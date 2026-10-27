@@ -32,8 +32,8 @@ def ping() -> None:
 def video(carpeta: Path) -> None:
     conteo = describir.describir(carpeta, solo_contar=True)
     t = transcribir.transcribir(carpeta)
-    print(f"Describir un video: {conteo['tokens_entrada']:,} tokens de entrada "
-          f"≈ {conteo['usd_entrada']:.4f} USD + salida.")
+    print(f"Describir un video: ~{conteo["tokens_entrada_estimados"]:,.0f} tokens de entrada "
+          f"≈ {conteo["usd_estimado"]:.3f} USD con salida.")
     print(f"Transcribir: {t['audio_ms'] / 1000:.0f} s de audio, {len(t['turnos'])} turnos.")
     print(f"Gastado en total: {meta_api.gastado_usd():.4f} USD de {meta_api.TOPE_USD:.0f}.")
 

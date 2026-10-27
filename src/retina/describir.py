@@ -62,16 +62,24 @@ def validar(salida: dict) -> list[str]:
     return problemas
 
 
+TOKENS_VIDEO_POR_S = 200  # medido el 27-oct-2026 con un video de 100 s
+SALIDA_TIPICA = 6500      # tokens de salida con razonamiento, mismo video
+
+
 def describir(carpeta: Path, solo_contar: bool = False) -> dict:
     manifiesto = json.loads((carpeta / "manifiesto.json").read_text(encoding="utf-8"))
     file_id = meta_api.subir_archivo(carpeta / manifiesto["mp4_ligero"])
     try:
         c = cuerpo(manifiesto, file_id)
         entrada = meta_api.contar_tokens({k: c[k] for k in ("model", "input", "text")})
-        estimado = entrada * meta_api.PRECIOS_TOKENS[MODELO][0] / 1e6
-        print(f"Entrada: {entrada:,} tokens ≈ {estimado:.4f} USD antes de la salida.")
+        # El conteo no incluye el video (27-oct: contó 1,343 y se cobraron 21,061 en 100 s).
+        real = entrada + TOKENS_VIDEO_POR_S * manifiesto["duracion_s"]
+        precio_in, _, precio_out = meta_api.PRECIOS_TOKENS[MODELO]
+        estimado = (real * precio_in + SALIDA_TIPICA * precio_out) / 1e6
+        print(f"Entrada: {entrada:,} tokens contados + video ≈ {real:,.0f} · estimado {estimado:.3f} USD con salida.")
         if solo_contar:
-            return {"tokens_entrada": entrada, "usd_entrada": estimado}
+            return {"tokens_entrada": entrada, "tokens_entrada_estimados": real, "usd_estimado": estimado}
+        meta_api._revisar_tope(estimado)
         respuesta = meta_api.responder("describir", c)
     finally:
         meta_api.borrar_archivo(file_id)

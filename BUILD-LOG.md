@@ -123,3 +123,17 @@ the day's cost in USD.*
   Ver `docs/decisiones.md`.
 
 **Costo:** USD 0.00 (todo local).
+
+### Día 2 (noche) · Gate 1 con la API real
+
+**Medido** (un video ya publicado de 100 s, modo Standard, tope del día USD 10)
+- Ping a Spark desde México: 1.6 s.
+- Voice Transcribe: 100 s de audio en 58 s, USD 0.005.
+- Describir (Spark ve el video, 40 tramos, 0 errores de validación): 21,061 tokens
+  de entrada, 6,285 de salida, 34 s, USD 0.053. Leyó exacto el texto en pantalla.
+- Explicar el tramo de riesgo: 12 s, USD 0.015, con un cambio concreto y lo que no pudo
+  verificar.
+- **Trampa:** `/v1/responses/input_tokens` no cuenta el video (dio 1,343 contra 21,061
+  cobrados; ~200 tokens por segundo de video). `describir.py` ya lo suma antes de revisar
+  el tope.
+- Costo de punta a punta: ~USD 0.075 por video de 100 s.
