@@ -75,11 +75,21 @@ def medir(filas: list[dict], carpeta: Path, con_audio: bool = False) -> dict:
     r = {"n_entrenamiento": len(ent), "n_prueba": len(pru),
          "moda": acierto([moda.get(v["cubeta"], int(np.argmax(frec))) for v in pru], real)}
 
+    # Top 3 de la moda: las 3 posiciones más comunes después del gancho.
+    top_moda = GANCHO + np.argsort(frec[GANCHO:])[::-1][:3]
+    r["moda_top3_pct"] = round(100 * float(np.mean([t in top_moda for t in real])), 1)
+
     Xt = np.vstack([X(v) for v in ent]); yt = np.concatenate([exceso(v) for v in ent])
     for lam in (10, 100, 1000, 10000):
         W = ajustar_ridge(Xt, yt, lam)
-        pred = [GANCHO + int(np.argmax((X(v) @ W)[GANCHO:])) for v in pru]
+        puntajes = [(X(v) @ W)[GANCHO:] for v in pru]
+        pred = [GANCHO + int(np.argmax(s)) for s in puntajes]
         r[f"directo_lambda_{lam}"] = acierto(pred, real)
+        r[f"directo_lambda_{lam}"]["top3_pct"] = round(100 * float(np.mean(
+            [t in GANCHO + np.argsort(s)[::-1][:3] for s, t in zip(puntajes, real)])), 1)
+        # ¿Sube la caída predicha donde sube la real? Correlación dentro de cada video, promediada.
+        corr = [np.corrcoef(s, exceso(v)[GANCHO:])[0, 1] for s, v in zip(puntajes, pru)]
+        r[f"directo_lambda_{lam}"]["corr_dentro_del_video"] = round(float(np.nanmean(corr)), 3)
         # con desempate por lo común: suma una fracción de la frecuencia de cada posición
         escala = float(np.std(Xt @ W))
         pred2 = [GANCHO + int(np.argmax((X(v) @ W + escala * frec)[GANCHO:])) for v in pru]

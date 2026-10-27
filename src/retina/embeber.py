@@ -94,7 +94,7 @@ class Embebedor:
         self.dev = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = torch.float16 if self.dev == "cuda" else torch.float32
         self.proc = AutoVideoProcessor.from_pretrained(modelo)
-        self.modelo = AutoModel.from_pretrained(modelo, torch_dtype=self.dtype,
+        self.modelo = AutoModel.from_pretrained(modelo, dtype=self.dtype,
                                                 attn_implementation="sdpa").to(self.dev).eval()
 
     def __call__(self, video: np.ndarray) -> np.ndarray:
