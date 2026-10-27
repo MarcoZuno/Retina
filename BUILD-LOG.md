@@ -89,3 +89,37 @@ the day's cost in USD.*
   video (gate 1). Ver `docs/decisiones.md`.
 
 **Costo del día:** USD 0.00 (sin llamadas a la API).
+
+### Día 2 (tarde) · toda la data
+
+**Hecho**
+- `base.py`: una sola base con todas las curvas de la página desde 2020
+  (decenas de miles de producciones con curva de 41 puntos, contra unos pocos miles de la lista
+  congelada), el archivo final cuando existe y la transcripción con tiempos
+  cuando existe (casi toda la base). Los videos sin archivo se quedan: aportan
+  curva y metadatos.
+- `voz.py`: lo que se dice tramo a tramo (palabras por segundo, voz contra
+  silencio, pausas, arranques de frase, preguntas).
+- `transcribir_local.py`: Whisper local para los videos con archivo y sin
+  transcripción (solo para entrenar y medir; el panel usa Voice Transcribe).
+- La regla de «videos parecidos» ahora usa sumas acumuladas: mismo resultado
+  (comprobado en 400 videos), 10 veces más rápida, necesaria para decenas de miles.
+- `eval/escala.py`, `eval/voz_tramo.py`, `eval/voz_gancho.py`.
+
+**Medido**
+- La curva de los exports de Facebook viene en puntos porcentuales enteros.
+  Después del primer cuarto del video, casi todos los tramos pierden 0 o 1
+  punto: el tramo exacto de la caída está por debajo de la resolución del
+  dato. Eso explica por qué ni la imagen, ni el audio, ni la voz lo ubican.
+- Más años de historia no mejoran el modelo de metadatos (la audiencia de
+  2020 no es la de 2026).
+- La voz del arranque sí mejora la curva, sobre todo a los 3 segundos, y el
+  exceso de caída en el gancho se puede anticipar (correlación moderada).
+  Medido entrenando con 2020-2023 y probando en 2024.
+
+**Decisión**
+- El «dónde» de Retina pasa de «tramo exacto» a «el gancho / el primer cuarto
+  pierde más que tus videos parecidos», que es lo que el dato sí sostiene.
+  Ver `docs/decisiones.md`.
+
+**Costo:** USD 0.00 (todo local).

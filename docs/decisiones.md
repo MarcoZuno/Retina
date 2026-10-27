@@ -77,3 +77,18 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
   cambia el video; Spark dice por qué se va la gente.
 - **Por qué no se fuerza.** Un número inflado en la demo se cae frente al
   jurado. Se reporta el resultado negativo en el BUILD-LOG.
+
+## 27-oct-2026 · El dato manda: resolución de la curva
+
+- **La curva viene en enteros.** Los exports de Meta redondean cada punto a
+  1 %. Pasado el primer cuarto del video, la caída por tramo casi siempre es
+  0 o 1 punto. Predecir el tramo exacto ahí es predecir el redondeo.
+- **Qué promete Retina.** La curva completa contra videos parecidos, y si el
+  gancho o el primer cuarto pierden más gente de lo normal. No promete el
+  segundo exacto donde se va la gente pasado el arranque.
+- **Toda la data entra.** Se usan todas las curvas desde 2020, aunque no haya
+  archivo: sirven para la línea base y para aprender qué de la voz explica el
+  arranque. El modelo de metadatos se entrena con los años recientes, porque
+  sumar años viejos no lo mejora.
+- **Los videos de prueba no cambian** (jul-sep 2026), para comparar contra
+  todo lo medido antes.
