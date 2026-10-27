@@ -50,3 +50,24 @@ the day's cost in USD.*
 - Reglas Oficiales leídas y guardadas en `docs/`.
 
 **Costo del día:** USD 0.00 (sin llamadas a la API todavía).
+
+## Día 2 · mar 27-oct-2026
+
+**Hecho**
+- `embeber.py`: V-JEPA 2 (ViT-L, pesos abiertos de Meta) corriendo local en una
+  tarjeta local. Se toman 80 cuadros por video (2 por tramo); como el modelo agrupa
+  los cuadros de 2 en 2, su salida trae exactamente 40 posiciones temporales:
+  un vector de 1,024 números por tramo de la curva.
+- Lote reanudable: 3 lectores de video en paralelo mientras la GPU corre el
+  modelo; un video malo no detiene el lote.
+- `predecir.py` v1: sobre la v0, un modelo por tramo con los vectores de
+  V-JEPA 2 (qué se ve, cuánto cambió contra el tramo anterior, dónde está)
+  aprende la caída que la v0 no explica.
+
+**Medido**
+- Decodificar 80 cuadros de un export de 100 s a 1080x1920: 10 s en CPU,
+  7.4 s en la GPU (NVDEC), 3.1 s leyendo solo cuadros clave. La red no es el
+  cuello de botella (250 MB en 2.9 s).
+- V-JEPA 2: 1.2 s por video en la GPU. En lote, 4.5 s por video de punta a punta.
+- Los vectores de tramos vecinos se parecen en promedio 0.88 (coseno) y caen
+  en los cortes de escena: el modelo sí ve dónde cambia el video.

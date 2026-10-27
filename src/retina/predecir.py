@@ -98,11 +98,84 @@ def entrenar(filas: list[dict]) -> dict:
             "n_rasgos": int(X.shape[1]), **metricas(prueba, predichas, bases, tramos)}
 
 
+K_PCA = 32
+
+
+def rasgos_tramo(emb: np.ndarray, proy: np.ndarray, media: np.ndarray, cubeta: int) -> np.ndarray:
+    """Una fila por tramo: qué se ve, cuánto cambió respecto al tramo anterior y dónde está."""
+    e = (emb.astype(np.float32) - media) @ proy                      # (40, K)
+    previo = np.vstack([e[:1], e[:-1]])
+    n = emb / (np.linalg.norm(emb, axis=1, keepdims=True) + 1e-6)
+    corte = np.concatenate([[0.0], 1 - np.sum(n[1:] * n[:-1], axis=1)])  # 1 - coseno con el anterior
+    posicion = np.eye(N_PUNTOS - 1)
+    cub = np.repeat(np.eye(6)[cubeta][None], N_PUNTOS - 1, axis=0)
+    return np.hstack([e, e - previo, corte[:, None], (corte[:, None] * posicion), posicion, cub])
+
+
+def caidas(curva: np.ndarray) -> np.ndarray:
+    return curva[:-1] - curva[1:]
+
+
+def entrenar_con_video(filas: list[dict], carpeta: Path) -> dict:
+    """v1: v0 + un modelo por tramo con los vectores de V-JEPA 2.
+
+    El modelo por tramo aprende la caída que v0 no explica, tramo a tramo; la
+    curva final se rehace acumulando esas caídas. Se mide solo en los videos
+    que ya tienen vector, y v0 se mide en esos mismos para comparar parejo.
+    """
+    con_vector = {p.stem for p in carpeta.glob("*.npy")}
+    entrenamiento, prueba = dividir(filas)
+    rasgos = Rasgos(entrenamiento)
+    X, Y, _ = preparar(filas, entrenamiento, entrenamiento, rasgos)
+    W0 = ajustar_ridge(X, Y, 30)
+
+    def v0(grupo):
+        Xg, _, bases = preparar(filas, grupo, entrenamiento, rasgos)
+        return [np.clip(b + d, 0, 1) for b, d in zip(bases, Xg @ W0)], bases
+
+    ent_v = [v for v in entrenamiento if v["codigo"] in con_vector]
+    pru_v = [v for v in prueba if v["codigo"] in con_vector]
+    embs = {v["codigo"]: np.load(carpeta / f"{v['codigo']}.npy") for v in ent_v + pru_v}
+
+    muestra = np.vstack([embs[v["codigo"]] for v in ent_v]).astype(np.float32)
+    media = muestra.mean(axis=0)
+    _, _, vt = np.linalg.svd(muestra[::7] - media, full_matrices=False)
+    proy = vt[:K_PCA].T
+
+    p0_ent, _ = v0(ent_v)
+    Xt = np.vstack([rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"]) for v in ent_v])
+    yt = np.concatenate([caidas(v["curva"]) - caidas(p) for v, p in zip(ent_v, p0_ent)])
+    Xt = np.hstack([np.ones((len(Xt), 1)), Xt])
+    resultados = {}
+    p0_pru, bases = v0(pru_v)
+    for lam in (10, 100, 1000):
+        Wt = ajustar_ridge(Xt, yt, lam)
+        predichas = []
+        for v, p in zip(pru_v, p0_pru):
+            Xv = np.hstack([np.ones((N_PUNTOS - 1, 1)), rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"])])
+            extra = Xv @ Wt
+            predichas.append(np.clip(p - np.concatenate([[0.0], np.cumsum(extra)]), 0, 1))
+        tramos = [tramo_exceso(q, b) for q, b in zip(predichas, bases)]
+        resultados[f"v1_lambda_{lam}"] = metricas(pru_v, predichas, bases, tramos)
+    resultados["v0_mismos_videos"] = metricas(pru_v, p0_pru, bases, [tramo_exceso(p, b) for p, b in zip(p0_pru, bases)])
+    return {"version": "predecir-v1-vjepa2", "n_entrenamiento_con_vector": len(ent_v),
+            "n_prueba_con_vector": len(pru_v), **resultados}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--pares", type=Path, required=True)
     ap.add_argument("--salida", type=Path, required=True)
+    ap.add_argument("--vectores", type=Path, help="Carpeta con los .npy de embeber (activa v1).")
     a = ap.parse_args()
+    if a.vectores:
+        r = entrenar_con_video(cargar(a.pares), a.vectores)
+        a.salida.parent.mkdir(parents=True, exist_ok=True)
+        a.salida.write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
+        for k, v in r.items():
+            if isinstance(v, dict):
+                print(k, json.dumps({x: v[x] for x in ("n", "mae_pp", "spearman_15s", "tramo_exceso_10pct")}))
+        return
     r = entrenar(cargar(a.pares))
     a.salida.parent.mkdir(parents=True, exist_ok=True)
     a.salida.write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")

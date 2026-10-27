@@ -2,6 +2,21 @@
 
 Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
 
+## 27-oct-2026
+
+- **2 cuadros por tramo para V-JEPA 2.** El modelo junta los cuadros de 2 en 2
+  en el tiempo; con 80 cuadros su salida queda alineada 1 a 1 con los 40 tramos
+  de la curva, sin interpolar.
+- **Decodificación completa en GPU, no solo cuadros clave.** Los cuadros clave
+  vienen cada ~1 s: en videos cortos se repetirían cuadros y se perdería el
+  movimiento, que es lo que V-JEPA 2 sabe leer. Cuesta 2x más tiempo; se queda
+  la opción `--rapido`.
+- **ViT-L (300 M) y no ViT-g.** Cabe holgado en 8 GB en fp16 y corre 1.2 s por
+  video. Si el tiempo alcanza, se compara con ViT-g en el día 8.
+- **Los créditos no cambian el modelo a contributor.** Los «Hackathon Credit
+  Terms» no mencionan entrenamiento con lo que mandamos; el uso se rige por los
+  términos del API, donde los modelos Standard no entrenan con las entradas.
+
 ## 26-oct-2026
 
 - **El «tramo más común» de la línea base se aprende solo en entrenamiento.**
