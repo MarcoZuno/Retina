@@ -1,0 +1,100 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version_esquema": {
+      "type": "string",
+      "enum": [
+        "tramo-v1"
+      ]
+    },
+    "tramos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "tramo": {
+            "type": "integer",
+            "description": "Índice del tramo, de 0 a 39."
+          },
+          "presentador_en_pantalla": {
+            "type": "boolean"
+          },
+          "texto_en_pantalla": {
+            "type": "string",
+            "description": "Texto visible copiado tal cual; vacío si no hay."
+          },
+          "cambio_de_plano": {
+            "type": "boolean",
+            "description": "Hay al menos un corte o cambio de plano dentro del tramo."
+          },
+          "tipo_de_plano": {
+            "type": "string",
+            "enum": [
+              "primer_plano",
+              "plano_medio",
+              "plano_abierto",
+              "grafico",
+              "texto_solo",
+              "otro"
+            ]
+          },
+          "tipo_de_gancho": {
+            "type": "string",
+            "enum": [
+              "pregunta",
+              "dato_impactante",
+              "promesa",
+              "conflicto",
+              "imagen_impactante",
+              "presentacion_del_talento",
+              "ninguno",
+              "otro"
+            ],
+            "description": "Solo en los primeros tramos; después, ninguno."
+          },
+          "riesgo_anzuelo": {
+            "type": "string",
+            "enum": [
+              "ninguno",
+              "pide_interaccion",
+              "mira_hasta_el_final",
+              "esconde_el_dato",
+              "exageracion",
+              "cura_milagrosa",
+              "material_ajeno",
+              "ia_sin_etiqueta"
+            ]
+          },
+          "que_pasa": {
+            "type": "string",
+            "description": "Una frase: qué se ve en el tramo."
+          }
+        },
+        "required": [
+          "tramo",
+          "presentador_en_pantalla",
+          "texto_en_pantalla",
+          "cambio_de_plano",
+          "tipo_de_plano",
+          "tipo_de_gancho",
+          "riesgo_anzuelo",
+          "que_pasa"
+        ]
+      }
+    },
+    "no_pude_verificar": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lo que no se pudo ver o confirmar en el video."
+    }
+  },
+  "required": [
+    "version_esquema",
+    "tramos",
+    "no_pude_verificar"
+  ]
+}

@@ -1,0 +1,19 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Datos: nunca al repo (viven en el servidor, fuera de esta carpeta)
+datos/
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.jpg
+*.png
+!docs/img/*.png
+
+# Python
+__pycache__/
+*.pyc
+.venv/

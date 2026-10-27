@@ -1,0 +1,10 @@
+{
+  "version": "video-parecido-v1",
+  "fecha": "2026-10-26",
+  "estado": "BORRADOR: falta definirlo con el equipo de redes sociales. Esta es la regla del plan; cambiarla sube la versión.",
+  "definicion": "Promedio de los videos del mismo formato, talento y duración publicados en los 90 días anteriores.",
+  "ventana_dias": 90,
+  "minimo_para_usar_talento": 15,
+  "cubetas_duracion_s": [0, 30, 60, 90, 120, 180, 300, 600, 100000],
+  "si_no_alcanza": "Se quita el talento y se usa formato + duración; la licencia de la tarjeta dice cuántos videos parecidos hubo."
+}
