@@ -29,11 +29,14 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     tiempos, no_pude = {}, []
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
 
-    emb = None
+    emb = audio = None
     try:
-        from .embeber import Embebedor, cuadros
-        t = time.time(); emb = Embebedor()(cuadros(video)); tiempos["embeber"] = round(time.time() - t, 1)
-        np.save(salida / "vectores.npy", emb)
+        from .embeber import Embebedor, cuadros_y_audio
+        t = time.time()
+        marcos, audio = cuadros_y_audio(video)
+        emb = Embebedor()(marcos)
+        tiempos["embeber"] = round(time.time() - t, 1)
+        np.save(salida / "vectores.npy", emb); np.save(salida / "audio.npy", audio)
     except ImportError:
         no_pude.append("Lo que pasa en pantalla tramo a tramo (falta V-JEPA 2 en esta máquina).")
 
@@ -41,7 +44,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     v = {"fecha": datetime.strptime(fecha, "%Y-%m-%d %H:%M"), "dur": man["duracion_s"], "codigo": codigo,
          "talento": talento.upper().strip(), "archivo": titulo}
     v["cubeta"] = cubeta(v["dur"])
-    t = time.time(); pred = Modelo.cargar(modelo).predecir(v, emb); tiempos["predecir"] = round(time.time() - t, 1)
+    t = time.time(); pred = Modelo.cargar(modelo).predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
 
     explicacion = None
     if con_api:

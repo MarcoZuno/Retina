@@ -101,15 +101,27 @@ def entrenar(filas: list[dict]) -> dict:
 K_PCA = 32
 
 
-def rasgos_tramo(emb: np.ndarray, proy: np.ndarray, media: np.ndarray, cubeta: int) -> np.ndarray:
-    """Una fila por tramo: qué se ve, cuánto cambió respecto al tramo anterior y dónde está."""
+def rasgos_tramo(emb: np.ndarray, proy: np.ndarray, media: np.ndarray, cubeta: int,
+                 audio: np.ndarray | None = None) -> np.ndarray:
+    """Una fila por tramo: qué se ve, cuánto cambió respecto al tramo anterior, cómo suena
+    (volumen, silencio) y dónde está. Sin audio, esas columnas van en cero y lo marca."""
     e = (emb.astype(np.float32) - media) @ proy                      # (40, K)
     previo = np.vstack([e[:1], e[:-1]])
     n = emb / (np.linalg.norm(emb, axis=1, keepdims=True) + 1e-6)
     corte = np.concatenate([[0.0], 1 - np.sum(n[1:] * n[:-1], axis=1)])  # 1 - coseno con el anterior
     posicion = np.eye(N_PUNTOS - 1)
     cub = np.repeat(np.eye(6)[cubeta][None], N_PUNTOS - 1, axis=0)
-    return np.hstack([e, e - previo, corte[:, None], (corte[:, None] * posicion), posicion, cub])
+    if audio is None:
+        son = np.zeros((N_PUNTOS - 1, 9), dtype=np.float32)
+    else:
+        a = np.column_stack([audio[:, 0] / 30, audio[:, 1] / 30, audio[:, 2], audio[:, 3]])
+        son = np.hstack([np.ones((N_PUNTOS - 1, 1)), a, a - np.vstack([a[:1], a[:-1]])])
+    return np.hstack([e, e - previo, corte[:, None], (corte[:, None] * posicion), posicion, cub, son])
+
+
+def cargar_audio(carpeta: Path, codigo: str) -> np.ndarray | None:
+    p = carpeta / f"{codigo}.audio.npy"
+    return np.load(p) if p.exists() else None
 
 
 def caidas(curva: np.ndarray) -> np.ndarray:
@@ -149,7 +161,8 @@ def entrenar_con_video(filas: list[dict], carpeta: Path) -> dict:
     proy = vt[:K_PCA].T
 
     p0_ent, _ = v0(ent_v)
-    Xt = np.vstack([rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"]) for v in ent_v])
+    sonido = {v["codigo"]: cargar_audio(carpeta, v["codigo"]) for v in ent_v + pru_v}
+    Xt = np.vstack([rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"], sonido[v["codigo"]]) for v in ent_v])
     yt = np.concatenate([caidas(v["curva"]) - caidas(p) for v, p in zip(ent_v, p0_ent)])
     Xt = np.hstack([np.ones((len(Xt), 1)), Xt])
     resultados = {}
@@ -158,7 +171,8 @@ def entrenar_con_video(filas: list[dict], carpeta: Path) -> dict:
         Wt = ajustar_ridge(Xt, yt, lam)
         predichas = []
         for v, p in zip(pru_v, p0_pru):
-            Xv = np.hstack([np.ones((N_PUNTOS - 1, 1)), rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"])])
+            Xv = np.hstack([np.ones((N_PUNTOS - 1, 1)),
+                            rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"], sonido[v["codigo"]])])
             extra = Xv @ Wt
             predichas.append(np.clip(p - np.concatenate([[0.0], np.cumsum(extra)]), 0, 1))
         tramos = [tramo_exceso(q, b) for q, b in zip(predichas, bases)]
@@ -187,7 +201,9 @@ class Modelo:
             media = muestra.mean(axis=0)
             proy = np.linalg.svd(muestra[::7] - media, full_matrices=False)[2][:K_PCA].T
             p0 = [m.curva_v0(v)[0] for v in con]
-            Xt = np.vstack([np.hstack([np.ones((N_PUNTOS - 1, 1)), rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"])])
+            Xt = np.vstack([np.hstack([np.ones((N_PUNTOS - 1, 1)),
+                                       rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"],
+                                                    cargar_audio(carpeta_vectores, v["codigo"]))])
                             for v in con])
             yt = np.concatenate([caidas(v["curva"]) - caidas(p) for v, p in zip(con, p0)])
             m.extra = {"proy": proy, "media": media, "Wt": ajustar_ridge(Xt, yt, 100)}
@@ -197,13 +213,13 @@ class Modelo:
         base, fuente = regla_de_hoy(v, self.filas, self.filas)
         return np.clip(base + self.rasgos(v, base) @ self.W0, 0, 1), base, fuente
 
-    def predecir(self, v: dict, emb: np.ndarray | None = None) -> dict:
+    def predecir(self, v: dict, emb: np.ndarray | None = None, audio: np.ndarray | None = None) -> dict:
         p, base, fuente = self.curva_v0(v)
         _, _, n_parecidos = grupo_parecido(v, self.filas, self.filas)
         uso_video = emb is not None and "Wt" in self.extra
         if uso_video:
             X = np.hstack([np.ones((N_PUNTOS - 1, 1)),
-                           rasgos_tramo(emb, self.extra["proy"], self.extra["media"], v["cubeta"])])
+                           rasgos_tramo(emb, self.extra["proy"], self.extra["media"], v["cubeta"], audio)])
             p = np.clip(p - np.concatenate([[0.0], np.cumsum(X @ self.extra["Wt"])]), 0, 1)
         t = tramo_exceso(p, base)
         return {
