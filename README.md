@@ -48,12 +48,12 @@ If a service is not in this table, it does not exist.
 | `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ code, pending key |
 | `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | measured day 1 | ✅ code, pending key |
 | `embeber` | frames per stretch → vector per stretch | V-JEPA 2 (local) | 0 | day 2 |
-| `predecir` | vectors + descriptors + metadata → 41-point curve + risky stretch | own regression | 0 | day 3 |
+| `predecir` | vectors + descriptors + metadata → 41-point curve + risky stretch | own regression | 0 | v0 (metadata only) ✅ day 1 · v1 day 3 |
 | `explicar` | stretch + descriptors + bait list → explanation + suggestion | Muse Spark 1.3 | ≈ USD 0.01 | day 4 |
 | `storyboard` | suggestion + 3 reference images → 3 PNG | Muse Image 1.0 | USD 0.03 | day 4 |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | day 7 |
 | `escuchar` | post id → real curve + labeled comments | Graph API + Spark | ≈ USD 0.02 | day 7 |
-| `evaluar` | held-out videos → metrics with intervals | — | 0 | day 2+ |
+| `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ day 1 |
 
 Rules live outside the code: [`reglas/`](reglas/). Every API call is logged
 (model, tokens, seconds, USD) in `costos.jsonl` by

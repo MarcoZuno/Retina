@@ -26,10 +26,23 @@ the day's cost in USD.*
   tramo), `transcribir.py` (Voice Transcribe, turnos y silencios) y `gate1.py`
   (llamada real y costo de un video).
 
+- `curvas.py`: carga de curvas, regla «videos parecidos» y las cinco métricas
+  del plan con intervalo de 95 %, compartidas por la línea base y el modelo.
+- `eval/linea_base.py`: la regla de hoy medida en los videos de prueba.
+- `predecir.py` v0: regresión ridge sobre la regla de hoy con lo que se sabe
+  antes de publicar (duración, tipo de producción, talento, hora, día y
+  palabras del título). Sin modelos todavía; es el piso que la versión con
+  V-JEPA 2 y Spark tiene que superar.
+
 **Medido**
 - `segmentar` sobre un video ya publicado de 99.8 s: 40 tramos de 2.49 s,
   399 cuadros, ningún tramo vacío, MP4 ligero de 3.1 MB, 39 s en total.
 - Esquema `tramo-v1` validado contra las reglas del modo estricto.
+- Línea base y v0 medidas en los videos de prueba. La v0 mejora a la regla
+  en el error a 3 s, 15 s, mitad y final y en el orden de los videos, pero NO
+  en ubicar el tramo de caída anómala (ahí queda peor que adivinar el tramo
+  más común): sin ver el video no se puede. Las cifras quedan fuera del repo
+  hasta tener autorización para publicarlos.
 
 **Pendiente del gate 1**
 - Llamada real a Spark desde México y costo de un video: falta la llave del

@@ -4,6 +4,22 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
 
 ## 26-oct-2026
 
+- **El «tramo más común» de la línea base se aprende solo en entrenamiento.**
+  Calcularlo con los videos de prueba inflaba el acierto de la regla. Con el
+  método limpio la cifra sale distinta a la nota previa al evento; se reporta
+  la que salió.
+- **El tramo de caída anómala se busca después del primer 10 % del video.**
+  Todos los videos pierden gente al arranque; incluirlo premia lo obvio.
+- **Cifras fuera del repo hasta tener autorización.** Los resultados viven
+  en la carpeta de datos privada; el README se llena el día 8.
+- **predecir v0 sin modelos.** Antes de gastar API se mide cuánto se logra con
+  lo que ya se sabe antes de publicar. Así se ve cuánto aporta de verdad ver
+  el video con los modelos de Meta.
+- **Bono de pesos abiertos: necesita Muse Glimmer o Muse Spark Open.** Según
+  los organizadores (Discord, 26-oct), ese bono es solo para esos dos modelos
+  y el aliado verifica que corran en el proyecto. V-JEPA 2 cuenta como modelo
+  de Meta para la etapa 1, pero no para ese bono.
+
 - **Repo nuevo, código escrito desde hoy.** Ningún script anterior al evento
   entra al repo. Los datos previos se declaran en el README como
   «infraestructura y datos previos».
