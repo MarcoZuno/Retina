@@ -1,15 +1,22 @@
 {
   "version": "anzuelos-v1",
-  "fecha": "2026-10-26",
-  "estado": "BORRADOR: la lista con ejemplos se escribe el día 4 (29-oct). Hasta entonces, solo las categorías del plan.",
-  "uso": "Retina nunca sugiere nada de esta lista. Si lo ve en un borrador, lo marca con la regla. El esquema de describir toma sus enum de aquí.",
+  "fecha": "2026-10-27",
+  "estado": "BORRADOR: la lista con ejemplos se escribe el día 4 (29-oct). Hasta entonces, las categorías del plan y frases semilla.",
+  "uso": "Retina nunca sugiere nada de esta lista. Si lo ve en un borrador, lo marca con la regla. El esquema de describir toma sus valores de aquí y el filtro de integridad bloquea cualquier sugerencia que contenga una de las frases (sin acentos, sin mayúsculas).",
   "anzuelos": [
-    {"id": "pide_interaccion", "nombre": "Pide comentarios, likes o compartidos a cambio de algo", "fuente": "Normas de distribución de contenido de Meta (engagement bait)"},
-    {"id": "mira_hasta_el_final", "nombre": "«Mira hasta el final» o promesas de recompensa por quedarse", "fuente": "Normas de distribución de contenido de Meta"},
-    {"id": "esconde_el_dato", "nombre": "Esconde el dato prometido en el título para retener", "fuente": "Normas de distribución de contenido de Meta (clickbait)"},
-    {"id": "exageracion", "nombre": "Exagera o sensacionaliza lo que el video no sostiene", "fuente": "Normas de distribución de contenido de Meta (sensacionalismo)"},
-    {"id": "cura_milagrosa", "nombre": "Promete curas o resultados de salud milagrosos", "fuente": "Normas comunitarias de Meta y normas de distribución"},
-    {"id": "material_ajeno", "nombre": "Usa material de otros sin transformarlo", "fuente": "Reglas de contenido original de Meta"},
-    {"id": "ia_sin_etiqueta", "nombre": "Imagen o voz realista hecha con IA sin la etiqueta de IA", "fuente": "Etiquetado de contenido hecho con IA de Meta"}
+    {"id": "pide_interaccion", "nombre": "Pide comentarios, likes o compartidos a cambio de algo", "fuente": "Normas de distribución de contenido de Meta (engagement bait)",
+     "frases": ["coment*", "dale like", "like", "me gusta", "compart*", "etiquet*", "si estas de acuerdo", "reaccion*", "suscrib*", "sigueme", "siguenos"]},
+    {"id": "mira_hasta_el_final", "nombre": "«Mira hasta el final» o promesas de recompensa por quedarse", "fuente": "Normas de distribución de contenido de Meta; consejos de monetización de Meta",
+     "frases": ["hasta el final", "no te vayas", "quedate hasta", "al final te digo", "al final revelamos", "espera al final"]},
+    {"id": "esconde_el_dato", "nombre": "Esconde el dato prometido en el título para retener", "fuente": "Normas de distribución de contenido de Meta (clickbait)",
+     "frases": ["no vas a creer", "no creeras", "lo que paso despues", "te sorprendera", "nadie te dice", "el secreto que"]},
+    {"id": "exageracion", "nombre": "Exagera o sensacionaliza lo que el video no sostiene", "fuente": "Normas de distribución de contenido de Meta (sensacionalismo)",
+     "frases": ["impactante", "urgente", "increible", "te dejara sin palabras", "el peor", "nunca antes visto"]},
+    {"id": "cura_milagrosa", "nombre": "Promete curas o resultados de salud milagrosos", "fuente": "Normas comunitarias de Meta y normas de distribución",
+     "frases": ["cura", "elimina por completo", "adios para siempre", "milagro", "en solo 3 dias", "sin dieta"]},
+    {"id": "material_ajeno", "nombre": "Usa material de otros sin transformarlo", "fuente": "Reglas de contenido original de Meta",
+     "frases": ["usa el video de", "sube el clip de", "toma el video viral"]},
+    {"id": "ia_sin_etiqueta", "nombre": "Imagen o voz realista hecha con IA sin la etiqueta de IA", "fuente": "Etiquetado de contenido hecho con IA de Meta («AI info»)",
+     "frases": ["que no se note que es ia", "sin etiqueta de ia", "voz clonada de"]}
   ]
 }
