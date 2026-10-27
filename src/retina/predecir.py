@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .curvas import N_PUNTOS, cargar, dividir, metricas, regla_de_hoy, tramo_exceso
+from .curvas import N_PUNTOS, cargar, dividir, grupo_parecido, metricas, regla_de_hoy, tramo_exceso
 
 N_PALABRAS = 1024
 VACIAS = set("de la el en y a que los las un una por con para del se su al lo es tu te mp4 reel igtv".split())
@@ -123,7 +123,13 @@ def entrenar_con_video(filas: list[dict], carpeta: Path) -> dict:
     curva final se rehace acumulando esas caídas. Se mide solo en los videos
     que ya tienen vector, y v0 se mide en esos mismos para comparar parejo.
     """
-    con_vector = {p.stem for p in carpeta.glob("*.npy")}
+    con_vector = set()
+    for p in carpeta.glob("*.npy"):  # un archivo a medio escribir (lote interrumpido) se ignora
+        try:
+            if np.load(p).shape == (N_PUNTOS - 1, 1024):
+                con_vector.add(p.stem)
+        except (ValueError, OSError):
+            pass
     entrenamiento, prueba = dividir(filas)
     rasgos = Rasgos(entrenamiento)
     X, Y, _ = preparar(filas, entrenamiento, entrenamiento, rasgos)
@@ -160,6 +166,67 @@ def entrenar_con_video(filas: list[dict], carpeta: Path) -> dict:
     resultados["v0_mismos_videos"] = metricas(pru_v, p0_pru, bases, [tramo_exceso(p, b) for p, b in zip(p0_pru, bases)])
     return {"version": "predecir-v1-vjepa2", "n_entrenamiento_con_vector": len(ent_v),
             "n_prueba_con_vector": len(pru_v), **resultados}
+
+
+class Modelo:
+    """El modelo listo para un video nuevo. Se guarda en la carpeta privada de datos,
+    nunca en el repo: trae la historia de curvas que usa la regla de videos parecidos."""
+
+    def __init__(self, filas: list[dict], W0: np.ndarray, rasgos: Rasgos, extra: dict | None = None):
+        self.filas, self.W0, self.rasgos, self.extra = filas, W0, rasgos, extra or {}
+
+    @classmethod
+    def entrenar(cls, filas: list[dict], carpeta_vectores: Path | None = None) -> "Modelo":
+        rasgos = Rasgos(filas)
+        X, Y, _ = preparar(filas, filas, filas, rasgos)
+        m = cls(filas, ajustar_ridge(X, Y, 30), rasgos)
+        if carpeta_vectores:
+            con = [v for v in filas if (carpeta_vectores / f"{v['codigo']}.npy").exists()]
+            embs = {v["codigo"]: np.load(carpeta_vectores / f"{v['codigo']}.npy") for v in con}
+            muestra = np.vstack(list(embs.values())).astype(np.float32)
+            media = muestra.mean(axis=0)
+            proy = np.linalg.svd(muestra[::7] - media, full_matrices=False)[2][:K_PCA].T
+            p0 = [m.curva_v0(v)[0] for v in con]
+            Xt = np.vstack([np.hstack([np.ones((N_PUNTOS - 1, 1)), rasgos_tramo(embs[v["codigo"]], proy, media, v["cubeta"])])
+                            for v in con])
+            yt = np.concatenate([caidas(v["curva"]) - caidas(p) for v, p in zip(con, p0)])
+            m.extra = {"proy": proy, "media": media, "Wt": ajustar_ridge(Xt, yt, 100)}
+        return m
+
+    def curva_v0(self, v: dict) -> tuple[np.ndarray, np.ndarray, str]:
+        base, fuente = regla_de_hoy(v, self.filas, self.filas)
+        return np.clip(base + self.rasgos(v, base) @ self.W0, 0, 1), base, fuente
+
+    def predecir(self, v: dict, emb: np.ndarray | None = None) -> dict:
+        p, base, fuente = self.curva_v0(v)
+        _, _, n_parecidos = grupo_parecido(v, self.filas, self.filas)
+        uso_video = emb is not None and "Wt" in self.extra
+        if uso_video:
+            X = np.hstack([np.ones((N_PUNTOS - 1, 1)),
+                           rasgos_tramo(emb, self.extra["proy"], self.extra["media"], v["cubeta"])])
+            p = np.clip(p - np.concatenate([[0.0], np.cumsum(X @ self.extra["Wt"])]), 0, 1)
+        t = tramo_exceso(p, base)
+        return {
+            "curva_predicha": [round(float(x), 4) for x in p],
+            "curva_parecidos": [round(float(x), 4) for x in base],
+            "tramo_riesgo": t,
+            "caida_predicha_pp": round(float((p[t] - p[t + 1]) * 100), 1),
+            "caida_parecidos_pp": round(float((base[t] - base[t + 1]) * 100), 1),
+            "regla_de_parecidos": fuente,
+            "n_parecidos": n_parecidos,
+            "uso_video": uso_video,
+            "datos_hasta": max(h["fecha"] for h in self.filas).strftime("%Y-%m-%d"),
+        }
+
+    def guardar(self, ruta: Path) -> None:
+        import pickle
+        ruta.parent.mkdir(parents=True, exist_ok=True)
+        ruta.write_bytes(pickle.dumps(self))
+
+    @staticmethod
+    def cargar(ruta: Path) -> "Modelo":
+        import pickle
+        return pickle.loads(ruta.read_bytes())  # solo archivos propios de la carpeta privada
 
 
 def main() -> None:

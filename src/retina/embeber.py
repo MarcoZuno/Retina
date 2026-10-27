@@ -30,7 +30,7 @@ CUADROS_POR_TRAMO = 2
 LADO = 256
 
 
-def cuadros(video: Path, rapido: bool = False) -> np.ndarray:
+def cuadros(video: Path, rapido: bool = False, gpu: bool = True) -> np.ndarray:
     """80 cuadros RGB uniformes en el tiempo, recorte central cuadrado de 256 px.
 
     Se decodifica en la GPU (NVDEC): 7 s contra 10 s en CPU para un export de
@@ -42,7 +42,7 @@ def cuadros(video: Path, rapido: bool = False) -> np.ndarray:
     n = N_TRAMOS * CUADROS_POR_TRAMO
     filtro = (f"fps={n}/{dur:.4f},scale='if(gt(iw,ih),-2,{LADO})':'if(gt(iw,ih),{LADO},-2)',"
               f"crop={LADO}:{LADO}")
-    entrada = ["-skip_frame", "nokey"] if rapido else ["-hwaccel", "cuda"]
+    entrada = ["-skip_frame", "nokey"] if rapido else (["-hwaccel", "cuda"] if gpu else [])
     p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", *entrada, "-i", str(video),
                         "-vf", filtro, "-frames:v", str(n), "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
                        capture_output=True)
@@ -110,13 +110,21 @@ def lote(pares: Path, raices: list[Path], salida: Path, n: int, rapido: bool = F
     pendientes = [r for r in filas if not (salida / f"{r['codigo_produccion']}.npy").exists()]
     pendientes = pendientes[:max(0, n - hechos)]
     emb = Embebedor()
+    # NVDEC se satura con ~3 videos a la vez; los demás lectores decodifican en CPU.
+    import threading
+    turnos_gpu = threading.Semaphore(3)
 
     def leer(r):
         t0 = time.time()
         ruta = idx.get(r["archivo_nombre"])
         if not ruta:
             raise FileNotFoundError("sin archivo en la NAS")
-        return cuadros(Path(ruta), rapido), time.time() - t0
+        if turnos_gpu.acquire(blocking=False):
+            try:
+                return cuadros(Path(ruta), rapido, gpu=True), time.time() - t0
+            finally:
+                turnos_gpu.release()
+        return cuadros(Path(ruta), rapido, gpu=False), time.time() - t0
 
     registro = (salida / "registro.jsonl").open("a", encoding="utf-8")
     inicio = time.time()

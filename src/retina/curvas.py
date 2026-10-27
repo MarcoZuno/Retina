@@ -54,6 +54,11 @@ def en_segundo(curva: np.ndarray, dur: float, s: float) -> float:
 
 
 def regla_de_hoy(v: dict, historia: list[dict], entrenamiento: list[dict]) -> tuple[np.ndarray, str]:
+    curva, nombre, _ = grupo_parecido(v, historia, entrenamiento)
+    return curva, nombre
+
+
+def grupo_parecido(v: dict, historia: list[dict], entrenamiento: list[dict]) -> tuple[np.ndarray, str, int]:
     """Promedio de videos parecidos: cubeta + talento en 90 días, luego cubeta en 90 días,
     luego cubeta + talento en entrenamiento, luego cubeta. Nunca el propio video."""
     otros = [h for h in historia if h["codigo"] != v["codigo"] and h["fecha"] < v["fecha"]]
@@ -67,8 +72,8 @@ def regla_de_hoy(v: dict, historia: list[dict], entrenamiento: list[dict]) -> tu
     ]
     for nombre, grupo in opciones:
         if len(grupo) >= MINIMO or (nombre == "cubeta" and grupo):
-            return np.mean([g["curva"] for g in grupo], axis=0), nombre
-    return np.mean([h["curva"] for h in entrenamiento], axis=0), "global"
+            return np.mean([g["curva"] for g in grupo], axis=0), nombre, len(grupo)
+    return np.mean([h["curva"] for h in entrenamiento], axis=0), "global", len(entrenamiento)
 
 
 def tramo_exceso(real: np.ndarray, base: np.ndarray) -> int:

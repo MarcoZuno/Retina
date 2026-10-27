@@ -47,10 +47,11 @@ If a service is not in this table, it does not exist.
 | `segmentar` | MP4 → frames per stretch, 24 kHz mono WAV, 480p MP4 | ffmpeg (no model) | 0 | ✅ day 1 |
 | `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ code, pending key |
 | `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | measured day 1 | ✅ code, pending key |
-| `embeber` | frames per stretch → vector per stretch | V-JEPA 2 (local) | 0 | day 2 |
+| `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | ✅ day 2 |
 | `predecir` | vectors + descriptors + metadata → 41-point curve + risky stretch | own regression | 0 | v0 (metadata only) ✅ day 1 · v1 day 3 |
-| `explicar` | stretch + descriptors + bait list → explanation + suggestion | Muse Spark 1.3 | ≈ USD 0.01 | day 4 |
-| `storyboard` | suggestion + 3 reference images → 3 PNG | Muse Image 1.0 | USD 0.03 | day 4 |
+| `explicar` | stretch + descriptors + bait list → explanation + suggestion | Muse Spark 1.3 | ≈ USD 0.01 | ✅ code, pending key |
+| `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ day 2 |
+| `storyboard` | suggestion + 3 reference images → 3 PNG (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ code, pending key |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | day 7 |
 | `escuchar` | post id → real curve + labeled comments | Graph API + Spark | ≈ USD 0.02 | day 7 |
 | `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ day 1 |
