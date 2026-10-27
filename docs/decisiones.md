@@ -60,3 +60,20 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
 - **README en inglés; BUILD-LOG y decisiones en español** con resumen en
   inglés donde hace falta. El jurado lee el README; el equipo trabaja en
   español.
+
+## 27-oct-2026 · Lo que V-JEPA 2 sí y no hace en Retina
+
+- **Medido, no supuesto.** Con miles de videos de entrenamiento y cientos de prueba,
+  el vector de V-JEPA 2 por tramo (y el audio por tramo) no ubica mejor el
+  tramo de caída anómala que la posición más común. La posición más común es
+  el primer tramo después del gancho.
+- **Qué se hace con eso.** El tramo de riesgo del panel sale de la v0 más la
+  posición típica de su duración. V-JEPA 2 queda como servicio local (detecta
+  cortes y cambios de escena, sin costo) y como insumo para Spark, no como
+  predictor del «dónde».
+- **Lo que queda por probar.** Que Spark, viendo el video y leyendo la
+  transcripción, explique la caída mejor que la regla. Esa es la prueba del
+  gate 1 y la historia de la demo: el modelo de pesos abiertos dice dónde
+  cambia el video; Spark dice por qué se va la gente.
+- **Por qué no se fuerza.** Un número inflado en la demo se cae frente al
+  jurado. Se reporta el resultado negativo en el BUILD-LOG.

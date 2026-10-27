@@ -71,3 +71,21 @@ the day's cost in USD.*
 - V-JEPA 2: 1.2 s por video en la GPU. En lote, 4.5 s por video de punta a punta.
 - Los vectores de tramos vecinos se parecen en promedio 0.88 (coseno) y caen
   en los cortes de escena: el modelo sí ve dónde cambia el video.
+- Lote completo: casi todos los videos de la lista con vector de V-JEPA 2 y audio por
+  tramo (volumen, silencios, cruces por cero). Los 27 restantes no están en
+  el archivo de exports.
+- Medición del tramo de caída anómala con los videos de prueba que tienen
+  vector: ni la imagen (V-JEPA 2 promediado por tramo) ni el audio le ganan a
+  «el tramo más común». Ese tramo es casi siempre el primero después del
+  gancho (el 10 % inicial). La imagen sí se mueve en la dirección correcta
+  dentro de cada video, pero la señal es débil. El audio no agrega nada medible.
+- Curvas completas con vectores: iguales a la v0 dentro del intervalo de
+  confianza. Leve mejora en el orden de los videos, también dentro del ruido.
+
+**Decisión del día**
+- El «dónde» del panel sale del modelo con metadatos más la posición
+  típica; V-JEPA 2 se queda como servicio, pero ya no se presume que ubica el
+  tramo. El «por qué» y el «qué cambiar» son trabajo de Spark viendo el
+  video (gate 1). Ver `docs/decisiones.md`.
+
+**Costo del día:** USD 0.00 (sin llamadas a la API).
