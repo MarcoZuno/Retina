@@ -60,8 +60,12 @@ class Arranque:
             n[clave] = len(g)
         return cls(rasgos, W, cortes, lam, n)
 
+    # Medido el 27-oct en jul-sep 2026: la voz no mejora el nivel (las cifras van en la
+    # investigación privada). El nivel sale sin voz; la voz va a la explicación.
+    USAR_VOZ_EN_NIVEL = False
+
     def predecir(self, v: dict, base: np.ndarray, tramos: list | None = None) -> dict:
-        clave = "con_voz" if tramos else "sin_voz"
+        clave = "con_voz" if tramos and self.USAR_VOZ_EN_NIVEL else "sin_voz"
         p = self._X(self.rasgos, v, base, tramos if tramos else None) @ self.W[clave]
         arranque = float(p[0] + p[1])
         medio, alto = self.cortes[clave]
@@ -75,7 +79,7 @@ class Arranque:
             "bloques": [{"bloque": NOMBRES_BLOQUES[i], "tramos": list(BLOQUES[i]),
                          "caida_parecidos_pp": round(float(b[i]) * 100, 1),
                          "exceso_predicho_pp": round(float(p[i]) * 100, 1)} for i in range(len(BLOQUES))],
-            "uso_voz": bool(tramos),
+            "uso_voz": clave == "con_voz",
             "entrenado_con": self.n[clave],
         }
 
