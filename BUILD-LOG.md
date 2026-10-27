@@ -137,3 +137,17 @@ the day's cost in USD.*
   cobrados; ~200 tokens por segundo de video). `describir.py` ya lo suma antes de revisar
   el tope.
 - Costo de punta a punta: ~USD 0.075 por video de 100 s.
+
+### Día 2 (cierre) · Riesgo del arranque
+
+**Hecho**
+- `arranque.py`: dice si el gancho y el primer cuarto van a perder más gente que
+  videos parecidos (alto, medio o bajo), con y sin la voz del arranque. Se guarda en
+  JSON (no pickle): va al repo público y lo cargan los jueces.
+- `retina.py` lo usa: con la API toma la voz de Voice Transcribe; sin la API, solo
+  metadatos. `voz.py` convierte los turnos de Voice Transcribe a frases con tiempo.
+
+**Medido** (entrena antes del periodo, prueba en el periodo; cifras en la investigación privada)
+- Prueba jul-sep 2026: cuando dice «alto», el arranque sí pierde de más en la gran
+  mayoría de los casos; cuando dice «bajo», en la mitad. En 2024, el mismo orden.
+- La voz no cambia el nivel de riesgo (sí ayuda a la curva a los 3 s).

@@ -56,3 +56,28 @@ def rasgos_voz(tramos: list[list], dur: float) -> np.ndarray:
     r[:, 5] = np.log((r[:, 0] + 1e-3) / media)
     r[1:, 6] = r[1:, 0] - r[:-1, 0]
     return r
+
+
+# Bloques gruesos del video: la curva de Facebook viene en puntos enteros, así que
+# pasado el arranque solo se puede hablar de bloques, no de tramos.
+BLOQUES = [(0, 4), (4, 10), (10, 20), (20, 30), (30, 40)]
+NOMBRES_BLOQUES = ["gancho (0-10 %)", "primer cuarto (10-25 %)", "25-50 %", "50-75 %", "75-100 %"]
+INICIO = 10  # tramos del primer 25 %
+
+
+def voz_inicio(tramos: list, dur: float) -> np.ndarray:
+    """La voz del primer cuarto aplanada, más cuándo arranca y cuánto se dice en 3 y 15 s."""
+    r = rasgos_voz(tramos, dur)
+    primera = min((float(t) for t, _ in tramos), default=dur)
+    pal = lambda s: sum(len(x.split()) for t, x in tramos if float(t) < s)  # noqa: E731
+    return np.concatenate([r[:INICIO].ravel(), [min(primera, 10) / 10, primera / dur, pal(3) / 10, pal(15) / 40,
+                                               float(any("?" in x for t, x in tramos if float(t) < 15))]])
+
+
+def bloques(caida: np.ndarray) -> np.ndarray:
+    return np.array([caida[a:b].sum() for a, b in BLOQUES])
+
+
+def de_turnos(turnos: list[dict]) -> list[list]:
+    """Turnos de Voice Transcribe (startMs, transcript) -> tramos [inicio_s, texto]."""
+    return [[t["startMs"] / 1000, t.get("transcript", "")] for t in turnos if t.get("transcript")]

@@ -25,23 +25,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from retina.curvas import CUBETAS, cargar, metricas, regla_de_hoy, tramo_exceso  # noqa: E402
 from retina.predecir import Rasgos, ajustar_ridge, caidas  # noqa: E402
-from retina.voz import rasgos_voz  # noqa: E402
-
-BLOQUES = [(0, 4), (4, 10), (10, 20), (20, 30), (30, 40)]
-INICIO = 10  # tramos del primer 25 %
-
-
-def voz_inicio(tramos: list, dur: float) -> np.ndarray:
-    r = rasgos_voz(tramos, dur)
-    primera = min((float(t) for t, _ in tramos), default=dur)
-    pal = lambda s: sum(len(x.split()) for t, x in tramos if float(t) < s)  # noqa: E731
-    return np.concatenate([r[:INICIO].ravel(), [min(primera, 10) / 10, primera / dur, pal(3) / 10, pal(15) / 40,
-                                               float(any("?" in x for t, x in tramos if float(t) < 15))]])
-
-
-def bloques(caida: np.ndarray) -> np.ndarray:
-    return np.array([caida[a:b].sum() for a, b in BLOQUES])
-
+from retina.voz import BLOQUES, bloques, voz_inicio  # noqa: E402
 
 def ajustar(Xa, Ya, Xv, Yv) -> tuple[np.ndarray, int]:
     err = {lam: float(np.mean(np.abs(Xv @ ajustar_ridge(Xa, Ya, lam) - Yv))) for lam in (10, 30, 100, 300, 1000, 3000)}

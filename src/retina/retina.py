@@ -25,7 +25,7 @@ from .segmentar import segmentar
 
 
 def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, fecha: str,
-           titulo: str, con_api: bool) -> dict:
+           titulo: str, con_api: bool, arranque: Path | None = None) -> dict:
     tiempos, no_pude = {}, []
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
 
@@ -46,10 +46,12 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     v["cubeta"] = cubeta(v["dur"])
     t = time.time(); pred = Modelo.cargar(modelo).predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
 
-    explicacion = None
+    explicacion, tramos_voz = None, None
     if con_api:
         from . import describir, explicar, transcribir
-        t = time.time(); transcribir.transcribir(salida); tiempos["transcribir"] = round(time.time() - t, 1)
+        from .voz import de_turnos
+        t = time.time(); tr = transcribir.transcribir(salida); tiempos["transcribir"] = round(time.time() - t, 1)
+        tramos_voz = de_turnos(tr["turnos"])
         t = time.time(); describir.describir(salida); tiempos["describir"] = round(time.time() - t, 1)
         t = time.time()
         explicacion = explicar.explicar(salida, pred["tramo_riesgo"], pred["caida_predicha_pp"], pred["caida_parecidos_pp"])
@@ -59,11 +61,17 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         no_pude.append("La voz y los silencios (se corrió sin la API de Meta).")
     no_pude.append("La música: no se analiza la letra ni la licencia.")
 
+    riesgo_arranque = None
+    if arranque:
+        from .arranque import Arranque
+        riesgo_arranque = Arranque.cargar(arranque).predecir(v, np.array(pred["curva_parecidos"]), tramos_voz)
+
     tramo = man["tramos"][pred["tramo_riesgo"]]
     resultado = {
         "version": "retina-v0",
         "video": {"duracion_s": man["duracion_s"], "codigo": codigo, "titulo": titulo},
         "prediccion": pred,
+        "arranque": riesgo_arranque,
         "tramo_riesgo": {"indice": pred["tramo_riesgo"], "inicio_s": tramo["inicio_s"], "fin_s": tramo["fin_s"]},
         "explicacion": explicacion,
         "tiempos_s": tiempos,
@@ -94,8 +102,9 @@ def main() -> None:
     ap.add_argument("--fecha", default=datetime.now().strftime("%Y-%m-%d %H:%M"))
     ap.add_argument("--titulo", default="")
     ap.add_argument("--con-api", action="store_true", help="Usa la Meta Model API (cuesta).")
+    ap.add_argument("--arranque", type=Path, help="Modelo del riesgo del arranque (JSON de retina.arranque).")
     a = ap.parse_args()
-    r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api)
+    r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque)
     p = r["prediccion"]
     print(f"Tramo de riesgo {p['tramo_riesgo']} ({r['tramo_riesgo']['inicio_s']:.0f}-{r['tramo_riesgo']['fin_s']:.0f} s): "
           f"cae {p['caida_predicha_pp']} pp contra {p['caida_parecidos_pp']} en videos parecidos · {r['tiempos_s']}")
