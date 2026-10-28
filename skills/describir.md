@@ -2,7 +2,7 @@
 estacion: describir
 version: describir-v1
 fecha: 2026-10-26
-duenio: Josafat Ruvalcaba
+duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort bajo
 herramientas: ninguna (solo salida estructurada)
 ---

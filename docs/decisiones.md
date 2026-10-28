@@ -129,3 +129,11 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
 - **La tarjeta habla como persona.** Sin porcentajes ni jerga, con segundos, con un solo
   cambio y sin tocar marca, ley ni línea editorial. El validador lo exige.
 - **A Meta solo van videos publicados,** y el código lo pide de forma explícita.
+
+## 28-oct-2026 · El nivel de riesgo no lo decide Spark mirando el video
+
+- **Qué se probó.** Un juez a ciegas: Spark ve dos arranques reales del mismo tipo y dice cuál
+  pierde más gente. Cada par en los dos órdenes, porque con uno solo elegía siempre el segundo.
+- **Qué salió.** No le gana al azar y el modelo de datos le gana en los mismos pares.
+- **Qué se decide.** El nivel sale del modelo; Spark explica y propone. Es mejor reportar lo que
+  no funcionó que prometer que «ver el video» predice.

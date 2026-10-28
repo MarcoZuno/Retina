@@ -266,3 +266,21 @@ negocio) auditaron Retina el 28-oct. Esto se arregló el mismo día:
   panel. `python -m unittest discover -s tests`.
 
 **Costo:** unos centavos (3 casos reales para probar las instrucciones nuevas).
+
+### Día 3 (tarde) · Juez por pares
+
+¿Mirar el video aporta algo que los datos del video no dan? Spark 1.3 ve el arranque de dos
+videos reales del mismo tipo (los 50 casos del gate, publicados jul-sep 2026) y dice cuál
+pierde más gente que un video parecido. Sin título ni cifras. Solo pares con diferencia
+clara (`eval/juez_pares.py`, `skills/juez.md`).
+
+- **Sesgo de posición.** Con un solo orden eligió el segundo video en 10 de 10. Cada par se
+  juzga en los dos órdenes y solo cuenta si elige el mismo video las dos veces.
+- **Resultado.** Con veredicto firme acierta como un volado; el modelo de datos acierta
+  bastante más en los mismos pares, y cuando no coinciden casi siempre tiene razón el modelo.
+  Cifras en la investigación privada.
+- **Decisión.** El nivel de riesgo se queda con el modelo. El video entra donde sí sirve: decir
+  dónde y por qué, y proponer el cambio. No prometemos que «ver el video» mejore la predicción.
+- 11 de 524 juicios fallaron con HTTP 400 (archivo ya caducado al reusarlo); se dejan fuera.
+
+**Costo:** USD 9.08 (524 juicios a unos USD 0.017).

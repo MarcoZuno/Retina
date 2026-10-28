@@ -18,7 +18,7 @@ rounding noise. We promise what the data supports
 Built by Badabun (Mexico) for the Meta Global AI Developer Hackathon 2026 ·
 Startup track · theme *Build for Your World*.
 
-Team: **Josafat Ruvalcaba** (lead).
+Team: **Marco Zuno** (representative) · **Jossafat Ruvalcaba** (lead developer).
 
 > Retain, never deceive: Retina never suggests what Meta's distribution rules
 > penalize (engagement bait, hiding the payoff, miracle cures, unlabeled AI).
@@ -121,6 +121,7 @@ private data are published only with management's approval.
 | When Retina says the opening risk is "high", does the opening really lose more people? | Clearly more often than the base rate, measured against similar videos *of the same production type* so the type alone can't explain it, and the gap holds within each type. Figures pending approval. |
 | Can it point to the exact stretch where people leave? | No. Past the opening it does worse than always guessing the most common stretch, because the curve comes in whole points. We dropped that promise. |
 | Does speech help the risk level? | No, measured twice. Speech goes to the agent's explanation instead. |
+| Can Spark, watching two real openings of the same type, tell which one loses more people? | No. We ran a blind pairwise judge on clear-difference pairs, each pair in both orders to cancel position bias (with one order it picked the second video every time). When its verdict held in both orders it was no better than a coin flip, and the metadata model beat it on the same pairs. So the risk level stays with the model, and Spark does what it is good at: explaining *where* and *why*, and proposing the edit (`eval/juez_pares.py`). |
 
 ## Prior infrastructure and data (not built during the event)
 

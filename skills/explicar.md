@@ -2,7 +2,7 @@
 estacion: explicar
 version: explicar-v3
 fecha: 2026-10-28
-duenio: Josafat Ruvalcaba
+duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort high
 herramientas: ninguna (solo salida estructurada); el validador y el filtro de integridad corren después, en código
 ---

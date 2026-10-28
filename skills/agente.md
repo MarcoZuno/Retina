@@ -2,7 +2,7 @@
 estacion: agente
 version: agente-v2
 fecha: 2026-10-28
-duenio: Josafat Ruvalcaba
+duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort medium
 herramientas: ver_arranque, ver_tramos, oir, buscar_parecidos, medir_lo_prometido (SAM 3.1), entregar_tarjeta (todas calculan en código; solo leen)
 ---
