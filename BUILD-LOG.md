@@ -309,3 +309,12 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
   «tu opinión», «tu like».
 
 **Costo:** USD 0.03 (un caso para probar los pasos).
+
+### Día 3 (noche, 2) · Panel del concurso y demo de un minuto
+
+- Panel rehecho para quien edita, a partir de una maqueta: semáforo,
+  una cifra «de cada 100», barra del inicio con las partes a revisar, pasos numerados con botón
+  para copiarlos, y el detalle (curva, confianza, qué revisó el agente) escondido. Solo
+  `textContent`, misma CSP. Sin desborde a 360 px (medido con Playwright).
+- `python -m retina.demo`: sirve el repo solo en 127.0.0.1 y abre el panel con un caso. Sin llave,
+  sin GPU y sin paquetes extra. Rechaza rutas fuera del repo.

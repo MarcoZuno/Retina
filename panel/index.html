@@ -7,103 +7,140 @@
 <title>Retina</title>
 <style>
   :root {
-    --fondo: #f6f5f2; --tarjeta: #ffffff; --texto: #1c1b19; --suave: #5f5c56; --linea: #e2dfd8;
-    --predicha: #1c1b19; --parecidos: #8a867e; --ambar: #e8a33d; --ambar-fondo: #fdf1dc;
-    --rojo: #c8412f; --rojo-fondo: #fbe6e2; --gris-fondo: #efede8; --verde: #2f7d4f;
-    --boton: #1c1b19; --boton-texto: #ffffff;
+    --fondo: #EEF1F4; --papel: #FFFFFF; --texto: #1B1F24; --suave: #5E6875; --tenue: #8893A0; --linea: #DCE1E7; --zona: #F7F9FB;
+    --alerta: #E11D2E; --alerta-tenue: #FDE8EA; --alerta-texto: #8E0F1B;
+    --mejora: #B86E00; --mejora-tenue: #FDF1DC; --bien: #1E9D54; --bien-tenue: #E3F4EA;
+    --azul: #2563B0; --curva: #1B1F24; --parecidos: #A0A8B3;
+    --nivel: var(--alerta); --nivel-tenue: var(--alerta-tenue); --nivel-texto: var(--alerta-texto);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --fondo: #141412; --tarjeta: #1f1e1b; --texto: #f1efe9; --suave: #b0aca3; --linea: #33312c;
-            --predicha: #f1efe9; --parecidos: #8a867e; --ambar-fondo: #3a2d16; --rojo-fondo: #3b1d18;
-            --gris-fondo: #2a2926; --verde: #6fc193; --boton: #f1efe9; --boton-texto: #141412; }
+    :root { --fondo: #121417; --papel: #1B1E23; --texto: #EEF1F4; --suave: #B4BCC6; --tenue: #8893A0; --linea: #2E333A; --zona: #22262C;
+            --alerta-tenue: #3A1A1E; --alerta-texto: #FFB3BA; --mejora: #F0A53A; --mejora-tenue: #3A2C14; --bien: #5CCB8C; --bien-tenue: #16301F;
+            --azul: #7FB0F0; --curva: #EEF1F4; --parecidos: #6B7480; }
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto);
-         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
-  header h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
-  header p { margin: 2px 0 24px; color: var(--suave); }
-  .tarjeta { background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
-  .subir { width: 100%; text-align: center; border: 2px dashed var(--linea); background: var(--tarjeta); color: var(--texto);
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 17px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 22px 16px 64px; }
+  header { margin-bottom: 16px; }
+  header strong { font-size: 20px; }
+  header span { color: var(--suave); }
+  .subir { width: 100%; text-align: center; border: 2px dashed var(--linea); background: var(--papel); color: var(--texto);
            padding: 40px 20px; border-radius: 14px; font: inherit; cursor: pointer; }
-  .subir:focus-visible, button:focus-visible { outline: 3px solid var(--ambar); outline-offset: 2px; }
-  h2 { margin: 0 0 6px; font-size: 21px; line-height: 1.3; }
-  .alto h2::before { content: "⚠ "; }
-  .nivel { border-left: 6px solid var(--ambar); }
-  .nivel.alto { border-left-color: var(--rojo); background: var(--rojo-fondo); }
-  .nivel.medio { border-left-color: var(--ambar); background: var(--ambar-fondo); }
-  .nivel.bajo { border-left-color: var(--parecidos); background: var(--gris-fondo); }
-  .suave { color: var(--suave); }
-  .cambio { font-weight: 600; }
-  .funciona { color: var(--verde); }
-  .alerta { border-left: 6px solid var(--rojo); }
-  .leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--suave); margin: 8px 0 0; }
-  .leyenda i { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--predicha); vertical-align: middle; margin-right: 6px; }
+  button:focus-visible, summary:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+  .tarjeta { background: var(--papel); border-radius: 14px; overflow: hidden; border: 1px solid var(--linea); }
+  .nivel-alto { --nivel: var(--alerta); --nivel-tenue: var(--alerta-tenue); --nivel-texto: var(--alerta-texto); }
+  .nivel-medio { --nivel: var(--mejora); --nivel-tenue: var(--mejora-tenue); --nivel-texto: var(--mejora); }
+  .nivel-bajo { --nivel: var(--bien); --nivel-tenue: var(--bien-tenue); --nivel-texto: var(--bien); }
+  .encabezado { padding: 22px 24px 18px; border-left: 10px solid var(--nivel); }
+  .semaforo { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--nivel); }
+  .semaforo i { width: 12px; height: 12px; border-radius: 50%; background: var(--nivel); display: inline-block; }
+  h1 { font-size: 30px; line-height: 1.15; font-weight: 800; margin: 8px 0 6px; letter-spacing: -.01em; }
+  .sub { color: var(--suave); margin: 0; }
+  .cifra { display: grid; grid-template-columns: auto 1fr; gap: 4px 18px; align-items: center; padding: 16px 24px;
+           background: var(--zona); border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
+  .cifra .numero { font-weight: 800; font-size: 54px; line-height: 1; color: var(--nivel); font-variant-numeric: tabular-nums; }
+  .cifra p { margin: 0; }
+  .cifra .comparado { color: var(--suave); font-size: 15px; }
+  section { padding: 18px 24px; }
+  h2 { font-size: 19px; margin: 0 0 10px; font-weight: 700; }
+  .barra { position: relative; height: 34px; background: var(--zona); border: 1px solid var(--linea); border-radius: 8px; }
+  .marca { position: absolute; top: -1px; bottom: -1px; border-radius: 6px; background: var(--nivel-tenue); border: 3px solid var(--nivel); }
+  .punto { position: absolute; top: -6px; bottom: -6px; width: 4px; margin-left: -2px; background: var(--alerta); border-radius: 2px; }
+  .tiempos { display: flex; justify-content: space-between; font-size: 13px; color: var(--tenue); margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .porque { margin: 12px 0 0; }
+  .hacer { border: 2px solid var(--azul); border-radius: 12px; padding: 16px 18px; }
+  .hacer .cambio { margin: 0 0 8px; font-size: 18px; }
+  .pasos { margin: 4px 0 12px 22px; padding: 0; } .pasos li { margin: 7px 0; padding-left: 4px; }
+  .copiar { font: inherit; font-size: 15px; font-weight: 700; color: var(--azul); background: transparent; border: 2px solid var(--azul);
+            border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+  .funciona b { color: var(--bien); }
+  .anzuelo { margin: 0 24px; padding: 12px 16px; border-radius: 10px; background: var(--alerta-tenue); color: var(--alerta-texto); }
+  .acciones { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 24px 20px; }
+  .acciones button { font: inherit; font-weight: 700; border-radius: 10px; padding: 12px 16px; cursor: pointer;
+                     border: 2px solid var(--texto); background: transparent; color: var(--texto); }
+  .acciones .principal { background: var(--texto); color: var(--papel); }
+  .decision { padding: 0 24px 16px; margin: 0; color: var(--suave); }
+  details { border-top: 1px solid var(--linea); padding: 14px 24px 20px; }
+  summary { cursor: pointer; font-weight: 700; color: var(--suave); }
+  .detalle { color: var(--suave); font-size: 15px; }
+  .detalle ul { margin: 6px 0 0 18px; padding: 0; } .detalle li { margin: 5px 0; }
+  .leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--suave); margin: 6px 0 12px; }
+  .leyenda i { display: inline-block; width: 22px; border-top: 2.5px solid var(--curva); vertical-align: middle; margin-right: 6px; }
   .leyenda i.p { border-top: 2px dashed var(--parecidos); }
-  .leyenda i.a { border-top: 8px solid var(--ambar); opacity: .5; }
-  .leyenda i.m { width: 0; height: 12px; border-top: 0; border-left: 3px solid var(--rojo); }
   svg { width: 100%; height: auto; display: block; }
-  .botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
-  button { font: inherit; border-radius: 10px; padding: 10px 18px; cursor: pointer; border: 1px solid var(--boton); }
-  button.principal { background: var(--boton); color: var(--boton-texto); }
-  button.secundario { background: transparent; color: var(--texto); }
-  .licencia { font-size: 13px; color: var(--suave); }
-  .licencia ul { margin: 4px 0 0; padding-left: 18px; }
+  .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .storyboard div { background: var(--zona); border: 1px solid var(--linea); border-radius: 10px; padding: 10px; font-size: 14px; }
+  .error { background: var(--alerta-tenue); color: var(--alerta-texto); border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
   .oculto { display: none !important; }
-  .pasos { margin: 8px 0 12px 22px; padding: 0; } .pasos li { margin: 6px 0; }
-  .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-  .storyboard div { background: var(--fondo); border: 1px solid var(--linea); border-radius: 10px; padding: 10px; font-size: 14px; }
-  .error { border-left: 6px solid var(--rojo); }
-  @media (max-width: 520px) { .storyboard { grid-template-columns: 1fr; } h2 { font-size: 19px; } }
+  @media (max-width: 560px) {
+    h1 { font-size: 25px; } .cifra .numero { font-size: 44px; }
+    .encabezado, section, details, .cifra { padding-left: 16px; padding-right: 16px; }
+    .acciones { padding: 4px 16px 18px; } .anzuelo { margin: 0 16px; } .decision { padding: 0 16px 14px; }
+    .storyboard { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <h1>Retina</h1>
-    <p>Antes de publicar, ve si tu arranque va a perder gente.</p>
-  </header>
+  <header><strong>Retina</strong> · <span>Revisa tu video antes de publicarlo.</span></header>
 
   <button id="pantalla-subir" class="subir" type="button" aria-describedby="ayuda-subir">
     <strong>Abre la revisión de tu video</strong><br>
-    <span id="ayuda-subir" class="suave">Elige el archivo <code>resultado.json</code> que dejó Retina en la carpeta del video.</span>
+    <span id="ayuda-subir">Elige el archivo <code>resultado.json</code> que dejó Retina en la carpeta del video.</span>
   </button>
   <input id="archivo" type="file" accept=".json,application/json" class="oculto" aria-hidden="true" tabindex="-1">
 
-  <div id="error" class="tarjeta error oculto" role="alert"></div>
+  <div id="error" class="error oculto" role="alert"></div>
 
-  <section id="pantalla-resultado" class="oculto" aria-live="polite">
-    <div id="tarjeta-nivel" class="tarjeta nivel">
-      <h2 id="titular"></h2>
-      <p id="porque"></p>
-      <p id="cambio" class="cambio"></p>
-      <ol id="pasos" class="pasos"></ol>
-      <p id="funciona" class="funciona"></p>
-      <div class="botones"><button class="secundario oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button></div>
-      <div id="storyboard" class="storyboard oculto"></div>
+  <article id="pantalla-resultado" class="tarjeta oculto" aria-live="polite">
+    <div class="encabezado">
+      <span class="semaforo"><i aria-hidden="true"></i><span id="semaforo"></span></span>
+      <h1 id="titular"></h1>
+      <p class="sub" id="sub"></p>
     </div>
 
-    <div id="alerta" class="tarjeta alerta oculto">
-      <strong>Meta reparte menos los videos con esto.</strong>
-      <p id="alerta-texto"></p>
+    <div class="cifra">
+      <span class="numero" id="cifra-numero"></span>
+      <p><b id="cifra-texto"></b><br><span class="comparado" id="cifra-comparado"></span></p>
     </div>
 
-    <div class="tarjeta">
-      <svg id="grafica" viewBox="0 0 800 300" role="img"></svg>
-      <div class="leyenda"><span><i></i>Tu video (predicción)</span><span><i class="p"></i>Videos parecidos</span>
-        <span><i class="a"></i>El arranque (primer cuarto)</span><span><i class="m"></i>Dónde cambiar</span></div>
-    </div>
+    <section id="donde">
+      <h2>Dónde está el problema</h2>
+      <div class="barra" id="barra" role="img"></div>
+      <div class="tiempos"><span>0:00</span><span id="t-medio"></span><span id="t-fin"></span></div>
+      <p class="porque" id="porque"></p>
+    </section>
 
-    <div class="tarjeta">
-      <div class="botones">
-        <button class="principal" id="d-cortar" type="button">Cortar como dice Retina</button>
-        <button class="secundario" id="d-regrabar" type="button">Regrabar</button>
-        <button class="secundario" id="d-publicar" type="button">Publicar así</button>
+    <p id="anzuelo" class="anzuelo oculto" role="note"></p>
+
+    <section id="seccion-hacer">
+      <div class="hacer">
+        <h2>Qué hacer</h2>
+        <p class="cambio" id="cambio"></p>
+        <ol class="pasos" id="pasos"></ol>
+        <button class="copiar" id="copiar" type="button">Copiar para el editor</button>
       </div>
-      <p class="suave" id="decision"></p>
-      <div class="licencia" id="licencia"></div>
+      <p class="funciona" id="funciona"></p>
+    </section>
+
+    <div class="acciones">
+      <button class="principal" id="d-cortar" type="button">Cortar como dice Retina</button>
+      <button id="d-regrabar" type="button">Regrabar</button>
+      <button id="d-publicar" type="button">Publicar así</button>
     </div>
-  </section>
+    <p class="decision" id="decision" aria-live="polite"></p>
+
+    <details>
+      <summary>Ver detalle</summary>
+      <div class="detalle">
+        <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span></div>
+        <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
+        <ul id="detalle-lista"></ul>
+        <button class="copiar oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
+        <div id="storyboard" class="storyboard oculto"></div>
+      </div>
+    </details>
+  </article>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -122,10 +159,18 @@ const ANZUELOS = {  // nombres legibles si la tarjeta no trae la frase (reglas/a
   sorteo_falso: "ofrece un sorteo o regalo a cambio de interacción", saca_de_la_plataforma: "pide mandar el video fuera de Facebook",
   ia_sin_etiqueta: "usa imagen o voz de IA sin etiqueta",
 };
-const TITULARES = {
-  alto: "Tu arranque puede perder más gente que tus videos parecidos",
-  medio: "Tu arranque se puede mejorar",
-  bajo: "No vemos un problema claro en tu arranque",
+const NIVELES = {
+  alto: { semaforo: "Alerta", titular: "Tu video puede perder gente en los primeros segundos",
+          sub: "Más de lo que suele perder un video como este." },
+  medio: { semaforo: "Se puede mejorar", titular: "El inicio de tu video se puede mejorar",
+           sub: "Pierde un poco más de lo normal para un video como este." },
+  bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
+          sub: "Igual revisa el detalle antes de publicar." },
+};
+const HERRAMIENTAS = {  // lo que revisó el agente, en palabras de quien edita
+  ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
+  oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
+  medir_lo_prometido: "revisó con SAM si lo que promete el título aparece en los primeros 3 segundos",
 };
 let actual = null;
 
@@ -136,39 +181,85 @@ function el(tag, attrs, texto) {  // todo lo que viene del JSON entra como texto
   return n;
 }
 
+function en(curva, dur, s) {  // la curva tiene 41 puntos repartidos en toda la duración
+  const x = Math.min(40, (s / dur) * 40), i = Math.floor(x), f = x - i;
+  return i >= 40 ? curva[40] : curva[i] * (1 - f) + curva[i + 1] * f;
+}
+
+function cifra(r) {
+  const p = r.prediccion, dur = r.video.duracion_s, s = dur >= 30 ? 15 : 3;
+  const tuyo = Math.round(100 * en(p.curva_predicha, dur, s)), otros = Math.round(100 * en(p.curva_parecidos, dur, s));
+  $("cifra-numero").textContent = String(tuyo);
+  $("cifra-texto").textContent = `de cada 100 personas que empiecen tu video seguirán viendo a los ${s} segundos.`;
+  $("cifra-comparado").textContent = `En videos parecidos siguen ${otros}.`;
+}
+
+function barra(r) {
+  const dur = r.video.duracion_s, fin = dur / 4, e = r.explicacion, b = $("barra");
+  b.replaceChildren();
+  $("t-medio").textContent = mmss(fin / 2); $("t-fin").textContent = mmss(fin);
+  const pct = (s) => `${Math.max(0, Math.min(100, (s / fin) * 100))}%`;
+  let texto = `El inicio de tu video, de 0:00 a ${mmss(fin)}.`;
+  if (e && e.que_cambiar && r.arranque.nivel !== "bajo") {
+    // Las partes débiles son los tramos «del segundo A al B» que cita la explicación; si no cita ninguno,
+    // se marca un pedazo desde donde empieza el cambio.
+    const num = (x) => parseFloat(x.replace(",", "."));
+    const zonas = [...(e.por_que || "").matchAll(/del segundo (\d+(?:[.,]\d+)?) al (\d+(?:[.,]\d+)?)/gi)]
+      .map((z) => [num(z[1]), num(z[2])]).filter(([i, f]) => f > i && i < fin);
+    if (!zonas.length) zonas.push([e.momento_s, Math.min(fin, e.momento_s + fin / 5)]);
+    for (const [i, f] of zonas) {
+      const m = document.createElement("div");
+      m.className = "marca"; m.style.left = pct(i); m.style.width = `calc(${pct(Math.min(f, fin))} - ${pct(i)})`;
+      b.append(m);
+    }
+    texto += ` Partes a revisar: ${zonas.map(([i, f]) => `${mmss(i)} a ${mmss(Math.min(f, fin))}`).join(", ")}.`;
+  }
+  if (e && e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno" && e.anzuelo_momento_s >= 0 && e.anzuelo_momento_s <= fin) {
+    const pnt = document.createElement("div"); pnt.className = "punto"; pnt.style.left = pct(e.anzuelo_momento_s); b.append(pnt);
+  }
+  b.setAttribute("aria-label", texto);
+}
+
 function grafica(r) {
-  const p = r.prediccion, dur = r.video.duracion_s, W = 800, H = 300, m = { i: 44, d: 12, a: 12, b: 32 };
+  const p = r.prediccion, dur = r.video.duracion_s, W = 800, H = 280, m = { i: 44, d: 12, a: 12, b: 30 };
   const x = (i) => m.i + (i / 40) * (W - m.i - m.d);
   const y = (v) => m.a + (1 - v) * (H - m.a - m.b);
   const linea = (c) => c.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   const g = $("grafica");
   g.replaceChildren();
-  if (r.arranque && r.arranque.nivel !== "bajo") {
-    g.append(el("rect", { x: x(0), y: m.a, width: x(10) - x(0), height: H - m.a - m.b, fill: "var(--ambar)", opacity: ".3" }));
-  }
+  g.append(el("rect", { x: x(0), y: m.a, width: x(10) - x(0), height: H - m.a - m.b, fill: "var(--zona)" }));
   for (const v of [0, .25, .5, .75, 1]) {
     g.append(el("line", { x1: m.i, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--linea)" }));
-    g.append(el("svg-text", { x: m.i - 8, y: y(v) + 4, "font-size": 12, "text-anchor": "end", fill: "var(--suave)" }, `${v * 100}%`));
+    g.append(el("svg-text", { x: m.i - 8, y: y(v) + 4, "font-size": 12, "text-anchor": "end", fill: "var(--tenue)" }, `${v * 100}`));
   }
   for (const f of [0, .25, .5, .75, 1]) {
-    g.append(el("svg-text", { x: x(f * 40), y: H - 10, "font-size": 12, "text-anchor": "middle", fill: "var(--suave)" }, mmss(f * dur)));
+    g.append(el("svg-text", { x: x(f * 40), y: H - 8, "font-size": 12, "text-anchor": "middle", fill: "var(--tenue)" }, mmss(f * dur)));
   }
   g.append(el("path", { d: linea(p.curva_parecidos), fill: "none", stroke: "var(--parecidos)", "stroke-width": 2, "stroke-dasharray": "5 5" }));
-  g.append(el("path", { d: linea(p.curva_predicha), fill: "none", stroke: "var(--predicha)", "stroke-width": 2.5 }));
-  const e = r.explicacion;
-  if (e && e.que_cambiar && e.momento_s >= 1) {
-    const mx = x((e.momento_s / dur) * 40);
-    g.append(el("line", { x1: mx, x2: mx, y1: m.a, y2: H - m.b, stroke: "var(--rojo)", "stroke-width": 3 }));
-  }
-  const nivel = r.arranque ? r.arranque.nivel : "sin nivel";
-  g.setAttribute("aria-label", `Curva de retención predicha de un video de ${mmss(dur)}. Arranque: riesgo ${nivel}` +
-    (e && e.que_cambiar ? `. Cambio desde ${mmss(e.momento_s)}.` : "."));
+  g.append(el("path", { d: linea(p.curva_predicha), fill: "none", stroke: "var(--curva)", "stroke-width": 2.5 }));
+  g.setAttribute("aria-label", `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${mmss(dur)}, según Retina y según videos parecidos.`);
 }
 
-function lista(padre, textos) {
-  const ul = document.createElement("ul");
-  for (const t of textos) { const li = document.createElement("li"); li.textContent = t; ul.append(li); }
-  padre.append(ul);
+function item(padre, texto) { const li = document.createElement("li"); li.textContent = texto; padre.append(li); }
+
+function detalle(r) {
+  const l = r.licencia || {}, e = r.explicacion, ul = $("detalle-lista");
+  ul.replaceChildren();
+  item(ul, `La alerta compara el inicio de tu video (el primer cuarto) con ${l.comparado_con || "videos parecidos"}. Datos al ${l.datos_hasta || "—"}.`);
+  if (e) {
+    const conf = { alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" }[e.confianza] || e.confianza;
+    item(ul, `Qué tan segura está Retina de la explicación: ${conf}.`);
+    const traza = (e.licencia && e.licencia.traza) || [];
+    const usadas = [...new Set(traza.map((t) => t.herramienta || t.nombre || t).filter((h) => HERRAMIENTAS[h]))];
+    if (usadas.length) item(ul, `Para escribir esto, Retina ${usadas.map((h) => HERRAMIENTAS[h]).join("; ")}.`);
+  }
+  item(ul, "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.");
+  for (const n of l.no_pude_revisar || []) item(ul, `No revisé: ${n}`);
+  const cuadros = (e && e.storyboard) || [];
+  $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
+  $("storyboard").replaceChildren(...cuadros.map((c, i) => {
+    const d = document.createElement("div"); d.textContent = `${i + 1}. ${c}`; return d;
+  }));
 }
 
 function mostrar(r) {
@@ -176,46 +267,48 @@ function mostrar(r) {
     throw new Error("Este archivo no es una revisión de Retina (le falta el arranque o la curva).");
   }
   actual = r;
-  const a = r.arranque, e = r.explicacion, l = r.licencia;
-  $("tarjeta-nivel").className = `tarjeta nivel ${a.nivel}`;
-  $("titular").textContent = TITULARES[a.nivel] || "Revisión del arranque";
+  const a = r.arranque, e = r.explicacion, n = NIVELES[a.nivel] || NIVELES.medio;
+  $("pantalla-resultado").className = `tarjeta nivel-${a.nivel}`;
+  $("semaforo").textContent = n.semaforo; $("titular").textContent = n.titular; $("sub").textContent = n.sub;
+  cifra(r); barra(r);
   if (e) {
     $("porque").textContent = reloj(e.por_que);
-    const desde = e.momento_s >= 1 ? `Desde ${mmss(e.momento_s)}: ` : "Desde el primer segundo: ";
-    $("cambio").textContent = e.que_cambiar ? `Qué hacer. ${desde}${reloj(e.que_cambiar)}`
-      : (a.nivel === "bajo" ? "" : "No hubo una sugerencia que pasara nuestras reglas. Revisa el arranque a mano.");
-    $("funciona").textContent = e.lo_que_funciona ? `✓ Ya funciona: ${reloj(e.lo_que_funciona)}` : "";
-    $("pasos").replaceChildren(...(e.pasos || []).map((x) => {
-      const li = document.createElement("li"); li.textContent = reloj(x); return li;
-    }));
-    const cuadros = e.storyboard || [];
-    $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
-    $("storyboard").replaceChildren(...cuadros.map((c, i) => {
-      const d = document.createElement("div"); d.textContent = `${i + 1}. ${c}`; return d;
-    }));
+    $("cambio").textContent = e.que_cambiar ? reloj(e.que_cambiar)
+      : (a.nivel === "bajo" ? "No hace falta cambiar el inicio." : "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano.");
+    $("pasos").replaceChildren(...(e.pasos || []).map((x) => { const li = document.createElement("li"); li.textContent = reloj(x); return li; }));
+    $("copiar").classList.toggle("oculto", !e.que_cambiar);
+    $("funciona").replaceChildren();
+    if (e.lo_que_funciona) {
+      const b = document.createElement("b"); b.textContent = "Ya funciona: ";
+      $("funciona").append(b, reloj(e.lo_que_funciona));
+    }
     const hay = e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno";
-    $("alerta").classList.toggle("oculto", !hay);
+    $("anzuelo").classList.toggle("oculto", !hay);
     if (hay) {
       const cuando = e.anzuelo_momento_s >= 0 ? `En ${mmss(e.anzuelo_momento_s)}` : "En el video";
-      $("alerta-texto").textContent = `${cuando}: ${e.anzuelo_frase || ANZUELOS[e.anzuelo_detectado] || "trae algo que Meta castiga"}. Retina nunca lo sugiere; quítalo antes de publicar.`;
+      $("anzuelo").textContent = `${cuando} tu video ${ANZUELOS[e.anzuelo_detectado] || "trae algo que Meta castiga"}` +
+        `${e.anzuelo_frase ? `: «${e.anzuelo_frase}»` : ""}. Meta reparte menos los videos con esto; quítalo antes de publicar.`;
     }
   } else {
-    $("porque").textContent = "Todavía no hay explicación: esta revisión se hizo sin la API de Meta, así que solo vemos el riesgo, no el porqué.";
-    $("cambio").textContent = ""; $("funciona").textContent = ""; $("pasos").replaceChildren();
-    $("ver-storyboard").classList.add("oculto"); $("alerta").classList.add("oculto");
+    $("porque").textContent = "Esta revisión se hizo sin la API de Meta: vemos el riesgo, pero no el porqué.";
+    $("cambio").textContent = ""; $("pasos").replaceChildren(); $("funciona").replaceChildren();
+    $("copiar").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  grafica(r);
-  const conf = e ? e.confianza : "baja";
-  const lic = $("licencia");
-  lic.replaceChildren();
-  const b = document.createElement("strong");
-  b.textContent = `Confianza: ${conf}.${conf !== "alta" ? " Revísalo tú antes de cortar." : ""}`;
-  lic.append(b, ` Lo comparamos con ${l.comparado_con}; datos al ${l.datos_hasta}. No revisé:`);
-  lista(lic, l.no_pude_revisar || []);
+  grafica(r); detalle(r);
   $("error").classList.add("oculto");
   $("pantalla-subir").classList.add("oculto");
   $("pantalla-resultado").classList.remove("oculto");
 }
+
+function textoParaEditor() {
+  const e = actual.explicacion, t = actual.video.titulo ? ` · ${actual.video.titulo}` : "";
+  return [`Retina${t}`, `Qué hacer: ${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`)].join("\n");
+}
+
+$("copiar").onclick = async () => {
+  try { await navigator.clipboard.writeText(textoParaEditor()); $("copiar").textContent = "Copiado"; }
+  catch (_) { $("copiar").textContent = "No se pudo copiar: selecciona el texto"; }
+};
 
 function fallo(mensaje) {
   $("error").textContent = `No pude abrir esta revisión. ${mensaje} Vuelve a elegir el archivo o avisa a quien corrió Retina.`;
@@ -235,17 +328,19 @@ $("ver-storyboard").onclick = () => {
   const abierto = $("storyboard").classList.toggle("oculto") === false;
   $("ver-storyboard").setAttribute("aria-expanded", String(abierto));
 };
-$("d-cortar").onclick = () => decidir("cortar", "Anotado: haces el cambio que sugiere Retina. Revisa la nueva versión y compara.");
-$("d-regrabar").onclick = () => decidir("regrabar", "Anotado: regrabas. Cuando tengas la nueva versión, revísala otra vez.");
+$("d-cortar").onclick = () => decidir("cortar", "Anotado: haces el cambio. Cuando tengas la nueva versión, pásala otra vez por Retina.");
+$("d-regrabar").onclick = () => decidir("regrabar", "Anotado: regrabas. Cuando tengas la nueva versión, pásala otra vez por Retina.");
 $("d-publicar").onclick = () => decidir("publicar", "Anotado: se publica así.");
 $("pantalla-subir").onclick = () => $("archivo").click();
 $("archivo").onchange = async (ev) => {
   try { mostrar(JSON.parse(await ev.target.files[0].text())); }
   catch (err) { fallo(err.message || "El archivo no se pudo leer."); }
 };
-// Servido por http (python -m http.server desde la raíz del repo) abre solo el ejemplo; con doble clic, se elige el archivo.
+// Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo; con doble clic, se elige el archivo.
 (async () => {
-  for (const ruta of ["resultado.json", "../casos/demo/resultado.json"]) {
+  const pedido = new URLSearchParams(location.search).get("caso");
+  const rutas = pedido && !/^[a-z]+:/i.test(pedido) ? [pedido] : ["resultado.json", "../casos/demo/resultado.json"];
+  for (const ruta of rutas) {
     try {
       const r = await fetch(ruta);
       if (r.ok) { mostrar(await r.json()); return; }

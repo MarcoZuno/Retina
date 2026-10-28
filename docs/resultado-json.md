@@ -56,3 +56,12 @@ ya no se prometen: el tramo exacto pasado el arranque es ruido de redondeo.
 «tramo» ni nombres técnicos; miden 220 caracteres como máximo; los segundos vienen
 como «segundo 4». El panel puede mostrarlos tal cual, siempre como texto
 (`textContent`), nunca como HTML.
+
+## El panel (desde el 28-oct)
+
+`panel/index.html` lee este archivo y lo muestra en lenguaje de quien edita: semáforo («Alerta»,
+«Se puede mejorar», «Sin problema claro»), una sola cifra («59 de cada 100 personas seguirán viendo a
+los 15 segundos; en videos parecidos, 62»), la barra del inicio con las partes a revisar (los tramos
+«del segundo A al B» que cita `por_que`), «Qué hacer» con los `pasos` y un botón para copiarlos al
+editor, y lo técnico escondido en «Ver detalle». Los segundos se muestran como reloj (0:05).
+`python -m retina.demo` lo abre con un caso, sin llave.

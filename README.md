@@ -85,6 +85,19 @@ Rules live outside the code: [`reglas/`](reglas/). Every API call is logged
 [`src/retina/meta_api.py`](src/retina/meta_api.py), which also enforces the
 project budget cap.
 
+## Try it in one minute (no key, no GPU)
+
+```bash
+PYTHONPATH=src python -m retina.demo      # Windows PowerShell: $env:PYTHONPATH="src"; python -m retina.demo
+```
+
+Only the Python standard library is needed for the demo.
+
+It opens the review card in your browser, served only on your machine (127.0.0.1), with the example
+case in `casos/demo/`. The card answers three questions in plain words: **will the start of my video lose
+people, where, and what exactly do I change** (numbered steps with clock times an editor can follow).
+`--caso PATH` opens any other `resultado.json` inside the repo.
+
 ## How to run it with your own key
 
 ```bash
