@@ -188,9 +188,24 @@ def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
     }
 
 
-def pedir(datos: dict, aviso: str) -> dict:
+def pedir_abierto(datos: dict, aviso: str) -> dict:
+    """La misma tarjeta con Muse Spark Open (pesos abiertos) en Baseten: mismas instrucciones,
+    mismos datos y el mismo validador después."""
+    from . import baseten
+    c = cuerpo(datos, aviso)
+    mensajes = [{"role": "system", "content": c["input"][0]["content"][0]["text"]},
+                {"role": "user", "content": c["input"][1]["content"][0]["text"]}]
+    texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=8000)
+    if not texto.strip():
+        raise RuntimeError("Spark Open no devolvió la explicación.")
+    return json.loads(texto[texto.find("{"):texto.rfind("}") + 1])
+
+
+def pedir(datos: dict, aviso: str, motor: str = "api") -> dict:
     """Con razonamiento alto, Spark a veces gasta toda la salida pensando y no escribe nada
     (medido el 27-oct: 5,998 de 6,000 tokens). Si llega vacía, se repite pensando menos."""
+    if motor == "abierto":
+        return pedir_abierto(datos, aviso)
     for esfuerzo in ("high", "medium"):
         texto = meta_api.texto_de(meta_api.responder("explicar", cuerpo(datos, aviso, esfuerzo)))
         if texto.strip():
@@ -198,11 +213,11 @@ def pedir(datos: dict, aviso: str) -> dict:
     raise RuntimeError("Spark no devolvió la explicación ni con razonamiento medio.")
 
 
-def explicar(carpeta: Path, arranque: dict) -> dict:
+def explicar(carpeta: Path, arranque: dict, motor: str = "api", nombre: str = "explicar.json") -> dict:
     datos = datos_del_arranque(carpeta, arranque)
     aviso, intentos = "", []
     for _ in range(2):
-        salida = pedir(datos, aviso)
+        salida = pedir(datos, aviso, motor)
         problemas = revisar(salida, datos)
         intentos.append({"sugerencia": salida["que_cambiar"], "problemas": problemas})
         if not problemas:
@@ -211,18 +226,23 @@ def explicar(carpeta: Path, arranque: dict) -> dict:
     else:
         salida.update(que_cambiar="", pasos=[], tipo_de_cambio="ninguno", storyboard=[])
         salida["no_pude_verificar"].append("No hubo una sugerencia que pasara el validador y el filtro de integridad.")
-    salida["licencia"] = {"modelo": MODELO, "instrucciones": "skills/explicar.md (explicar-v4)",
+    from . import baseten
+    salida["licencia"] = {"modelo": baseten.MODELO if motor == "abierto" else MODELO,
+                          "servido_por": "Baseten" if motor == "abierto" else "Meta Model API",
+                          "instrucciones": "skills/explicar.md (explicar-v4)",
                           "reglas": integridad.reglas()["version"], "intentos": intentos}
-    (carpeta / "explicar.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
+    (carpeta / nombre).write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
     return salida
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("carpeta", type=Path)
+    ap.add_argument("--abierto", action="store_true", help="Con Muse Spark Open en Baseten (pesos abiertos).")
     a = ap.parse_args()
     arranque = json.loads((a.carpeta / "resultado.json").read_text(encoding="utf-8"))["arranque"]
-    s = explicar(a.carpeta, arranque)
+    s = explicar(a.carpeta, arranque, "abierto" if a.abierto else "api",
+                 "explicar-abierto.json" if a.abierto else "explicar.json")
     print(json.dumps({k: s[k] for k in ("por_que", "que_cambiar", "momento_s", "confianza", "anzuelo_detectado")},
                      ensure_ascii=False, indent=1))
 
