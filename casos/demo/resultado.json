@@ -1,0 +1,193 @@
+{
+ "version": "retina-v1",
+ "ejemplo_inventado": true,
+ "video": {
+  "duracion_s": 96.0,
+  "codigo": "EJEMPLO",
+  "titulo": "Ejemplo inventado: tres trucos para que el pan dulce no se endurezca"
+ },
+ "prediccion": {
+  "curva_predicha": [
+   1.0,
+   0.8829,
+   0.7937,
+   0.725,
+   0.6713,
+   0.6287,
+   0.5942,
+   0.5656,
+   0.5415,
+   0.5207,
+   0.5022,
+   0.4916,
+   0.4824,
+   0.4742,
+   0.4668,
+   0.46,
+   0.4537,
+   0.4478,
+   0.4422,
+   0.4369,
+   0.4318,
+   0.4269,
+   0.4221,
+   0.4175,
+   0.4131,
+   0.4088,
+   0.4046,
+   0.4005,
+   0.3965,
+   0.3926,
+   0.3888,
+   0.3851,
+   0.3816,
+   0.3781,
+   0.3746,
+   0.3713,
+   0.3681,
+   0.3649,
+   0.3618,
+   0.3588,
+   0.3559
+  ],
+  "curva_parecidos": [
+   1.0,
+   0.8889,
+   0.8057,
+   0.743,
+   0.6953,
+   0.6587,
+   0.6302,
+   0.6076,
+   0.5895,
+   0.5747,
+   0.5622,
+   0.5516,
+   0.5424,
+   0.5342,
+   0.5268,
+   0.52,
+   0.5137,
+   0.5078,
+   0.5022,
+   0.4969,
+   0.4918,
+   0.4869,
+   0.4821,
+   0.4775,
+   0.4731,
+   0.4688,
+   0.4646,
+   0.4605,
+   0.4565,
+   0.4526,
+   0.4488,
+   0.4451,
+   0.4416,
+   0.4381,
+   0.4346,
+   0.4313,
+   0.4281,
+   0.4249,
+   0.4218,
+   0.4188,
+   0.4159
+  ],
+  "regla_de_parecidos": "cubeta+talento 90 d",
+  "n_parecidos": 40,
+  "uso_video": false,
+  "datos_hasta": "2026-10-27"
+ },
+ "arranque": {
+  "nivel": "alto",
+  "exceso_arranque_pp": 6.0,
+  "bloques": [
+   {
+    "bloque": "gancho (0-10 %)",
+    "tramos": [
+     0,
+     4
+    ],
+    "caida_parecidos_pp": 30.5
+   },
+   {
+    "bloque": "primer cuarto (10-25 %)",
+    "tramos": [
+     4,
+     10
+    ],
+    "caida_parecidos_pp": 13.3
+   },
+   {
+    "bloque": "25-50 %",
+    "tramos": [
+     10,
+     20
+    ],
+    "caida_parecidos_pp": 7.0
+   },
+   {
+    "bloque": "50-75 %",
+    "tramos": [
+     20,
+     30
+    ],
+    "caida_parecidos_pp": 4.3
+   },
+   {
+    "bloque": "75-100 %",
+    "tramos": [
+     30,
+     40
+    ],
+    "caida_parecidos_pp": 3.3
+   }
+  ],
+  "uso_voz": false,
+  "entrenado_con": 30000
+ },
+ "explicacion": {
+  "por_que": "Del segundo 0.0 al 7.2 la presentadora saluda y dice su nombre antes de decir de qué trata el video, y el texto en pantalla no menciona el pan hasta el segundo 9.6.",
+  "lo_que_funciona": "El primer truco, del segundo 14.4 al 21.6, se ve en un plano cerrado y se entiende sin audio.",
+  "que_cambiar": "Abrir con el plano del pan duro contra el pan suave y el texto «3 trucos para que tu pan no se endurezca»; el saludo va después del primer truco.",
+  "tipo_de_cambio": "adelantar_dato",
+  "momento_s": 0.0,
+  "anzuelo_detectado": "ninguno",
+  "confianza": "media",
+  "storyboard": [
+   "Ilustración sencilla de dos panes dulces lado a lado, uno duro y uno suave, sobre una mesa de madera.",
+   "Ilustración sencilla de unas manos sin rostro envolviendo un pan en un trapo de cocina.",
+   "Ilustración sencilla de una bolsa de pan cerrada junto a una canasta, sin logos."
+  ],
+  "no_pude_verificar": [
+   "La música de fondo."
+  ],
+  "licencia": {
+   "modelo": "muse-spark-1.3",
+   "instrucciones": "skills/explicar.md (explicar-v2)",
+   "reglas": "anzuelos-v1",
+   "intentos": [
+    {
+     "sugerencia": "(igual que que_cambiar)",
+     "problemas": []
+    }
+   ]
+  }
+ },
+ "tiempos_s": {
+  "segmentar": 12.0,
+  "predecir": 0.1,
+  "transcribir": 16.0,
+  "describir": 40.0,
+  "explicar": 20.0
+ },
+ "licencia": {
+  "comparado_con": "40 videos del mismo talento y duración de los últimos 90 días",
+  "regla": "cubeta+talento 90 d",
+  "datos_hasta": "2026-10-27",
+  "vio_el_video": false,
+  "no_pude_revisar": [
+   "La música: no se analiza la letra ni la licencia."
+  ]
+ }
+}

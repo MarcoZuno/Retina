@@ -33,6 +33,7 @@ def cargar(ruta: Path) -> list[dict]:
                 "codigo": r["codigo_produccion"],
                 "talento": r["talento"].strip(),
                 "archivo": r.get("archivo_nombre", ""),
+                "titulo": r.get("titulo", ""),
                 "curva": np.array([float(r[f"c{i:02d}"]) for i in range(N_PUNTOS)]),
             })
     filas.sort(key=lambda x: x["fecha"])

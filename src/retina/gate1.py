@@ -35,7 +35,7 @@ def video(carpeta: Path) -> None:
     print(f"Describir un video: ~{conteo["tokens_entrada_estimados"]:,.0f} tokens de entrada "
           f"≈ {conteo["usd_estimado"]:.3f} USD con salida.")
     print(f"Transcribir: {t['audio_ms'] / 1000:.0f} s de audio, {len(t['turnos'])} turnos.")
-    print(f"Gastado en total: {meta_api.gastado_usd():.4f} USD de {meta_api.TOPE_USD:.0f}.")
+    print(f"Gastado en total: {meta_api.gastado_usd():.4f} USD de {meta_api.tope_usd():.0f}.")
 
 
 if __name__ == "__main__":

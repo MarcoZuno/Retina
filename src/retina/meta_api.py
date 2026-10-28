@@ -18,7 +18,6 @@ import requests
 BASE = os.environ.get("META_API_BASE", "https://api.meta.ai/v1")
 RAIZ = Path(__file__).resolve().parents[2]
 COSTOS = Path(os.environ.get("RETINA_COSTOS", RAIZ / "costos.jsonl"))
-TOPE_USD = float(os.environ.get("RETINA_TOPE_USD", "100"))
 
 # USD por millón de tokens (entrada, entrada en caché, salida), según
 # dev.meta.ai/docs/pricing-rate-limits al 26-oct-2026.
@@ -68,12 +67,18 @@ def gastado_usd() -> float:
     return total
 
 
+def tope_usd() -> float:
+    # Se lee después del .env: leído al importar, el tope del .env no contaba.
+    _cargar_env()
+    return float(os.environ.get("RETINA_TOPE_USD", "10"))
+
+
 def _revisar_tope(estimado_usd: float = 0.0) -> None:
-    gastado = gastado_usd()
-    if gastado + estimado_usd > TOPE_USD:
+    gastado, tope = gastado_usd(), tope_usd()
+    if gastado + estimado_usd > tope:
         raise TopeAlcanzado(
             f"Tope del proyecto: llevamos {gastado:.2f} USD y el tope es "
-            f"{TOPE_USD:.2f}. Súbelo en tu .env si hace falta."
+            f"{tope:.2f}. Súbelo en tu .env si hace falta."
         )
 
 

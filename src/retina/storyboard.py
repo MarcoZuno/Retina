@@ -6,7 +6,7 @@ sin --aprobar solo muestra el costo estimado. Con imágenes de referencia
 cuadros. Cada PNG lleva en su nombre que es ilustración hecha con IA.
 
 Uso:
-    python -m retina.storyboard CARPETA/explicar-t12.json [--estilo REF.png ...] [--aprobar]
+    python -m retina.storyboard CARPETA/explicar.json [--estilo REF.png ...] [--aprobar]
 """
 from __future__ import annotations
 

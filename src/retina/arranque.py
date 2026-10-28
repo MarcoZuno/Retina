@@ -71,14 +71,13 @@ class Arranque:
         medio, alto = self.cortes[clave]
         nivel = "alto" if arranque >= alto else "medio" if arranque >= medio else "bajo"
         b = bloques(caidas(base))
-        peor = int(np.argmax(p[:2]))
+        # Sin «bloque más débil» ni exceso por bloque: elegir el bloque no le gana a decir
+        # siempre el más común (medido el 27-oct). Los bloques van solo como contexto.
         return {
             "nivel": nivel,
             "exceso_arranque_pp": round(arranque * 100, 1),
-            "bloque_mas_debil": NOMBRES_BLOQUES[peor],
             "bloques": [{"bloque": NOMBRES_BLOQUES[i], "tramos": list(BLOQUES[i]),
-                         "caida_parecidos_pp": round(float(b[i]) * 100, 1),
-                         "exceso_predicho_pp": round(float(p[i]) * 100, 1)} for i in range(len(BLOQUES))],
+                         "caida_parecidos_pp": round(float(b[i]) * 100, 1)} for i in range(len(BLOQUES))],
             "uso_voz": clave == "con_voz",
             "entrenado_con": self.n[clave],
         }
