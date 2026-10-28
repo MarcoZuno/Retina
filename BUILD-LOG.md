@@ -326,3 +326,6 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 - `CLAUDE.md` del repo y paquete de despliegue de la demo estática (`deploy/`: Dockerfile con
   nginx, cabeceras de seguridad, solo panel y casos, contenedor de solo lectura, cómo apagarlo).
   No se pudo probar la imagen aquí: esta PC no tiene Docker.
+- Los 50 casos del gate, otra vez con el agente y la tarjeta con pasos: 50 de 50 los escribió el
+  agente (ninguno cayó al respaldo); 38 traen cambio con sus pasos y 12 no necesitan cambio.
+  **Costo:** USD 1.45 (total del proyecto: USD 16.36 de 50).
