@@ -30,18 +30,39 @@ from .segmentar import _correr
 MODELO = "sam-3.1"
 SEGUNDOS, FPS = 3, 10
 USD_POR_CUADRO = 0.20 / 1000  # dev.meta.ai/models/sam-3-1, 27-oct-2026
-PERSONAS = re.compile(
-    r"\b(persona|personas|gente|hombre|mujer|nino|nina|ninos|bebe|cara|rostro|presentador|presentadora|"
-    r"senor|senora|chico|chica|joven|actor|actriz|doctor|doctora|policia|person|people|human|man|men|"
-    r"woman|women|face|faces|child|children|kid|kids|boy|girl|baby|guy|host|presenter|crowd)\b")
+PERMITIDOS = Path(__file__).resolve().parents[2] / "reglas" / "sam-permitidos-v1.json"
 
 
 def normalizar(texto: str) -> str:
     return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower().strip()
 
 
+def _singular(p: str) -> str:
+    return p[:-2] if p.endswith("es") and p[:-2] in _lista()[0] else p[:-1] if p.endswith("s") else p
+
+
+def _lista() -> tuple[set, set]:
+    d = json.loads(PERMITIDOS.read_text(encoding="utf-8"))
+    return set(d["palabras"]), set(d["personas"])
+
+
+def rechazo(concepto: str) -> str | None:
+    """Lista cerrada: la última palabra tiene que ser un objeto, lugar, comida, animal o
+    fenómeno permitido, y ninguna palabra puede ser de persona. Devuelve el motivo o None."""
+    palabras, personas = _lista()
+    tokens = re.findall(r"[a-z]+", normalizar(concepto))
+    if not tokens:
+        return "El concepto va vacío."
+    if any(t in personas or _singular(t) in personas for t in tokens):
+        return "SAM no se usa sobre personas (condiciones de uso de Meta). Nombra un objeto o un lugar."
+    if tokens[-1] not in palabras and _singular(tokens[-1]) not in palabras:
+        return (f"«{tokens[-1]}» no está en la lista de objetos y lugares permitidos "
+                "(reglas/sam-permitidos-v1.json). Usa una frase corta en inglés que termine en un objeto o lugar.")
+    return None
+
+
 def es_persona(concepto: str) -> bool:
-    return bool(PERSONAS.search(normalizar(concepto)))
+    return rechazo(concepto) is not None
 
 
 def recortar(carpeta: Path) -> Path:
@@ -76,7 +97,7 @@ async def _segmentar(file_id: str, concepto: str):
                 yield {"type": "response.output_text.done", "item_id": d.get("item_id"),
                        "output_index": d.get("output_index"), "content_index": d.get("content_index"), "text": parte["text"]}
 
-    async with AsyncOpenAI(base_url=meta_api.BASE, api_key=meta_api._llave()) as api:
+    async with AsyncOpenAI(base_url=meta_api.base(), api_key=meta_api._llave()) as api:
         stream = await api.responses.create(model=MODELO, stream=True, input=[{
             "type": "message", "role": "user",
             "content": [{"type": "input_text", "text": concepto}, {"type": "input_video", "file_id": file_id}]}])
@@ -90,10 +111,8 @@ async def _segmentar(file_id: str, concepto: str):
 
 def medir(carpeta: Path, concepto: str) -> dict:
     concepto = concepto.strip()[:60]
-    if not concepto:
-        return {"error": "El concepto va vacío."}
-    if es_persona(concepto):
-        return {"error": "SAM no se usa sobre personas (condiciones de uso de Meta). Nombra un objeto o un lugar."}
+    if motivo := rechazo(concepto):
+        return {"error": motivo}
     cuadros = SEGUNDOS * FPS
     meta_api._revisar_tope(cuadros * USD_POR_CUADRO)
     clip = recortar(carpeta)
@@ -101,9 +120,9 @@ def medir(carpeta: Path, concepto: str) -> dict:
     t0 = time.time()
     try:
         r = asyncio.run(_segmentar(file_id, concepto))
-    finally:
+    finally:  # se registra aunque falle a media corrida: la API pudo haber cobrado
         meta_api.borrar_archivo(file_id)
-    meta_api._registrar("sam", MODELO, time.time() - t0, cuadros * USD_POR_CUADRO, cuadros=cuadros)
+        meta_api._registrar("sam", MODELO, time.time() - t0, cuadros * USD_POR_CUADRO, cuadros=cuadros)
     if r.outcome.status != "completed":
         return {"concepto": concepto, "error": f"SAM no terminó: {getattr(r.outcome, 'reason', 'sin motivo')}"}
     from meta_sam_parser import decode_mask_to_raster

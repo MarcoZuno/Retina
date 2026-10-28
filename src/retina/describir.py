@@ -36,6 +36,7 @@ def cuerpo(manifiesto: dict, file_id: str) -> dict:
         "model": MODELO,
         "reasoning": {"effort": "low"},
         "max_output_tokens": 16000,
+        "store": False,  # el video de Badabun no se guarda del lado de Meta
         "text": formato_responses(),
         "input": [
             {"type": "message", "role": "developer",
@@ -84,8 +85,14 @@ def describir(carpeta: Path, solo_contar: bool = False) -> dict:
     finally:
         meta_api.borrar_archivo(file_id)
 
-    salida = json.loads(meta_api.texto_de(respuesta))
+    texto = meta_api.texto_de(respuesta)
+    if respuesta.get("status") == "incomplete" or not texto.strip():
+        raise RuntimeError("Spark no terminó la descripción (salida incompleta o vacía).")
+    salida = json.loads(texto)
     salida["problemas_validacion"] = validar(salida)
+    if [t["tramo"] for t in salida.get("tramos", [])] != list(range(N_TRAMOS)):
+        # Sin los 40 tramos en orden, explicar leería segundos que no son: mejor no guardarla.
+        raise RuntimeError(f"Descripción inválida: {salida['problemas_validacion'][0]}")
     salida["licencia"] = {
         "modelo": MODELO, "esquema": salida.get("version_esquema"),
         "instrucciones": "skills/describir.md (describir-v1)",

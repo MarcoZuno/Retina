@@ -11,13 +11,16 @@ import json
 import os
 import random
 import time
+from contextlib import contextmanager
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import requests
 
-BASE = os.environ.get("META_API_BASE", "https://api.meta.ai/v1")
 RAIZ = Path(__file__).resolve().parents[2]
 COSTOS = Path(os.environ.get("RETINA_COSTOS", RAIZ / "costos.jsonl"))
+TOPE_MAXIMO_USD = 50.0  # subirlo es cambiar esto 
+TIEMPO = (10, 300)  # conectar, leer (s): una llamada colgada no detiene la corrida 50 min
 
 # USD por millón de tokens (entrada, entrada en caché, salida), según
 # dev.meta.ai/docs/pricing-rate-limits al 26-oct-2026.
@@ -57,6 +60,33 @@ def _llave() -> str:
     return llave
 
 
+def base() -> str:
+    _cargar_env()
+    return os.environ.get("META_API_BASE", "https://api.meta.ai/v1")
+
+
+@contextmanager
+def _candado():
+    """Candado de archivo para que dos corridas a la vez no se pasen juntas del tope."""
+    ruta = COSTOS.with_suffix(".candado")
+    ruta.parent.mkdir(parents=True, exist_ok=True)
+    for _ in range(600):
+        try:
+            fd = os.open(ruta, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            if time.time() - ruta.stat().st_mtime > 120:  # candado huérfano de una corrida caída
+                ruta.unlink(missing_ok=True)
+            time.sleep(0.1)
+    else:
+        raise RuntimeError(f"No pude tomar el candado de gasto ({ruta}).")
+    try:
+        yield
+    finally:
+        os.close(fd)
+        ruta.unlink(missing_ok=True)
+
+
 def gastado_usd() -> float:
     if not COSTOS.exists():
         return 0.0
@@ -70,16 +100,23 @@ def gastado_usd() -> float:
 def tope_usd() -> float:
     # Se lee después del .env: leído al importar, el tope del .env no contaba.
     _cargar_env()
-    return float(os.environ.get("RETINA_TOPE_USD", "10"))
+    return min(float(os.environ.get("RETINA_TOPE_USD", "50")), TOPE_MAXIMO_USD)
 
 
 def _revisar_tope(estimado_usd: float = 0.0) -> None:
-    gastado, tope = gastado_usd(), tope_usd()
+    with _candado():
+        gastado, tope = gastado_usd(), tope_usd()
     if gastado + estimado_usd > tope:
         raise TopeAlcanzado(
             f"Tope del proyecto: llevamos {gastado:.2f} USD y el tope es "
             f"{tope:.2f}. Súbelo en tu .env si hace falta."
         )
+
+
+def peor_caso_usd(cuerpo: dict) -> float:
+    """Lo máximo que puede costar una llamada: toda la salida permitida (la entrada es menor)."""
+    _, _, salida = PRECIOS_TOKENS.get(cuerpo.get("model", ""), (0.0, 0.0, 0.0))
+    return cuerpo.get("max_output_tokens", 0) * salida / 1e6
 
 
 def _registrar(servicio: str, modelo: str, segundos: float, usd: float, **extra) -> None:
@@ -92,7 +129,7 @@ def _registrar(servicio: str, modelo: str, segundos: float, usd: float, **extra)
         **extra,
     }
     COSTOS.parent.mkdir(parents=True, exist_ok=True)
-    with COSTOS.open("a", encoding="utf-8") as f:
+    with _candado(), COSTOS.open("a", encoding="utf-8") as f:
         f.write(json.dumps(fila, ensure_ascii=False) + "\n")
 
 
@@ -103,17 +140,43 @@ def usd_tokens(modelo: str, uso: dict) -> float:
     return (sin_cache * entrada + en_cache * cache + uso.get("output_tokens", 0) * salida) / 1e6
 
 
-def _pedir(metodo: str, ruta: str, intentos: int = 5, **kwargs) -> requests.Response:
-    """Petición con reintentos para 429 y 5xx (Retry-After o espera con jitter)."""
+def _espera(r: requests.Response | None, intento: int) -> float:
+    valor = r.headers.get("Retry-After") if r is not None else None
+    if valor:
+        try:
+            return min(float(valor), 120)
+        except ValueError:  # también puede venir como fecha HTTP
+            try:
+                return max(0.0, min(parsedate_to_datetime(valor).timestamp() - time.time(), 120))
+            except (TypeError, ValueError):
+                pass
+    return min(60, 2 ** intento) + random.random()
+
+
+def _pedir(metodo: str, ruta: str, intentos: int = 5, archivos=None, **kwargs) -> requests.Response:
+    """Petición con reintentos para 429, 5xx y fallas de red.
+
+    `archivos` es una función que abre los archivos de nuevo en cada intento: un
+    archivo ya leído en el primer intento se mandaría vacío en el segundo.
+    """
     cabeceras = kwargs.pop("headers", {})
     cabeceras["Authorization"] = f"Bearer {_llave()}"
+    r = None
     for intento in range(intentos):
-        r = requests.request(metodo, f"{BASE}{ruta}", headers=cabeceras, timeout=600, **kwargs)
-        if r.status_code != 429 and r.status_code < 500:
-            return r
-        espera = r.headers.get("Retry-After")
-        espera = float(espera) if espera else min(60, 2 ** intento) + random.random()
-        time.sleep(espera)
+        abiertos = archivos() if archivos else None
+        try:
+            r = requests.request(metodo, f"{base()}{ruta}", headers=cabeceras, timeout=TIEMPO,
+                                 files=abiertos, **kwargs)
+            if r.status_code != 429 and r.status_code < 500:
+                return r
+        except (requests.ConnectionError, requests.Timeout):
+            if intento == intentos - 1:
+                raise
+        finally:
+            for f in (abiertos or {}).values():
+                if isinstance(f, tuple) and len(f) > 1 and hasattr(f[1], "close"):
+                    f[1].close()
+        time.sleep(_espera(r, intento))
     return r
 
 
@@ -128,9 +191,10 @@ def _error(r: requests.Response) -> RuntimeError:
 
 def responder(servicio: str, cuerpo: dict) -> dict:
     """POST /v1/responses. Devuelve el JSON y registra el costo real (usage)."""
-    _revisar_tope()
+    _revisar_tope(peor_caso_usd(cuerpo))
     t0 = time.time()
-    r = _pedir("POST", "/responses", json=cuerpo)
+    # 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble.
+    r = _pedir("POST", "/responses", intentos=3, json=cuerpo)
     if r.status_code != 200:
         raise _error(r)
     datos = r.json()
@@ -166,16 +230,15 @@ def texto_de(respuesta: dict) -> str:
 
 def subir_archivo(ruta: Path, segundos_vida: int = 3600) -> str:
     """Files API con caducidad: lo subido se borra solo aunque algo falle."""
-    with ruta.open("rb") as f:
-        r = _pedir(
-            "POST", "/files",
-            data={
-                "purpose": "user_data",
-                "expires_after[anchor]": "created_at",
-                "expires_after[seconds]": str(segundos_vida),
-            },
-            files={"file": (ruta.name, f, "video/mp4" if ruta.suffix == ".mp4" else None)},
-        )
+    r = _pedir(
+        "POST", "/files",
+        data={
+            "purpose": "user_data",
+            "expires_after[anchor]": "created_at",
+            "expires_after[seconds]": str(segundos_vida),
+        },
+        archivos=lambda: {"file": (ruta.name, ruta.open("rb"), "video/mp4" if ruta.suffix == ".mp4" else None)},
+    )
     if r.status_code != 200:
         raise _error(r)
     # Quien suba debe llamar borrar_archivo al terminar; la caducidad es la red.
@@ -196,15 +259,16 @@ def transcribir_wav(ruta: Path, modo: str = "ENDPOINTING", idiomas=("Spanish",))
         "audioEncoding": "WAV",
         "languageBias": list(idiomas),
     }
+    if ruta.stat().st_size > 32 * 1024 * 1024:
+        raise ValueError("El audio pasa de 32 MB (unos 10 min): Voice Transcribe no lo acepta.")
     t0 = time.time()
-    with ruta.open("rb") as f:
-        r = _pedir(
-            "POST", "/asr/transcribe",
-            files={
-                "request": (None, json.dumps(ajustes), "application/json"),
-                "audio": (ruta.name, f, "audio/wav"),
-            },
-        )
+    r = _pedir(
+        "POST", "/asr/transcribe",
+        archivos=lambda: {
+            "request": (None, json.dumps(ajustes), "application/json"),
+            "audio": (ruta.name, ruta.open("rb"), "audio/wav"),
+        },
+    )
     if r.status_code != 200:
         raise _error(r)
     datos = r.json()

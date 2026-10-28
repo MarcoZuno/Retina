@@ -164,15 +164,18 @@
   ],
   "licencia": {
    "modelo": "muse-spark-1.3",
-   "instrucciones": "skills/explicar.md (explicar-v2)",
+   "instrucciones": "skills/agente.md (agente-v2)",
    "reglas": "anzuelos-v1",
    "intentos": [
     {
      "sugerencia": "(igual que que_cambiar)",
      "problemas": []
     }
-   ]
-  }
+   ],
+   "fuente": "agente"
+  },
+  "anzuelo_frase": "",
+  "anzuelo_momento_s": -1
  },
  "tiempos_s": {
   "segmentar": 12.0,

@@ -100,7 +100,8 @@ def main() -> None:
         v, t0, gasto0 = por_codigo[c], time.time(), meta_api.gastado_usd()
         try:
             r = correr(Path(indice[v["archivo"]]), modelo, a.salida / "casos" / c, c, v["talento"],
-                       v["fecha"].strftime("%Y-%m-%d %H:%M"), v["archivo"], True, arranque, ver_video=False)
+                       v["fecha"].strftime("%Y-%m-%d %H:%M"), v["archivo"], True, arranque, ver_video=False,
+                       publicado=True)  # son videos de jul-sep ya publicados
         except meta_api.TopeAlcanzado as e:
             print(f"Me detengo: {e}")
             break

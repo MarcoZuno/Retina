@@ -95,7 +95,7 @@ cd src
 python -m retina.gate1 ping                      # one real call to Spark
 # Whole pipeline on a published video (the models are trained on private data):
 python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json \
-    --salida ../datos/casos/demo --con-api
+    --salida ../datos/casos/demo --con-api --ya-publicado --voz VOZ.jsonl
 python -m retina.agente ../datos/casos/demo --modelo MODELO.pkl --voz VOZ.jsonl
 ```
 
@@ -103,7 +103,10 @@ The panel reads only `resultado.json`; its contract is in
 [`docs/resultado-json.md`](docs/resultado-json.md), with a made-up example in
 [`casos/demo/resultado.json`](casos/demo/resultado.json).
 
-Requires Python 3.10+ and ffmpeg (on PATH or in `FFMPEG`).
+Requires Python 3.12 and ffmpeg (on PATH or in `FFMPEG`). Only already-published videos
+go to Meta's API: `--con-api` requires `--ya-publicado`.
+
+Tests (no API key, no private data): `python -m unittest discover -s tests`.
 
 ## Results
 
@@ -115,7 +118,7 @@ private data are published only with management's approval.
 | Question | What we found |
 |---|---|
 | Does the predicted curve beat today's rule? | Yes, on all five measures (error at 3 s, 15 s, mid-video, end, whole curve). Figures pending approval. |
-| When Retina says the opening risk is "high", does the opening really lose more people? | In the large majority of cases, clearly above the base rate. Figures pending approval. |
+| When Retina says the opening risk is "high", does the opening really lose more people? | Clearly more often than the base rate, measured against similar videos *of the same production type* so the type alone can't explain it, and the gap holds within each type. Figures pending approval. |
 | Can it point to the exact stretch where people leave? | No. Past the opening it does worse than always guessing the most common stretch, because the curve comes in whole points. We dropped that promise. |
 | Does speech help the risk level? | No, measured twice. Speech goes to the agent's explanation instead. |
 

@@ -214,3 +214,55 @@ the day's cost in USD.*
   con el arreglo.
 
 **Costo del día:** dentro del tope de USD 10 (detalle en `costos.jsonl`).
+
+### Día 3 (mañana) · Arreglos de la auditoría
+
+Siete revisores independientes (jurado, ingeniería, producto, datos, seguridad, redes y
+negocio) auditaron Retina el 28-oct. Esto se arregló el mismo día:
+
+**El riesgo del arranque, contra una vara justa**
+- La regla de hoy no distingue tipos de producción, y un tipo casi siempre perdía de más:
+  buena parte del acierto del «alto» venía de ahí. Ahora «perder de más» se mide contra
+  la regla corregida por tipo (su exceso medio en los 180 días antes del corte) y el
+  modelo aprende contra esa misma regla (`arranque-v2`). La ventaja del «alto» se sostiene
+  dentro de cada tipo y con o elegibles (`eval/arranque_privado.py`; cifras en la
+  investigación privada).
+- Versión pública del modelo sin nombres de talento (`modelos/arranque-v2-publico.json`):
+  pierde muy poco contra la privada.
+
+**La tarjeta que ve la persona**
+- El validador rechaza jerga y cifras internas («pp», porcentajes, «s0.6», «tramo», nombres
+  de herramientas), textos de más de 220 caracteres, valores fuera de catálogo, y un
+  anzuelo detectado sin su frase, su segundo y cómo quitarlo.
+- Lista de intocables (`reglas/intocables-v1.json`): nunca se sugiere quitar el logo, un
+  pixelado, el título, la postura editorial, avisos legales ni créditos.
+- «Bajo» ya no dice «va bien»: «No vemos un problema claro en tu arranque».
+- Panel de ejemplo rehecho al formato nuevo: titular por nivel, banda del arranque, marca
+  del cambio, anzuelo con su segundo, error visible, solo `textContent`. Probado sin
+  desborde en 360, 390, 768 y 1280 px.
+
+**Filtros**
+- Anzuelos: normaliza letras de otros alfabetos, números que imitan letras y palabras
+  partidas; detecta emojis de reacción; suma contenido no original, reacciones
+  concretas, sorteos, sacar el video de Facebook y más clickbait. Revisa todo el texto
+  sugerido; citar un anzuelo para quitarlo no cuenta.
+- SAM 3.1: lista cerrada de objetos y lugares (`reglas/sam-permitidos-v1.json`) en vez de
+  bloquear palabras. Personas, partes del cuerpo y oficios se rechazan en código.
+
+**Robustez y gasto**
+- El orquestador escribe primero lo gratuito y cada paso de la API cae a «no pude revisar»
+  si falla; el agente cae al respaldo ante errores de red; lista cerrada de herramientas.
+- Lo pagado se reusa solo si el video es el mismo (huella SHA-256).
+- Solo videos ya publicados van a Meta: `--ya-publicado` obligatorio con `--con-api`.
+- Reintentos: el archivo se vuelve a abrir en cada intento (antes se mandaba vacío),
+  tiempos de espera de 10/300 s, fallas de red reintentadas y `Retry-After` con fecha.
+- Tope de gasto con candado de archivo, con el peor caso de cada llamada y con un máximo
+  en código que ni el `.env` sube (USD 50).
+- `store: false` en todas las llamadas a Spark.
+
+**Tests**
+- `tests/test_reglas.py` (21 tests, sin API ni datos): filtros, validador, intocables, SAM,
+  silencios, la regla de parecidos rápida contra la definición, el tope y el formato del
+  panel. `python -m unittest discover -s tests`.
+
+**Costo:** unos centavos (3 casos reales para probar las instrucciones nuevas).

@@ -1,0 +1,15 @@
+{
+  "version": "intocables-v1",
+  "fecha": "2026-10-28",
+  "estado": "BORRADOR: falta agregar lo de cada página (avisos de salud o de primeros auxilios, noticias). Hasta entonces, lo común a todas.",
+  "uso": "Retina nunca sugiere quitar, cortar, tapar ni cambiar esto, porque es marca, ley o línea editorial. El validador bloquea la sugerencia si un verbo de la lista va junto a uno de estos elementos.",
+  "elementos": [
+    {"id": "logo", "nombre": "Logo o marca de la página", "frases": ["logo", "marca de la pagina", "cortinilla", "cintillo", "marca de agua de la pagina", "firma de la pagina"]},
+    {"id": "pixelado", "nombre": "Pixelados, difuminados y censuras (marcas ajenas, menores, datos personales)", "frases": ["pixel*", "difumin*", "censur*", "borroso", "desenfoque"]},
+    {"id": "titulo", "nombre": "El título del video (lo decide quien escribe el guion)", "frases": ["titulo"]},
+    {"id": "pregunta_editorial", "nombre": "La pregunta o postura editorial del video", "frases": ["estas a favor", "pregunta final", "postura", "opinion de la pagina"]},
+    {"id": "aviso_legal", "nombre": "Avisos legales y advertencias de salud", "frases": ["aviso legal", "advertencia", "consulta a tu medico", "consulta a tu veterinario", "contenido sensible"]},
+    {"id": "creditos", "nombre": "Créditos de material de terceros", "frases": ["credito*", "fuente:", "cortesia de"]}
+  ],
+  "verbos": ["quit*", "elimin*", "cort*", "borr*", "tap*", "ocult*", "saca*", "sin", "despixel*", "muestr* sin", "destap*", "cambia el", "cambia la", "reemplaz*", "mueve*"]
+}

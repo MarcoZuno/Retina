@@ -3,17 +3,19 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
 <title>Retina</title>
 <style>
   :root {
-    --fondo: #f6f5f2; --tarjeta: #ffffff; --texto: #1c1b19; --suave: #6b6862; --linea: #e2dfd8;
+    --fondo: #f6f5f2; --tarjeta: #ffffff; --texto: #1c1b19; --suave: #5f5c56; --linea: #e2dfd8;
     --predicha: #1c1b19; --parecidos: #8a867e; --ambar: #e8a33d; --ambar-fondo: #fdf1dc;
-    --rojo: #c8412f; --rojo-fondo: #fbe6e2; --boton: #1c1b19; --boton-texto: #ffffff;
+    --rojo: #c8412f; --rojo-fondo: #fbe6e2; --gris-fondo: #efede8; --verde: #2f7d4f;
+    --boton: #1c1b19; --boton-texto: #ffffff;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --fondo: #141412; --tarjeta: #1f1e1b; --texto: #f1efe9; --suave: #a29e95; --linea: #33312c;
+    :root { --fondo: #141412; --tarjeta: #1f1e1b; --texto: #f1efe9; --suave: #b0aca3; --linea: #33312c;
             --predicha: #f1efe9; --parecidos: #8a867e; --ambar-fondo: #3a2d16; --rojo-fondo: #3b1d18;
-            --boton: #f1efe9; --boton-texto: #141412; }
+            --gris-fondo: #2a2926; --verde: #6fc193; --boton: #f1efe9; --boton-texto: #141412; }
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--fondo); color: var(--texto);
@@ -22,132 +24,223 @@
   header h1 { margin: 0; font-size: 22px; letter-spacing: .5px; }
   header p { margin: 2px 0 24px; color: var(--suave); }
   .tarjeta { background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 14px; padding: 20px; margin-bottom: 16px; }
-  .subir { text-align: center; border-style: dashed; padding: 40px 20px; cursor: pointer; }
-  .pasos { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; color: var(--suave); font-size: 14px; }
-  .pasos span::after { content: "·"; margin-left: 8px; } .pasos span:last-child::after { content: ""; }
-  h2 { margin: 0 0 4px; font-size: 20px; }
+  .subir { width: 100%; text-align: center; border: 2px dashed var(--linea); background: var(--tarjeta); color: var(--texto);
+           padding: 40px 20px; border-radius: 14px; font: inherit; cursor: pointer; }
+  .subir:focus-visible, button:focus-visible { outline: 3px solid var(--ambar); outline-offset: 2px; }
+  h2 { margin: 0 0 6px; font-size: 21px; line-height: 1.3; }
+  .alto h2::before { content: "⚠ "; }
+  .nivel { border-left: 6px solid var(--ambar); }
+  .nivel.alto { border-left-color: var(--rojo); background: var(--rojo-fondo); }
+  .nivel.medio { border-left-color: var(--ambar); background: var(--ambar-fondo); }
+  .nivel.bajo { border-left-color: var(--parecidos); background: var(--gris-fondo); }
+  .suave { color: var(--suave); }
+  .cambio { font-weight: 600; }
+  .funciona { color: var(--verde); }
+  .alerta { border-left: 6px solid var(--rojo); }
   .leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--suave); margin: 8px 0 0; }
   .leyenda i { display: inline-block; width: 22px; height: 0; border-top: 2px solid var(--predicha); vertical-align: middle; margin-right: 6px; }
-  .leyenda i.p { border-top: 2px dashed var(--parecidos); } .leyenda i.a { border-top: 8px solid var(--ambar); opacity: .5; }
+  .leyenda i.p { border-top: 2px dashed var(--parecidos); }
+  .leyenda i.a { border-top: 8px solid var(--ambar); opacity: .5; }
+  .leyenda i.m { width: 0; height: 12px; border-top: 0; border-left: 3px solid var(--rojo); }
   svg { width: 100%; height: auto; display: block; }
-  .riesgo { border-left: 6px solid var(--ambar); background: var(--ambar-fondo); }
-  .riesgo .cuando { font-weight: 700; font-size: 18px; }
-  .cifra { color: var(--suave); margin: 6px 0 12px; }
-  .cambio { font-weight: 600; }
-  .alerta { border-left: 6px solid var(--rojo); background: var(--rojo-fondo); }
   .botones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
   button { font: inherit; border-radius: 10px; padding: 10px 18px; cursor: pointer; border: 1px solid var(--boton); }
   button.principal { background: var(--boton); color: var(--boton-texto); }
   button.secundario { background: transparent; color: var(--texto); }
   .licencia { font-size: 13px; color: var(--suave); }
   .licencia ul { margin: 4px 0 0; padding-left: 18px; }
-  .oculto { display: none; }
+  .oculto { display: none !important; }
   .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
   .storyboard div { background: var(--fondo); border: 1px solid var(--linea); border-radius: 10px; padding: 10px; font-size: 14px; }
+  .error { border-left: 6px solid var(--rojo); }
+  @media (max-width: 520px) { .storyboard { grid-template-columns: 1fr; } h2 { font-size: 19px; } }
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1>Retina</h1>
-    <p>Antes de publicar, ve dónde se va tu público.</p>
+    <p>Antes de publicar, ve si tu arranque va a perder gente.</p>
   </header>
 
-  <section id="pantalla-subir" class="tarjeta subir" tabindex="0">
-    <strong>Abre la revisión de tu video</strong>
-    <div class="cifra">Elige el archivo <code>resultado.json</code> que dejó Retina en la carpeta del video.</div>
-    <input id="archivo" type="file" accept=".json,application/json" class="oculto">
-    <div class="pasos"><span>Viendo</span><span>Escuchando</span><span>Comparando</span><span>Dibujando</span></div>
-  </section>
+  <button id="pantalla-subir" class="subir" type="button" aria-describedby="ayuda-subir">
+    <strong>Abre la revisión de tu video</strong><br>
+    <span id="ayuda-subir" class="suave">Elige el archivo <code>resultado.json</code> que dejó Retina en la carpeta del video.</span>
+  </button>
+  <input id="archivo" type="file" accept=".json,application/json" class="oculto" aria-hidden="true" tabindex="-1">
 
-  <section id="pantalla-resultado" class="oculto">
-    <div class="tarjeta">
-      <h2 id="titular">Aquí se va más gente de lo normal</h2>
-      <div class="cifra" id="subtitulo"></div>
-      <svg id="grafica" viewBox="0 0 800 300" role="img" aria-label="Curva de retención predicha"></svg>
-      <div class="leyenda"><span><i></i>Tu video (predicción)</span><span><i class="p"></i>Videos parecidos</span><span><i class="a"></i>Tramo de riesgo</span></div>
+  <div id="error" class="tarjeta error oculto" role="alert"></div>
+
+  <section id="pantalla-resultado" class="oculto" aria-live="polite">
+    <div id="tarjeta-nivel" class="tarjeta nivel">
+      <h2 id="titular"></h2>
+      <p id="porque"></p>
+      <p id="cambio" class="cambio"></p>
+      <p id="funciona" class="funciona"></p>
+      <div class="botones"><button class="secundario oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button></div>
+      <div id="storyboard" class="storyboard oculto"></div>
     </div>
 
-    <div id="alerta" class="tarjeta alerta oculto"></div>
+    <div id="alerta" class="tarjeta alerta oculto">
+      <strong>Meta reparte menos los videos con esto.</strong>
+      <p id="alerta-texto"></p>
+    </div>
 
-    <div class="tarjeta riesgo">
-      <div class="cuando" id="cuando"></div>
-      <div class="cifra" id="comparacion"></div>
-      <div id="porque"></div>
-      <p class="cambio" id="cambio"></p>
-      <div class="botones"><button class="secundario" id="ver-storyboard">Ver storyboard</button></div>
-      <div id="storyboard" class="storyboard oculto"></div>
+    <div class="tarjeta">
+      <svg id="grafica" viewBox="0 0 800 300" role="img"></svg>
+      <div class="leyenda"><span><i></i>Tu video (predicción)</span><span><i class="p"></i>Videos parecidos</span>
+        <span><i class="a"></i>El arranque (primer cuarto)</span><span><i class="m"></i>Dónde cambiar</span></div>
     </div>
 
     <div class="tarjeta">
       <div class="botones">
-        <button class="principal" id="regrabar">Regrabar</button>
-        <button class="secundario" id="publicar">Publicar igual</button>
+        <button class="principal" id="d-cortar" type="button">Cortar como dice Retina</button>
+        <button class="secundario" id="d-regrabar" type="button">Regrabar</button>
+        <button class="secundario" id="d-publicar" type="button">Publicar así</button>
       </div>
-      <p class="cifra" id="decision"></p>
+      <p class="suave" id="decision"></p>
       <div class="licencia" id="licencia"></div>
     </div>
   </section>
 </main>
 <script>
 const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
 const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+const ANZUELOS = {  // nombres legibles si la tarjeta no trae la frase (reglas/anzuelos-v1.json)
+  pide_interaccion: "pide comentarios, reacciones o compartidos", mira_hasta_el_final: "pide quedarse hasta el final",
+  esconde_el_dato: "esconde el dato que promete el título", exageracion: "exagera lo que el video no sostiene",
+  cura_milagrosa: "promete una cura o resultado milagroso", material_ajeno: "usa material de otros sin transformarlo",
+  sorteo_falso: "ofrece un sorteo o regalo a cambio de interacción", saca_de_la_plataforma: "pide mandar el video fuera de Facebook",
+  ia_sin_etiqueta: "usa imagen o voz de IA sin etiqueta",
+};
+const TITULARES = {
+  alto: "Tu arranque puede perder más gente que tus videos parecidos",
+  medio: "Tu arranque se puede mejorar",
+  bajo: "No vemos un problema claro en tu arranque",
+};
+let actual = null;
+
+function el(tag, attrs, texto) {  // todo lo que viene del JSON entra como texto, nunca como HTML
+  const n = tag === "svg-text" ? document.createElementNS(NS, "text") : document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
+  if (texto !== undefined) n.textContent = texto;
+  return n;
+}
 
 function grafica(r) {
   const p = r.prediccion, dur = r.video.duracion_s, W = 800, H = 300, m = { i: 44, d: 12, a: 12, b: 32 };
   const x = (i) => m.i + (i / 40) * (W - m.i - m.d);
   const y = (v) => m.a + (1 - v) * (H - m.a - m.b);
   const linea = (c) => c.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  const t = r.tramo_riesgo.indice;
-  let svg = `<rect x="${x(t)}" y="${m.a}" width="${x(t + 1) - x(t)}" height="${H - m.a - m.b}" fill="var(--ambar)" opacity=".35"/>`;
+  const g = $("grafica");
+  g.replaceChildren();
+  if (r.arranque && r.arranque.nivel !== "bajo") {
+    g.append(el("rect", { x: x(0), y: m.a, width: x(10) - x(0), height: H - m.a - m.b, fill: "var(--ambar)", opacity: ".3" }));
+  }
   for (const v of [0, .25, .5, .75, 1]) {
-    svg += `<line x1="${m.i}" x2="${W - m.d}" y1="${y(v)}" y2="${y(v)}" stroke="var(--linea)"/>`;
-    svg += `<text x="${m.i - 8}" y="${y(v) + 4}" font-size="12" text-anchor="end" fill="var(--suave)">${v * 100}%</text>`;
+    g.append(el("line", { x1: m.i, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--linea)" }));
+    g.append(el("svg-text", { x: m.i - 8, y: y(v) + 4, "font-size": 12, "text-anchor": "end", fill: "var(--suave)" }, `${v * 100}%`));
   }
   for (const f of [0, .25, .5, .75, 1]) {
-    svg += `<text x="${x(f * 40)}" y="${H - 10}" font-size="12" text-anchor="middle" fill="var(--suave)">${mmss(f * dur)}</text>`;
+    g.append(el("svg-text", { x: x(f * 40), y: H - 10, "font-size": 12, "text-anchor": "middle", fill: "var(--suave)" }, mmss(f * dur)));
   }
-  svg += `<path d="${linea(p.curva_parecidos)}" fill="none" stroke="var(--parecidos)" stroke-width="2" stroke-dasharray="5 5"/>`;
-  svg += `<path d="${linea(p.curva_predicha)}" fill="none" stroke="var(--predicha)" stroke-width="2.5"/>`;
-  $("grafica").innerHTML = svg;
+  g.append(el("path", { d: linea(p.curva_parecidos), fill: "none", stroke: "var(--parecidos)", "stroke-width": 2, "stroke-dasharray": "5 5" }));
+  g.append(el("path", { d: linea(p.curva_predicha), fill: "none", stroke: "var(--predicha)", "stroke-width": 2.5 }));
+  const e = r.explicacion;
+  if (e && e.que_cambiar && e.momento_s >= 1) {
+    const mx = x((e.momento_s / dur) * 40);
+    g.append(el("line", { x1: mx, x2: mx, y1: m.a, y2: H - m.b, stroke: "var(--rojo)", "stroke-width": 3 }));
+  }
+  const nivel = r.arranque ? r.arranque.nivel : "sin nivel";
+  g.setAttribute("aria-label", `Curva de retención predicha de un video de ${mmss(dur)}. Arranque: riesgo ${nivel}` +
+    (e && e.que_cambiar ? `. Cambio desde ${mmss(e.momento_s)}.` : "."));
+}
+
+function lista(padre, textos) {
+  const ul = document.createElement("ul");
+  for (const t of textos) { const li = document.createElement("li"); li.textContent = t; ul.append(li); }
+  padre.append(ul);
 }
 
 function mostrar(r) {
-  const p = r.prediccion, e = r.explicacion, t = r.tramo_riesgo, l = r.licencia;
-  $("subtitulo").textContent = `Video de ${mmss(r.video.duracion_s)}. La línea es cuánta gente seguiría viendo en cada momento.`;
-  grafica(r);
-  $("cuando").textContent = `${mmss(t.inicio_s)} a ${mmss(t.fin_s)}${e && e.por_que ? "" : " · aquí se va más gente que en videos parecidos"}`;
-  $("comparacion").textContent = `Videos parecidos pierden ${p.caida_parecidos_pp} de cada 100 aquí; este perdería ${p.caida_predicha_pp}.`;
+  if (!r || !r.arranque || !r.prediccion || !Array.isArray(r.prediccion.curva_predicha)) {
+    throw new Error("Este archivo no es una revisión de Retina (le falta el arranque o la curva).");
+  }
+  actual = r;
+  const a = r.arranque, e = r.explicacion, l = r.licencia;
+  $("tarjeta-nivel").className = `tarjeta nivel ${a.nivel}`;
+  $("titular").textContent = TITULARES[a.nivel] || "Revisión del arranque";
   if (e) {
     $("porque").textContent = e.por_que;
-    $("cambio").textContent = e.que_cambiar ? `Qué cambiar: ${e.que_cambiar}` : "No hay una sugerencia que pase nuestras reglas de integridad. Mejor revisa este tramo a mano.";
+    const desde = e.momento_s >= 1 ? `Desde ${mmss(e.momento_s)}: ` : "Desde el primer segundo: ";
+    $("cambio").textContent = e.que_cambiar ? `Qué cambiar. ${desde}${e.que_cambiar}`
+      : (a.nivel === "bajo" ? "" : "No hubo una sugerencia que pasara nuestras reglas. Revisa el arranque a mano.");
+    $("funciona").textContent = e.lo_que_funciona ? `✓ Ya funciona: ${e.lo_que_funciona}` : "";
     const cuadros = e.storyboard || [];
     $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
-    $("storyboard").innerHTML = cuadros.map((c, i) => `<div><strong>${i + 1}.</strong> ${c.replace(/</g, "&lt;")}</div>`).join("");
-    if (e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno") {
-      $("alerta").classList.remove("oculto");
-      $("alerta").innerHTML = `<strong>Esto Meta lo castiga en la distribución.</strong><br>El borrador trae: ${e.anzuelo_detectado.replace(/_/g, " ")}. Retina no lo sugiere nunca; quítalo antes de publicar.`;
+    $("storyboard").replaceChildren(...cuadros.map((c, i) => {
+      const d = document.createElement("div"); d.textContent = `${i + 1}. ${c}`; return d;
+    }));
+    const hay = e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno";
+    $("alerta").classList.toggle("oculto", !hay);
+    if (hay) {
+      const cuando = e.anzuelo_momento_s >= 0 ? `En ${mmss(e.anzuelo_momento_s)}` : "En el video";
+      $("alerta-texto").textContent = `${cuando}: ${e.anzuelo_frase || ANZUELOS[e.anzuelo_detectado] || "trae algo que Meta castiga"}. Retina nunca lo sugiere; quítalo antes de publicar.`;
     }
   } else {
-    $("porque").textContent = "Todavía no hay explicación: esta revisión se hizo sin la API de Meta, así que solo vemos dónde cae, no por qué.";
-    $("cambio").textContent = "";
-    $("ver-storyboard").classList.add("oculto");
+    $("porque").textContent = "Todavía no hay explicación: esta revisión se hizo sin la API de Meta, así que solo vemos el riesgo, no el porqué.";
+    $("cambio").textContent = ""; $("funciona").textContent = "";
+    $("ver-storyboard").classList.add("oculto"); $("alerta").classList.add("oculto");
   }
-  const confianza = l.vio_el_video ? "media" : "baja";
-  $("licencia").innerHTML = `<strong>Confianza: ${confianza}.</strong> Comparado con ${l.comparado_con}; datos al ${l.datos_hasta}. `
-    + (l.vio_el_video ? "Retina vio el video tramo a tramo." : "Retina no vio el video; solo usó sus datos.")
-    + `<br>No pude revisar:<ul>${l.no_pude_revisar.map((n) => `<li>${n}</li>`).join("")}</ul>`;
+  grafica(r);
+  const conf = e ? e.confianza : "baja";
+  const lic = $("licencia");
+  lic.replaceChildren();
+  const b = document.createElement("strong");
+  b.textContent = `Confianza: ${conf}.${conf !== "alta" ? " Revísalo tú antes de cortar." : ""}`;
+  lic.append(b, ` Lo comparamos con ${l.comparado_con}; datos al ${l.datos_hasta}. No revisé:`);
+  lista(lic, l.no_pude_revisar || []);
+  $("error").classList.add("oculto");
   $("pantalla-subir").classList.add("oculto");
   $("pantalla-resultado").classList.remove("oculto");
 }
 
-$("ver-storyboard").onclick = () => $("storyboard").classList.toggle("oculto");
-$("regrabar").onclick = () => $("decision").textContent = "Anotado: regrabas. Cuando tengas la nueva versión, revísala otra vez y compara.";
-$("publicar").onclick = () => $("decision").textContent = "Anotado: se publica igual. Mañana Retina compara la curva real con esta.";
+function fallo(mensaje) {
+  $("error").textContent = `No pude abrir esta revisión. ${mensaje} Vuelve a elegir el archivo o avisa a quien corrió Retina.`;
+  $("error").classList.remove("oculto");
+}
+
+function decidir(que, texto) {
+  $("decision").textContent = texto;
+  try {  // registro local de decisiones para medir la adopción; si el navegador no deja, no pasa nada
+    const k = "retina-decisiones", d = JSON.parse(localStorage.getItem(k) || "[]");
+    d.push({ codigo: actual && actual.video.codigo, nivel: actual && actual.arranque.nivel, que, cuando: new Date().toISOString() });
+    localStorage.setItem(k, JSON.stringify(d));
+  } catch (_) { /* sin almacenamiento */ }
+}
+
+$("ver-storyboard").onclick = () => {
+  const abierto = $("storyboard").classList.toggle("oculto") === false;
+  $("ver-storyboard").setAttribute("aria-expanded", String(abierto));
+};
+$("d-cortar").onclick = () => decidir("cortar", "Anotado: haces el cambio que sugiere Retina. Revisa la nueva versión y compara.");
+$("d-regrabar").onclick = () => decidir("regrabar", "Anotado: regrabas. Cuando tengas la nueva versión, revísala otra vez.");
+$("d-publicar").onclick = () => decidir("publicar", "Anotado: se publica así.");
 $("pantalla-subir").onclick = () => $("archivo").click();
-$("pantalla-subir").onkeydown = (ev) => { if (ev.key === "Enter") $("archivo").click(); };
-$("archivo").onchange = async (ev) => mostrar(JSON.parse(await ev.target.files[0].text()));
-fetch("resultado.json").then((r) => r.ok ? r.json() : null).then((r) => r && mostrar(r)).catch(() => {});
+$("archivo").onchange = async (ev) => {
+  try { mostrar(JSON.parse(await ev.target.files[0].text())); }
+  catch (err) { fallo(err.message || "El archivo no se pudo leer."); }
+};
+// Servido por http (python -m http.server desde la raíz del repo) abre solo el ejemplo; con doble clic, se elige el archivo.
+(async () => {
+  for (const ruta of ["resultado.json", "../casos/demo/resultado.json"]) {
+    try {
+      const r = await fetch(ruta);
+      if (r.ok) { mostrar(await r.json()); return; }
+    } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
+  }
+})().catch((err) => fallo(err.message));
 </script>
 </body>
 </html>

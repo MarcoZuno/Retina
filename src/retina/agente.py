@@ -55,6 +55,7 @@ HERRAMIENTAS = [
     _herramienta("entregar_tarjeta", "Entrega la tarjeta final. El código la revisa; si devuelve problemas, corrige y "
                  "vuelve a entregar.", explicar.esquema()["properties"]),
 ]
+NOMBRES = {h["name"] for h in HERRAMIENTAS}
 
 
 def titulo_limpio(archivo: str, codigo: str) -> str:
@@ -74,7 +75,7 @@ class Caja:
     def ver_arranque(self) -> dict:
         d, v = self.datos, self.resultado["video"]
         campos = ("duracion_video_s", "gancho_s", "primer_cuarto_s", "nivel_de_riesgo",
-                  "perdida_extra_predicha_pp", "caida_de_videos_parecidos_pp")
+                  "caida_de_videos_parecidos_pp")
         return {"titulo": titulo_limpio(v.get("titulo") or "", v["codigo"]), **{k: d[k] for k in campos}}
 
     def ver_tramos(self, desde_s: float, hasta_s: float) -> dict:
@@ -114,12 +115,21 @@ class Caja:
         from .sam import medir
         return medir(self.carpeta, concepto)
 
+    def titulos_ajenos(self, texto: str) -> list[str]:
+        """Títulos de otros videos (de buscar_parecidos) que la tarjeta no debe repetir."""
+        vistos = [x["titulo"] for s in self.vistos if isinstance(s, dict) for x in s.get("videos", [])]
+        return [t for t in vistos if len(t) >= 15 and t.lower()[:40] in texto.lower()]
+
     def correr(self, nombre: str, args: dict) -> dict:
+        if nombre not in NOMBRES:  # nunca se llama un método por el nombre que mande el modelo
+            return {"error": f"No existe la herramienta «{nombre}»."}
         if nombre == "entregar_tarjeta":
             faltan = [k for k in explicar.esquema()["required"] if k not in args]
             if faltan:
                 return {"aceptada": False, "problemas": [f"faltan campos: {', '.join(faltan)}"]}
             problemas = explicar.revisar(args, {**self.datos, "vistos": self.vistos})
+            if t := self.titulos_ajenos(" ".join([args["por_que"], args["que_cambiar"], args["lo_que_funciona"]])):
+                problemas.append(f"la tarjeta repite el título de otro video ({t[0][:40]}…): descríbelo sin citarlo")
             return {"aceptada": not problemas, "problemas": problemas}
         salida = getattr(self, nombre)(**args)
         self.vistos.append(salida)
@@ -135,12 +145,18 @@ def correr_agente(carpeta: Path, modelo: Modelo, voz: dict) -> dict:
     v = caja.resultado["video"]
     conversacion = [{"type": "message", "role": "user", "content": [{"type": "input_text", "text":
                      f"Revisa el arranque de este video de {v['duracion_s']:.0f} s y entrega la tarjeta."}]}]
-    traza, cuenta, tarjeta = [], {}, None
+    traza, cuenta, tarjeta, falla = [], {}, None, None
     for turno in range(1, MAX_TURNOS + 1):
-        r = meta_api.responder("agente", {
-            "model": MODELO, "instructions": instrucciones(), "input": conversacion, "tools": HERRAMIENTAS,
-            "parallel_tool_calls": False, "store": False, "reasoning": {"effort": "medium"},
-            "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v1"})
+        try:
+            r = meta_api.responder("agente", {
+                "model": MODELO, "instructions": instrucciones(), "input": conversacion, "tools": HERRAMIENTAS,
+                "parallel_tool_calls": False, "store": False, "reasoning": {"effort": "medium"},
+                "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v2"})  # gitleaks:allow
+        except meta_api.TopeAlcanzado:
+            raise  # el tope no se rodea con el respaldo: también gasta
+        except Exception as e:  # noqa: BLE001 — falla de red o de la API: se cae al respaldo
+            falla = f"{type(e).__name__} en el turno {turno}"
+            break
         salida = r.get("output", [])
         conversacion += [x for x in salida if x.get("type") != "reasoning"]  # sin store no se reenvía el razonamiento
         llamadas = [x for x in salida if x.get("type") == "function_call"]
@@ -150,16 +166,21 @@ def correr_agente(carpeta: Path, modelo: Modelo, voz: dict) -> dict:
                                  "text": "Entrega la tarjeta con entregar_tarjeta."}]})
             continue
         for c in llamadas:
-            args = json.loads(c.get("arguments") or "{}")
+            try:
+                args = json.loads(c.get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args = {"_invalidos": True}
             huella = hashlib.sha1(f"{c['name']}{json.dumps(args, sort_keys=True)}".encode()).hexdigest()
             cuenta[huella] = cuenta.get(huella, 0) + 1
             if cuenta[huella] > REPETIDAS:
                 res = {"error": "Ya hiciste esta misma llamada. Usa lo que ya tienes y entrega la tarjeta."}
             else:
                 try:
-                    res = caja.correr(c["name"], args)
-                except (AttributeError, TypeError, KeyError) as e:
-                    res = {"error": f"Llamada inválida: {type(e).__name__}"}
+                    res = {"error": "Los argumentos no eran JSON válido."} if "_invalidos" in args else caja.correr(c["name"], args)
+                except meta_api.TopeAlcanzado:
+                    raise
+                except Exception as e:  # noqa: BLE001 — una herramienta que falla se le dice al modelo y sigue
+                    res = {"error": f"La herramienta falló: {type(e).__name__}"}
             traza.append({"turno": turno, "herramienta": c["name"], "args": args if c["name"] != "entregar_tarjeta" else "…",
                           "resultado": res if c["name"] == "entregar_tarjeta" else f"{len(json.dumps(res))} caracteres"})
             conversacion.append({"type": "function_call_output", "call_id": c["call_id"],
@@ -171,8 +192,8 @@ def correr_agente(carpeta: Path, modelo: Modelo, voz: dict) -> dict:
     fuente = "agente"
     if tarjeta is None:  # el ciclo no cerró: una sola vuelta de «explicar», con su propio validador
         tarjeta, fuente = explicar.explicar(carpeta, caja.resultado["arranque"]), "explicar (respaldo)"
-    tarjeta["licencia"] = {"modelo": MODELO, "instrucciones": "skills/agente.md (agente-v1)", "fuente": fuente,
-                           "turnos": len({t["turno"] for t in traza}), "traza": traza}
+    tarjeta["licencia"] = {"modelo": MODELO, "instrucciones": "skills/agente.md (agente-v2)", "fuente": fuente,
+                           "turnos": len({t["turno"] for t in traza}), "traza": traza, "falla": falla}
     (carpeta / "agente.json").write_text(json.dumps(tarjeta, ensure_ascii=False, indent=1), encoding="utf-8")
     return tarjeta
 

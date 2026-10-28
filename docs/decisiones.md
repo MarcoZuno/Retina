@@ -116,3 +116,16 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
   de una vuelta, que tiene el mismo validador.
 - **SAM 3.1 solo sobre objetos y lugares.** Se usa para ver si lo que promete el título
   aparece en los primeros 3 s. Nunca sobre personas.
+
+## 28-oct-2026 · La vara justa: contra videos del mismo tipo
+
+- **Qué cambió.** «Perder de más» se mide contra la regla de hoy corregida por tipo de
+  producción, y el modelo aprende contra esa misma regla. Sin la corrección, el «alto»
+  premiaba ser de un tipo que casi siempre pierde de más; eso no le sirve a quien edita.
+- **Por qué no se quitó el tipo del modelo.** El tipo sigue entrando como rasgo; lo que
+  cambia es la vara. Así el nivel dice algo que el tipo solo no dice.
+- **«Bajo» no es «va bien».** También en «bajo» hay videos que pierden de más, solo que
+  menos. El titular dice «No vemos un problema claro».
+- **La tarjeta habla como persona.** Sin porcentajes ni jerga, con segundos, con un solo
+  cambio y sin tocar marca, ley ni línea editorial. El validador lo exige.
+- **A Meta solo van videos publicados,** y el código lo pide de forma explícita.

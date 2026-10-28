@@ -1,0 +1,18 @@
+{
+  "version": "sam-permitidos-v1",
+  "fecha": "2026-10-28",
+  "uso": "SAM 3.1 solo segmenta lo que nombra esta lista: objetos, comida, animales, lugares y fenómenos. Nunca personas, partes del cuerpo, ropa puesta ni oficios: la condiciones de uso de Meta prohíben seguir personas entre cuadros. El concepto se acepta solo si su última palabra (sin plural) está aquí y ninguna palabra es de persona. Lo demás se rechaza en código, antes de llamar a la API.",
+  "palabras": [
+    "tortilla", "bread", "food", "dish", "plate", "taco", "fruit", "vegetable", "meat", "cake", "coffee", "bean", "corn", "rice", "soup", "drink", "bottle", "can", "glass", "cup", "pan", "pot", "nopal", "cactus", "egg", "milk", "water", "candy", "pill", "medicine", "syringe", "vape", "cigarette",
+    "dog", "cat", "puppy", "kitten", "bird", "horse", "cow", "pig", "chicken", "turtle", "fish", "animal", "pet", "rabbit", "snake", "monkey", "tiger", "lion", "bear", "insect", "bee", "mosquito",
+    "street", "road", "highway", "bridge", "building", "house", "home", "school", "hospital", "church", "market", "store", "shop", "stadium", "park", "beach", "river", "lake", "sea", "mountain", "forest", "field", "farm", "landfill", "dump", "garbage", "trash", "city", "town", "village", "kitchen", "room", "office", "classroom", "castle", "fair", "stage", "restaurant", "prison", "cage", "terrarium", "shelter",
+    "car", "truck", "bus", "train", "motorcycle", "bicycle", "boat", "plane", "ambulance", "patrol",
+    "phone", "smartphone", "screen", "computer", "laptop", "tv", "camera", "sign", "poster", "logo", "map", "flag", "book", "paper", "money", "coin", "bill", "card", "ticket", "box", "bag", "package", "chair", "table", "bed", "door", "window", "wall", "fence", "scale", "clock", "lamp", "toy", "ball", "tool", "machine", "diaper", "handkerchief", "scarf", "blender", "fabric", "loom", "trophy",
+    "flood", "fire", "smoke", "rain", "snow", "storm", "tree", "flower", "plant", "rock", "sand", "mud", "landslide", "sky", "sun", "moon", "light"
+  ],
+  "personas": [
+    "person", "people", "human", "man", "men", "woman", "women", "girl", "boy", "child", "children", "kid", "baby", "toddler", "teen", "guy", "lady", "host", "presenter", "anchor", "reporter", "crowd", "face", "head", "hand", "hands", "arm", "leg", "foot", "feet", "body", "skin", "eye", "eyes", "mouth", "hair", "finger",
+    "doctor", "nurse", "paramedic", "firefighter", "police", "officer", "soldier", "worker", "farmer", "vendor", "seller", "chef", "cook", "teacher", "student", "dancer", "singer", "actor", "actress", "player", "athlete", "driver", "vet", "veterinarian", "politician", "president", "governor", "mother", "father", "family", "couple", "friend",
+    "persona", "personas", "gente", "hombre", "hombres", "mujer", "mujeres", "nino", "nina", "ninos", "ninas", "bebe", "cara", "rostro", "mano", "manos", "cuerpo", "presentador", "presentadora", "senor", "senora", "chico", "chica", "joven", "doctora", "enfermera", "paramedico", "policia", "bombero", "vendedor", "veterinaria", "veterinario", "mama", "papa", "familia"
+  ]
+}

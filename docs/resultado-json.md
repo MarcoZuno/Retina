@@ -14,12 +14,13 @@ vuelta. Los dos dan los mismos campos; `explicacion.licencia.fuente` dice cuál 
 
 | Campo | Qué es | Cómo se muestra |
 |---|---|---|
-| `arranque.nivel` | `alto`, `medio` o `bajo`: si el gancho y el primer cuarto del video van a perder más gente que videos parecidos. | El titular de la tarjeta (textos abajo). |
+| `arranque.nivel` | `alto`, `medio` o `bajo`: si el gancho y el primer cuarto del video van a perder más gente que videos parecidos de su mismo tipo de producción (`arranque.comparado_con_su_tipo`). | El titular de la tarjeta (textos abajo). |
 | `explicacion.por_que` | Dos frases como máximo, con los segundos donde pasa. | Debajo del titular. |
 | `explicacion.que_cambiar` | Un solo cambio de edición o guion. Vacío si el nivel es `bajo` o si ninguna sugerencia pasó los filtros. | Caja «Qué cambiar». Si viene vacío y el nivel no es `bajo`, mostrar `no_pude_verificar`. |
-| `explicacion.momento_s` | Segundo donde empieza lo que hay que cambiar. Siempre dentro del arranque. | Marca en la línea de tiempo. |
+| `explicacion.momento_s` | Segundo donde empieza lo que hay que cambiar. Siempre dentro del arranque. | Marca en la línea de tiempo, en m:ss. Si es menor que 1, «desde el primer segundo» y sin marca. |
 | `explicacion.lo_que_funciona` | Lo que el arranque ya hace bien. Puede venir vacío. | Línea en verde, opcional. |
-| `explicacion.anzuelo_detectado` | `ninguno` o el id de la regla (ver `reglas/anzuelos-v1.json`) si el borrador ya trae algo que Meta castiga. | Tarjeta roja con el nombre y la fuente de la regla. |
+| `explicacion.anzuelo_detectado` | `ninguno` o el id de la regla (ver `reglas/anzuelos-v1.json`) si el video ya trae algo que Meta castiga. | Tarjeta roja. |
+| `explicacion.anzuelo_frase`, `explicacion.anzuelo_momento_s` | La frase o lo que se ve, y el segundo donde aparece (-1 si no hay anzuelo). | «En 0:25: Comparte esta información…». Si hay anzuelo, `que_cambiar` siempre dice cómo quitarlo. |
 | `explicacion.storyboard` | Tres cuadros en texto. Las imágenes salen aparte con `retina.storyboard --aprobar`. | Botón «Ver storyboard». |
 | `explicacion.confianza` | `baja`, `media` o `alta`. | Junto a la explicación. |
 | `licencia.comparado_con`, `licencia.datos_hasta`, `licencia.no_pude_revisar` | Contra qué se comparó y lo que no se revisó. | Línea de confianza al pie. |
@@ -28,7 +29,7 @@ Textos del titular, en el lenguaje de quien publica:
 
 - `alto`: «Tu arranque puede perder más gente que tus videos parecidos».
 - `medio`: «Tu arranque se puede mejorar».
-- `bajo`: «Tu arranque va como tus videos parecidos o mejor».
+- `bajo`: «No vemos un problema claro en tu arranque» (en gris, no en verde: en «bajo» también hay videos que pierden de más, solo que menos).
 
 ## La línea de tiempo
 
@@ -47,3 +48,10 @@ Textos del titular, en el lenguaje de quien publica:
 `prediccion.tramo_riesgo`, `prediccion.caida_predicha_pp` y
 `prediccion.caida_parecidos_pp` siguen en el archivo por compatibilidad, pero
 ya no se prometen: el tramo exacto pasado el arranque es ruido de redondeo.
+
+## Lo que el validador garantiza en el texto
+
+`por_que`, `lo_que_funciona` y `que_cambiar` nunca traen «pp», porcentajes, «s0.6»,
+«tramo» ni nombres técnicos; miden 220 caracteres como máximo; los segundos vienen
+como «segundo 4». El panel puede mostrarlos tal cual, siempre como texto
+(`textContent`), nunca como HTML.
