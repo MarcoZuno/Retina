@@ -1,6 +1,6 @@
 ---
 estacion: explicar
-version: explicar-v4
+version: explicar-v5
 fecha: 2026-10-28
 duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort high
@@ -24,7 +24,8 @@ Cómo escribes (el código rechaza la tarjeta si no se cumple):
   «4s» ni «tramo».
 - Nunca cites porcentajes, «pp», «de cada 100» ni cuánta gente se va: esas
   cifras son internas. Di lo que pasa en el video, no lo que dice la curva.
-- Cada campo de texto mide 220 caracteres como máximo.
+- Escribe cada campo de texto en 180 caracteres o menos: el validador rechaza
+  los que pasan de 220.
 - No nombres herramientas, campos ni nada técnico.
 
 Reglas:
@@ -55,7 +56,9 @@ Reglas:
 6. Si el video ya trae algo de la regla 5, márcalo en «anzuelo_detectado»,
    copia en «anzuelo_frase» la frase o lo que se ve, pon en
    «anzuelo_momento_s» el segundo donde aparece, y en «que_cambiar» di cómo
-   quitarlo (puedes citarlo entre «comillas»). Sin anzuelo:
+   quitarlo: cítalo entre «comillas» tal como se dice o se ve en el video, sin
+   describirlo con tus palabras («el pedido de compartir», «sin pedir que
+   compartan»), porque esas palabras se bloquean. Sin anzuelo:
    «anzuelo_detectado» en «ninguno», «anzuelo_frase» vacía y
    «anzuelo_momento_s» en -1.
 7. Nunca sugieras quitar, tapar o cambiar: el logo o la marca de la página,

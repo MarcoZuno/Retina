@@ -89,6 +89,39 @@ class Validador(unittest.TestCase):
         self.assertTrue(any("paso 1" in x for x in explicar.revisar(tarjeta(pasos=["a" * 200]), DATOS)))
         self.assertTrue(explicar.revisar(tarjeta(pasos=["Pide que comenten abajo"]), DATOS))
 
+    def test_citar_lo_que_el_video_ya_dice_para_quitarlo_pasa(self):
+        # Casos reales del 28-oct: la tarjeta pedía quitar el anzuelo y el validador la tumbaba.
+        datos = {**DATOS, "frases": [{"segundo": 4.9, "dice": "Comparte esta información con todas las "
+                                                              "personas que tengan perritos en casa."}]}
+        anzuelo = dict(anzuelo_detectado="pide_interaccion", anzuelo_momento_s=4.9,
+                       anzuelo_frase="Comparte esta información con todas las personas que tengan perritos en casa")
+        for que, paso in [
+            ("Corta del segundo 0.6 al 4.9 donde te presentas y pides «Comparte esta información con todas las "
+             "personas que tengan perritos en casa».", "Corta del segundo 0.6 al 4.9."),
+            ("Quita el “Comparte esta información…” del segundo 4.9.", "Borra del audio “Comparte esta información…”."),
+            ("Corta el pedido del segundo 4.9.", "Busca el segundo 4.9 y corta “Comparte esta información…”."),
+        ]:
+            with self.subTest(que=que):
+                self.assertEqual(explicar.revisar(tarjeta(que_cambiar=que, pasos=[paso], **anzuelo), datos), [])
+        # La transcripción repite palabras al tartamudear; la cita no tiene por qué.
+        datos["frases"][0]["dice"] = "y comparte esta información con todas las personas que tengan perritos perritos en casa."
+        que = "Corta del segundo 0.6 al 4.9 el pedido de “comparte esta información con todas las personas que tengan perritos en casa”."
+        self.assertEqual(explicar.revisar(tarjeta(que_cambiar=que, **anzuelo), datos), [])
+
+    def test_describir_el_anzuelo_con_otras_palabras_se_bloquea_y_dice_como_citarlo(self):
+        p = explicar.revisar(tarjeta(que_cambiar="Corta el pedido de compartir del segundo 4.9.",
+                                     anzuelo_detectado="pide_interaccion", anzuelo_frase="Comparte esto",
+                                     anzuelo_momento_s=4.9), DATOS)
+        self.assertTrue(any("cítalo entre «comillas»" in x for x in p))
+
+    def test_citar_no_abre_la_puerta_a_un_anzuelo_nuevo(self):
+        datos = {**DATOS, "frases": [{"segundo": 4.9, "dice": "Comparte esta información con tu familia."}]}
+        for que in ["Corta el silencio del segundo 0.6 al 4.9 y al final di «comenta abajo»",
+                    "Corta el silencio del segundo 0.6 y repite «Comparte esta información» al inicio",
+                    "Mantén «Comparte esta información» en el segundo 4.9"]:
+            with self.subTest(que=que):
+                self.assertTrue(explicar.revisar(tarjeta(que_cambiar=que), datos))
+
     def test_intocables(self):
         self.assertTrue(explicar.toca_intocable("Muestra la lata sin pixelar desde el segundo 2"))
         self.assertTrue(explicar.toca_intocable("Corta del segundo 3 al 16 y quita el logo de la página"))
@@ -160,6 +193,17 @@ class FormatoDelPanel(unittest.TestCase):
         for campo in ("comparado_con", "datos_hasta", "no_pude_revisar"):
             self.assertIn(campo, r["licencia"])
 
+    def test_el_ejemplo_trae_la_revision_segun_meta_con_su_fuente(self):
+        r = json.loads((RAIZ / "casos" / "demo" / "resultado.json").read_text(encoding="utf-8"))
+        reglas = {x["id"]: x for x in json.loads((RAIZ / "reglas" / "recomendaciones-meta-v1.json").read_text(encoding="utf-8"))["reglas"]}
+        self.assertTrue(r["revision_meta"])
+        for x in r["revision_meta"]:
+            with self.subTest(id=x["id"]):
+                self.assertEqual({k: x[k] for k in ("ventana", "regla", "fuente")},
+                                 {k: reglas[x["id"]][k] for k in ("ventana", "regla", "fuente")})
+                self.assertIn(x["cumple"], (True, False, None))
+                self.assertTrue(x["evidencia"].strip())
+
     def test_el_panel_no_usa_campos_retirados_ni_inner_html(self):
         panel = (RAIZ / "panel" / "index.html").read_text(encoding="utf-8")
         self.assertNotIn("tramo_riesgo", panel)
@@ -180,6 +224,15 @@ class Demo(unittest.TestCase):
         from retina.demo import PERMITIDO
         for ruta in ("/panel/", "/panel/index.html", "/casos/demo/resultado.json"):
             self.assertTrue(PERMITIDO.match(ruta), ruta)
+
+    def test_la_demo_sirve_los_fondos_del_panel_y_nada_mas(self):
+        from retina.demo import CASO, PERMITIDO, SoloElPanel
+        for ruta in ("/panel/fondos/fondo-oceano.webp", "/panel/fondos/mini-cinta.webp"):
+            self.assertTrue(PERMITIDO.match(ruta), ruta)
+        for ruta in ("/panel/fondos/../../.env", "/panel/fondos/fondo-x.png", "/src/retina/demo.py", "/.git/config"):
+            self.assertFalse(PERMITIDO.match(ruta), ruta)
+        self.assertFalse(CASO.match("/panel/fondos/fondo-oceano.webp"))  # --caso solo acepta un resultado.json
+        self.assertEqual(SoloElPanel.extensions_map[".webp"], "image/webp")
         for ruta in ("/.git/config", "/README.md", "/casos/", "/casos/../.env", "/src/retina/meta_api.py"):
             self.assertFalse(PERMITIDO.match(ruta), ruta)
 

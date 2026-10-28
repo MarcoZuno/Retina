@@ -102,12 +102,42 @@ def cifras_inventadas(salida: dict, datos: dict) -> list[str]:
     return sorted({n for n in _NUM.findall(texto) if float(n.replace(",", ".")) not in validos})
 
 
-QUITAR = re.compile(r"\b(quit\w*|elimin\w*|cort\w*|borr\w*|sac\w*)\b[^«\"]{0,30}[«\"][^»\"]*[»\"]", re.I)
+QUITAR = re.compile(r"\b(?:quit|elimin|cort|borr|sac|reemplaz|sustitu)\w*", re.I)
+# Entre el verbo de quitar y la cita no puede haber otra orden: «corta el silencio y repite «…»».
+OTRA_ORDEN = re.compile(r"\b(?:di|dilo|pon|ponlo|ponla|agrega|añade|repite|mantén|manten|deja|adelanta|mueve|"
+                        r"pasa|sube|usa|pide|invita|cierra|termina|escribe|graba)\b", re.I)
+CITA = re.compile(r"[«\"“‘']([^«»\"“”‘’']+)[»\"”’']")
+FIN_DE_FRASE = re.compile(r"[.!?;](?=\s|$)")  # no corta en «4.9»
 
 
-def sin_citas_a_quitar(texto: str) -> str:
-    """«Quita "comparte con tu familia"» cita el anzuelo para quitarlo: esa cita no es la sugerencia."""
-    return QUITAR.sub(lambda m: m.group(1), texto)
+def _sin_signos(texto: str) -> str:
+    t = re.sub(r"\s+", " ", re.sub(r"[^\w\s]", " ", integridad.normalizar(texto))).strip()
+    return re.sub(r"\b(\w+)(?: \1\b)+", r"\1", t)  # la transcripción repite al tartamudear: «perritos perritos»
+
+
+def _lo_que_dice_el_video(datos: dict) -> str:
+    partes = [str(f.get("dice") or "") for f in datos.get("frases", [])]
+    partes += [str(t.get("texto_en_pantalla") or "") for t in datos.get("tramos", []) if isinstance(t, dict)]
+    return _sin_signos(" ".join(partes))
+
+
+def sin_citas_a_quitar(texto: str, datos: dict | None = None) -> str:
+    """«Corta “Comparte esta información…”» cita el anzuelo para quitarlo: esa cita no es la sugerencia.
+    Cuenta si el verbo de quitar va justo antes, o más lejos en la misma frase si lo citado es lo que
+    el video ya dice (transcripción o texto en pantalla). Con otra orden en medio, la cita se revisa."""
+    dicho = _lo_que_dice_el_video(datos or {})
+
+    def cita(m: re.Match) -> str:
+        antes = texto[:m.start()]
+        cortes = list(FIN_DE_FRASE.finditer(antes))
+        frase = antes[cortes[-1].end():] if cortes else antes
+        verbos = list(QUITAR.finditer(frase))
+        if not verbos or OTRA_ORDEN.search(entre := frase[verbos[-1].end():]):
+            return m.group(0)
+        citado = _sin_signos(m.group(1))
+        return "«»" if len(entre) <= 30 or (len(citado) >= 8 and citado in dicho) else m.group(0)
+
+    return CITA.sub(cita, texto)
 
 
 def toca_intocable(texto: str) -> list[str]:
@@ -134,9 +164,11 @@ def revisar(salida: dict, datos: dict) -> list[str]:
         if salida.get(campo) not in opciones:  # el agente no tiene esquema estricto: se revisa aquí
             problemas.append(f"{campo} «{salida.get(campo)}» no es un valor válido ({', '.join(opciones)})")
     pasos = salida.get("pasos", [])
-    texto = " ".join([sin_citas_a_quitar(salida["que_cambiar"]), salida["lo_que_funciona"], *salida["storyboard"],
-                      *(sin_citas_a_quitar(p) for p in pasos)])
-    problemas += [f"{r['regla']} (frases: {', '.join(r['frases'])})" for r in integridad.revisar(texto)]
+    texto = " ".join(sin_citas_a_quitar(t, datos) for t in [salida["que_cambiar"], salida["lo_que_funciona"],
+                                                             *salida["storyboard"], *pasos])
+    cita = (" — si es el anzuelo que hay que quitar, cítalo entre «comillas» tal como se dice en el video, "
+            "sin describirlo con otras palabras") if salida.get("anzuelo_detectado", "ninguno") != "ninguno" else ""
+    problemas += [f"{r['regla']} (frases: {', '.join(r['frases'])}){cita}" for r in integridad.revisar(texto)]
     if t := toca_intocable(" ".join([salida["que_cambiar"], *pasos])):
         problemas.append(f"la sugerencia toca algo intocable: {', '.join(t)}")
     for campo in ("por_que", "lo_que_funciona", "que_cambiar"):
@@ -178,7 +210,7 @@ def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
         "model": MODELO,
         "reasoning": {"effort": esfuerzo},
         "max_output_tokens": 16000,
-        "prompt_cache_key": "retina-explicar-v4",  # gitleaks:allow (etiqueta de caché, no es llave)
+        "prompt_cache_key": "retina-explicar-v5",  # gitleaks:allow (etiqueta de caché, no es llave)
         "store": False,
         "text": {"format": {"type": "json_schema", "name": "explicacion_v4", "strict": True, "schema": esquema()}},
         "input": [
@@ -239,7 +271,7 @@ def explicar(carpeta: Path, arranque: dict, motor: str = "api", nombre: str = "e
     from . import baseten
     salida["licencia"] = {"modelo": baseten.MODELO if motor == "abierto" else MODELO,
                           "servido_por": "Baseten" if motor == "abierto" else "Meta Model API",
-                          "instrucciones": "skills/explicar.md (explicar-v4)",
+                          "instrucciones": "skills/explicar.md (explicar-v5)",
                           "reglas": integridad.reglas()["version"], "intentos": intentos}
     (carpeta / nombre).write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
     return salida
