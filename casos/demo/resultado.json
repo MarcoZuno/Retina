@@ -197,5 +197,55 @@
   "no_pude_revisar": [
    "La música: no se analiza la letra ni la licencia."
   ]
- }
+ },
+ "revision_meta": [
+  {
+   "id": "gancho_3s",
+   "ventana": "0:00–0:03",
+   "regla": "Algo que detenga a la gente en los primeros 3 segundos",
+   "cumple": false,
+   "evidencia": "En los primeros 3 segundos no hay gancho: la presentadora saluda y dice su nombre.",
+   "fuente": "https://www.facebook.com/business/ads/automation/tailored-campaigns"
+  },
+  {
+   "id": "mensaje_3s",
+   "ventana": "0:00–0:03",
+   "regla": "El mensaje principal aparece pronto (en texto o en voz)",
+   "cumple": true,
+   "evidencia": "La voz empieza en el segundo 0.",
+   "fuente": "https://www.facebook.com/business/ads/automation/tailored-campaigns"
+  },
+  {
+   "id": "promesa_3s",
+   "ventana": "0:00–0:03",
+   "regla": "Lo que promete el título se ve en los primeros 3 segundos",
+   "cumple": false,
+   "evidencia": "Lo que promete el título no se ve en los primeros 3 segundos (lo revisó SAM).",
+   "fuente": "https://www.facebook.com/business/news/updated-features-for-video-ads"
+  },
+  {
+   "id": "sin_sonido_10s",
+   "ventana": "0:00–0:10",
+   "regla": "Se entiende sin sonido (texto en pantalla la mayor parte del tiempo)",
+   "cumple": false,
+   "evidencia": "Hay texto en pantalla en 1 de 4 partes de los primeros 10 segundos.",
+   "fuente": "https://www.facebook.com/business/help/1675722002698686"
+  },
+  {
+   "id": "original",
+   "ventana": "Todo el inicio",
+   "regla": "Contenido propio, no material de otros resubido",
+   "cumple": true,
+   "evidencia": "No se ve material de otros.",
+   "fuente": "https://creators.facebook.com/blog/how-to-continue-succeeding-with-facebook-on-video"
+  },
+  {
+   "id": "vertical",
+   "ventana": "Formato",
+   "regla": "Video vertical 9:16",
+   "cumple": true,
+   "evidencia": "Vertical 9:16.",
+   "fuente": "https://www.facebook.com/business/ads/facebook-instagram-reels-ads"
+  }
+ ]
 }

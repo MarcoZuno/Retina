@@ -17,11 +17,14 @@ import webbrowser
 
 from .esquemas import RAIZ
 
-PERMITIDO = re.compile(r"^/(panel/(index\.html)?|casos/[\w-]+/resultado\.json)$")
+CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
+PERMITIDO = re.compile(r"^/(panel/(index\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp|casos/[\w-]+/resultado\.json)$")
 
 
 class SoloElPanel(http.server.SimpleHTTPRequestHandler):
-    """Sirve solo el panel y los resultado.json de casos/; nada más del repo (ni .git ni .env)."""
+    """Sirve solo el panel (con sus fondos) y los resultado.json de casos/; nada más del repo (ni .git ni .env)."""
+
+    extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".webp": "image/webp"}
 
     def do_GET(self):  # noqa: N802 - nombre que pide http.server
         host = (self.headers.get("Host") or "").split(":")[0]
@@ -47,7 +50,7 @@ def main() -> None:
     a = ap.parse_args()
     caso = (RAIZ / a.caso).resolve()
     relativo = "/" + caso.relative_to(RAIZ.resolve()).as_posix() if RAIZ.resolve() in caso.parents else ""
-    if not caso.is_file() or not PERMITIDO.match(relativo):
+    if not caso.is_file() or not CASO.match(relativo):
         raise SystemExit(f"No encuentro {a.caso}: tiene que ser casos/<carpeta>/resultado.json dentro del repo.")
     manejador = functools.partial(SoloElPanel, directory=str(RAIZ))
     servidor = http.server.ThreadingHTTPServer(("127.0.0.1", a.puerto), manejador)

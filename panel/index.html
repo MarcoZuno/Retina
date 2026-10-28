@@ -6,143 +6,305 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
 <title>Retina</title>
 <style>
-  :root {
-    --fondo: #EEF1F4; --papel: #FFFFFF; --texto: #1B1F24; --suave: #5E6875; --tenue: #8893A0; --linea: #DCE1E7; --zona: #F7F9FB;
-    --alerta: #E11D2E; --alerta-tenue: #FDE8EA; --alerta-texto: #8E0F1B;
-    --mejora: #B86E00; --mejora-tenue: #FDF1DC; --bien: #1E9D54; --bien-tenue: #E3F4EA;
-    --azul: #2563B0; --curva: #1B1F24; --parecidos: #A0A8B3;
-    --nivel: var(--alerta); --nivel-tenue: var(--alerta-tenue); --nivel-texto: var(--alerta-texto);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --fondo: #121417; --papel: #1B1E23; --texto: #EEF1F4; --suave: #B4BCC6; --tenue: #8893A0; --linea: #2E333A; --zona: #22262C;
-            --alerta-tenue: #3A1A1E; --alerta-texto: #FFB3BA; --mejora: #F0A53A; --mejora-tenue: #3A2C14; --bien: #5CCB8C; --bien-tenue: #16301F;
-            --azul: #7FB0F0; --curva: #EEF1F4; --parecidos: #6B7480; }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 17px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 22px 16px 64px; }
-  header { margin-bottom: 16px; }
-  header strong { font-size: 20px; }
-  header span { color: var(--suave); }
-  .subir { width: 100%; text-align: center; border: 2px dashed var(--linea); background: var(--papel); color: var(--texto);
-           padding: 40px 20px; border-radius: 14px; font: inherit; cursor: pointer; }
-  button:focus-visible, summary:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
-  .tarjeta { background: var(--papel); border-radius: 14px; overflow: hidden; border: 1px solid var(--linea); }
-  .nivel-alto { --nivel: var(--alerta); --nivel-tenue: var(--alerta-tenue); --nivel-texto: var(--alerta-texto); }
-  .nivel-medio { --nivel: var(--mejora); --nivel-tenue: var(--mejora-tenue); --nivel-texto: var(--mejora); }
-  .nivel-bajo { --nivel: var(--bien); --nivel-tenue: var(--bien-tenue); --nivel-texto: var(--bien); }
-  .encabezado { padding: 22px 24px 18px; border-left: 10px solid var(--nivel); }
-  .semaforo { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px; color: var(--nivel); }
-  .semaforo i { width: 12px; height: 12px; border-radius: 50%; background: var(--nivel); display: inline-block; }
-  h1 { font-size: 30px; line-height: 1.15; font-weight: 800; margin: 8px 0 6px; letter-spacing: -.01em; }
-  .sub { color: var(--suave); margin: 0; }
-  .cifra { display: grid; grid-template-columns: auto 1fr; gap: 4px 18px; align-items: center; padding: 16px 24px;
-           background: var(--zona); border-top: 1px solid var(--linea); border-bottom: 1px solid var(--linea); }
-  .cifra .numero { font-weight: 800; font-size: 54px; line-height: 1; color: var(--nivel); font-variant-numeric: tabular-nums; }
-  .cifra p { margin: 0; }
-  .cifra .comparado { color: var(--suave); font-size: 15px; }
-  section { padding: 18px 24px; }
-  h2 { font-size: 19px; margin: 0 0 10px; font-weight: 700; }
-  .barra { position: relative; height: 34px; background: var(--zona); border: 1px solid var(--linea); border-radius: 8px; }
-  .marca { position: absolute; top: -1px; bottom: -1px; border-radius: 6px; background: var(--nivel-tenue); border: 3px solid var(--nivel); }
-  .punto { position: absolute; top: -6px; bottom: -6px; width: 4px; margin-left: -2px; background: var(--alerta); border-radius: 2px; }
-  .tiempos { display: flex; justify-content: space-between; font-size: 13px; color: var(--tenue); margin-top: 4px; font-variant-numeric: tabular-nums; }
-  .porque { margin: 12px 0 0; }
-  .hacer { border: 2px solid var(--azul); border-radius: 12px; padding: 16px 18px; }
-  .hacer .cambio { margin: 0 0 8px; font-size: 18px; }
-  .pasos { margin: 4px 0 12px 22px; padding: 0; } .pasos li { margin: 7px 0; padding-left: 4px; }
-  .copiar { font: inherit; font-size: 15px; font-weight: 700; color: var(--azul); background: transparent; border: 2px solid var(--azul);
-            border-radius: 8px; padding: 7px 14px; cursor: pointer; }
-  .funciona b { color: var(--bien); }
-  .anzuelo { margin: 0 24px; padding: 12px 16px; border-radius: 10px; background: var(--alerta-tenue); color: var(--alerta-texto); }
-  .acciones { display: flex; flex-wrap: wrap; gap: 10px; padding: 4px 24px 20px; }
-  .acciones button { font: inherit; font-weight: 700; border-radius: 10px; padding: 12px 16px; cursor: pointer;
-                     border: 2px solid var(--texto); background: transparent; color: var(--texto); }
-  .acciones .principal { background: var(--texto); color: var(--papel); }
-  .decision { padding: 0 24px 16px; margin: 0; color: var(--suave); }
-  details { border-top: 1px solid var(--linea); padding: 14px 24px 20px; }
-  summary { cursor: pointer; font-weight: 700; color: var(--suave); }
-  .detalle { color: var(--suave); font-size: 15px; }
-  .detalle ul { margin: 6px 0 0 18px; padding: 0; } .detalle li { margin: 5px 0; }
-  .leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--suave); margin: 6px 0 12px; }
-  .leyenda i { display: inline-block; width: 22px; border-top: 2.5px solid var(--curva); vertical-align: middle; margin-right: 6px; }
-  .leyenda i.p { border-top: 2px dashed var(--parecidos); }
-  .leyenda i.r { border-top: 2.5px solid var(--azul); }
-  svg { width: 100%; height: auto; display: block; }
-  .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
-  .storyboard div { background: var(--zona); border: 1px solid var(--linea); border-radius: 10px; padding: 10px; font-size: 14px; }
-  .error { background: var(--alerta-tenue); color: var(--alerta-texto); border-radius: 12px; padding: 14px 18px; margin-bottom: 12px; }
-  .oculto { display: none !important; }
-  @media (max-width: 560px) {
-    h1 { font-size: 25px; } .cifra .numero { font-size: 44px; }
-    .encabezado, section, details, .cifra { padding-left: 16px; padding-right: 16px; }
-    .acciones { padding: 4px 16px 18px; } .anzuelo { margin: 0 16px; } .decision { padding: 0 16px 14px; }
-    .storyboard { grid-template-columns: 1fr; }
-  }
+:root {
+  --tinte: rgba(255,255,255,.10);
+  --texto: #FFFFFF; --suave: rgba(255,255,255,.80); --tenue: rgba(255,255,255,.58);
+  --rojo: #FF6B6E; --rojo-vidrio: rgba(255,90,95,.30); --rojo-letra: #FFE1E2; --rojo-zona: rgba(255,90,95,.42);
+  --ambar: #FFC46B; --ambar-vidrio: rgba(255,180,80,.26); --ambar-letra: #FFEBC7; --ambar-zona: rgba(255,180,80,.40);
+  --verde: #7CF0B5; --verde-vidrio: rgba(124,240,181,.22); --verde-letra: #DDFBEA; --verde-zona: rgba(124,240,181,.30);
+  --azul: #9FD3FF; --curva: #FFFFFF; --parecidos: rgba(255,255,255,.6); --rejilla: rgba(255,255,255,.14);
+  --radio: 30px; --radio-chico: 18px;
+  --sombra: 0 24px 70px rgba(4,10,24,.42), 0 2px 8px rgba(4,10,24,.25);
+  --nivel: var(--rojo); --nivel-vidrio: var(--rojo-vidrio); --nivel-letra: var(--rojo-letra); --nivel-zona: var(--rojo-zona);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { color: var(--texto); font: 16px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+       background: #050B1C; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
+
+/* Fondo: un lienzo WebGL dibuja el fondo y el vidrio. Sin WebGL (o abierto con doble clic), imagen fija y esmerilado CSS. */
+#lienzo { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+body.sin-gl { background-size: cover; background-position: center; background-attachment: fixed; }
+body.sin-gl #lienzo { display: none; }
+
+/* Liquid Glass: se ve por sus brillos, su bisel y la luz que separa */
+.vidrio { position: relative; isolation: isolate; border-radius: var(--radio); background: rgba(255,255,255,.02);
+  transition: transform .45s cubic-bezier(.2,.8,.2,1), box-shadow .45s;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06), 0 34px 70px -12px rgba(0,0,0,.62), 0 10px 30px rgba(80,150,255,.12),
+              inset 3px 4px 10px rgba(255,255,255,.10), inset -3px -5px 12px rgba(0,0,0,.30),
+              inset 0 1.5px 1px rgba(255,255,255,.9), inset 0 -1.5px 1px rgba(255,255,255,.35),
+              inset 1.5px 0 1px rgba(255,255,255,.25), inset -1.5px 0 1px rgba(255,255,255,.25),
+              inset 0 14px 28px -18px rgba(255,255,255,.55), inset 0 -18px 30px -20px rgba(140,200,255,.45),
+              inset 0 0 0 1px rgba(255,255,255,.14);
+  text-shadow: 0 1px 16px rgba(0,0,0,.55); }
+.vidrio::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background:
+    linear-gradient(115deg, transparent 8%, rgba(255,255,255,.22) 14%, transparent 22%, transparent 64%, rgba(255,200,140,.14) 72%, transparent 80%),
+    radial-gradient(55% 35% at 20% 0%, rgba(255,255,255,.30), transparent 70%),
+    radial-gradient(45% 40% at 100% 100%, rgba(120,200,255,.22), transparent 70%),
+    radial-gradient(30% 30% at 0% 100%, rgba(255,170,90,.16), transparent 70%);
+  mix-blend-mode: screen; }
+.vidrio::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+  background: conic-gradient(from 210deg, rgba(255,255,255,.95), #8FF1FF 10%, #FF9FE0 22%, #FFE08A 34%, rgba(255,255,255,.35) 46%,
+              #9BB8FF 58%, #FFB37A 70%, #A8F7FF 82%, rgba(255,255,255,.95));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: .85; mix-blend-mode: screen; }
+/* En el resultado hay mucho texto: el fondo se apaga un poco y las tarjetas de texto se esmerilan más */
+body[data-estado="resultado"] .bloque, body[data-estado="resultado"] .linea-bloque { background: rgba(10,20,46,.16); }
+body.sin-gl .vidrio { -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); background: rgba(10,20,46,.35); }
+.vidrio:not(.fondos):not(.pastilla):hover { transform: translateY(-3px) scale(1.006); }
+body.legible .vidrio { background: rgba(6,14,34,.62); }
+/* Tema claro: para los fondos de paisaje claros, letras oscuras y vidrio un poco más blanco */
+body[data-tema="claro"] { --texto: #0E1A33; --suave: rgba(14,26,51,.82); --tenue: rgba(14,26,51,.64);
+  --verde: #12814B; --verde-vidrio: rgba(18,129,75,.14); --verde-letra: #0B5A33; --verde-zona: rgba(18,129,75,.28);
+  --rojo: #D7263D; --rojo-vidrio: rgba(215,38,61,.16); --rojo-letra: #8E0F1B; --rojo-zona: rgba(215,38,61,.30);
+  --ambar: #A35F00; --ambar-vidrio: rgba(200,120,0,.16); --ambar-letra: #6E3F00; --ambar-zona: rgba(200,120,0,.30);
+  --azul: #1F5FB0; --curva: #0E1A33; --parecidos: rgba(14,26,51,.55); --rejilla: rgba(14,26,51,.14); }
+body[data-tema="claro"] .vidrio { background: rgba(255,255,255,.14); text-shadow: 0 1px 12px rgba(255,255,255,.55);
+  box-shadow: 0 34px 70px -16px rgba(30,60,120,.32), 0 8px 22px rgba(30,60,120,.12),
+              inset 3px 4px 10px rgba(255,255,255,.35), inset -3px -5px 12px rgba(40,70,130,.14),
+              inset 0 1.5px 1px rgba(255,255,255,.95), inset 0 -1.5px 1px rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.35); }
+body[data-tema="claro"][data-estado="resultado"] .bloque, body[data-tema="claro"][data-estado="resultado"] .linea-bloque { background: rgba(255,255,255,.30); }
+body[data-tema="claro"].legible .vidrio { background: rgba(255,255,255,.72); }
+body[data-tema="claro"] .paso { background: rgba(255,255,255,.35); }
+body[data-tema="claro"] .boton.vidrio, body[data-tema="claro"] .pastilla { color: var(--texto); }
+body[data-tema="claro"] .tc { background: rgba(14,26,51,.10); color: var(--texto); box-shadow: inset 0 0 0 1px rgba(14,26,51,.18); }
+body[data-tema="claro"] .paso .num { background: rgba(14,26,51,.08); box-shadow: inset 0 0 0 1px rgba(14,26,51,.18); }
+body[data-tema="claro"] .hecho { box-shadow: inset 0 0 0 1.5px rgba(14,26,51,.35); }
+body[data-tema="claro"] .traza span { background: rgba(14,26,51,.07); }
+@media (prefers-reduced-transparency: reduce) { .vidrio { background: rgba(6,14,34,.7); } }
+
+/* Estructura */
+.capa { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+header { display: flex; align-items: center; gap: 12px; padding: 16px 22px; }
+.marca { display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border-radius: 999px; font-weight: 650; letter-spacing: .01em; }
+.ojo { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 32%, #fff 0 12%, #9FD3FF 22%, #3D6BFF 55%, #12204A 78%); box-shadow: 0 0 18px rgba(159,211,255,.7); }
+.espacio { flex: 1; }
+.menu-fondo { position: relative; }
+.fondos { position: absolute; right: 0; top: calc(100% + 10px); z-index: 5; width: min(420px, 92vw); padding: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; border-radius: 24px; }
+.fondos[hidden] { display: none; }
+.opcion { border: 0; padding: 0; background: none; color: var(--texto); font: inherit; font-size: 13px; cursor: pointer; text-align: left; border-radius: 14px; }
+.opcion img { width: 100%; aspect-ratio: 16/10; object-fit: cover; border-radius: 12px; display: block; box-shadow: inset 0 0 0 1px rgba(255,255,255,.2); }
+.opcion span { display: block; padding: 6px 2px 0; color: var(--suave); }
+.opcion[aria-selected="true"] img { outline: 2px solid #fff; outline-offset: 2px; }
+.pastilla { border: 0; color: var(--texto); font: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; cursor: pointer; min-height: 44px; }
+.opcion:focus-visible, .pastilla:focus-visible, .boton:focus-visible, .hecho:focus-visible, summary:focus-visible, .soltar:focus-visible, a:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
+main { flex: 1; display: grid; place-items: start center; padding: 8px 22px 48px; }
+.pantalla { display: none; width: 100%; }
+body[data-estado="vacio"] #vacio, body[data-estado="resultado"] #resultado { display: block; }
+.oculto { display: none !important; }
+
+/* Vacío */
+#vacio { max-width: 640px; text-align: center; margin-top: 6vh; }
+.soltar { padding: 54px 34px 40px; cursor: pointer; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.soltar:hover, .soltar.encima { transform: scale(1.015); }
+.gota { width: 92px; height: 92px; margin: 0 auto 22px; border-radius: 50%; display: grid; place-items: center; }
+.gota svg { width: 38px; height: 38px; stroke: var(--texto); }
+h1 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif; font-weight: 650; letter-spacing: -.02em; line-height: 1.08; margin: 0; }
+#vacio h1 { font-size: 38px; }
+#vacio p { color: var(--suave); margin: 12px auto 26px; max-width: 440px; }
+.botones { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.boton { border: 0; font: inherit; font-weight: 650; font-size: 15px; padding: 13px 22px; border-radius: 999px; cursor: pointer; min-height: 48px; color: #0B1730;
+  background: linear-gradient(180deg, #fff, #DDEBFF); box-shadow: 0 10px 30px rgba(120,170,255,.35), inset 0 -2px 4px rgba(60,110,200,.25); }
+.boton.vidrio { color: var(--texto); background: var(--tinte); box-shadow: var(--sombra), inset 0 1px 1px rgba(255,255,255,.6); }
+.nota-vacio { margin-top: 18px; font-size: 13px; color: var(--tenue); }
+.error { width: 100%; max-width: 640px; margin: 0 auto 14px; padding: 14px 18px; border-radius: var(--radio-chico); background: var(--rojo-vidrio); color: var(--rojo-letra); }
+
+/* Resultado */
+#resultado { max-width: 860px; }
+.tarjetas { display: grid; gap: 14px; }
+.nivel-alto { --nivel: var(--rojo); --nivel-vidrio: var(--rojo-vidrio); --nivel-letra: var(--rojo-letra); --nivel-zona: var(--rojo-zona); }
+.nivel-medio { --nivel: var(--ambar); --nivel-vidrio: var(--ambar-vidrio); --nivel-letra: var(--ambar-letra); --nivel-zona: var(--ambar-zona); }
+.nivel-bajo { --nivel: var(--verde); --nivel-vidrio: var(--verde-vidrio); --nivel-letra: var(--verde-letra); --nivel-zona: var(--verde-zona); }
+.veredicto { padding: 24px 26px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 650; background: var(--nivel-vidrio); color: var(--nivel-letra); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--nivel); box-shadow: 0 0 10px var(--nivel); }
+.veredicto h1 { font-size: 34px; margin: 12px 0 6px; }
+.veredicto p { margin: 0; color: var(--suave); }
+.titulo-video { font-size: 14px; color: var(--tenue) !important; margin-top: 10px !important; }
+.cifras { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; }
+.cifras.dos { grid-template-columns: 1.3fr 1fr; }
+.cifra { padding: 18px 20px; }
+.cifra .n { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-weight: 600; font-size: 46px; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.cifra.grande .n { font-size: 64px; }
+.cifra .n small { font-size: 15px; font-weight: 500; color: var(--suave); letter-spacing: 0; display: inline-block; white-space: nowrap; margin-left: 6px; }
+.cifra .que { margin-top: 6px; color: var(--suave); font-size: 14px; }
+.cifra .vs { margin-top: 8px; font-size: 13px; color: var(--tenue); }
+.cifra .vs b { color: var(--nivel-letra); font-weight: 650; }
+.bloque { padding: 22px 24px; }
+h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); letter-spacing: .01em; }
+.cabeza { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.porque { margin: 0; font-size: 17px; }
+.tc { display: inline-block; padding: 0 9px; border-radius: 999px; font-weight: 650; font-variant-numeric: tabular-nums; color: #0B1730; background: rgba(255,255,255,.88); text-shadow: none; }
+.anzuelo { background: var(--rojo-vidrio) !important; color: var(--rojo-letra); }
+.anzuelo b { color: var(--rojo-letra); }
+.cambio { margin: 0 0 12px; font-size: 17px; }
+.pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.paso { display: grid; grid-template-columns: 34px 1fr auto; gap: 14px; align-items: center; padding: 14px 16px; border-radius: var(--radio-chico); background: rgba(255,255,255,.07); box-shadow: inset 0 1px 0 rgba(255,255,255,.18); transition: background .25s, opacity .25s; }
+.paso:hover { background: rgba(255,255,255,.12); }
+.paso .num { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; background: rgba(255,255,255,.16); box-shadow: inset 0 1px 1px rgba(255,255,255,.5); }
+.paso p { margin: 0; font-size: 16px; }
+.hecho { width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; color: var(--texto); background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); font-size: 18px; }
+.paso.listo { opacity: .62; } .paso.listo p { text-decoration: line-through; }
+.paso.listo .num, .paso.listo .hecho { background: var(--verde-vidrio); color: var(--verde); box-shadow: inset 0 0 0 1.5px var(--verde); }
+.pie-pasos { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; flex-wrap: wrap; color: var(--suave); font-size: 14px; }
+.funciona { margin: 14px 0 0; padding: 12px 16px; border-radius: var(--radio-chico); background: var(--verde-vidrio); box-shadow: inset 0 0 0 1px var(--verde-zona); }
+.funciona b { color: var(--verde); }
+.acciones { display: flex; gap: 10px; flex-wrap: wrap; }
+.decision { margin: 12px 0 0; color: var(--suave); }
+.linea-bloque { padding: 18px 22px 16px; }
+.linea { position: relative; height: 104px; border-radius: 16px; overflow: hidden; background: rgba(0,0,0,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.15); }
+body[data-tema="claro"] .linea { background: rgba(255,255,255,.28); }
+.linea svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.zona { position: absolute; top: 0; bottom: 0; background: var(--nivel-zona); box-shadow: inset 2px 0 0 var(--nivel), inset -2px 0 0 var(--nivel); }
+.punto { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: var(--rojo); box-shadow: 0 0 10px var(--rojo); }
+.escala { display: flex; justify-content: space-between; font-size: 12px; color: var(--tenue); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.leyenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--suave); font-weight: 400; }
+.leyenda i { display: inline-block; width: 18px; border-top: 2px solid var(--curva); vertical-align: middle; margin-right: 5px; }
+.leyenda i.p { border-top: 2px dashed var(--parecidos); }
+.leyenda i.r { border-top: 2.5px solid var(--azul); }
+.texto-linea { margin: 10px 0 0; font-size: 14px; color: var(--suave); }
+path.tuyo { stroke: var(--curva); } path.parecidos { stroke: var(--parecidos); } path.real { stroke: var(--azul); }
+.rejilla { stroke: var(--rejilla); } .eje { fill: var(--tenue); font-size: 12px; } .zona-svg { fill: rgba(255,255,255,.06); }
+.meta { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.meta li { display: grid; grid-template-columns: 26px 96px 1fr; gap: 10px; align-items: start; font-size: 14px; }
+.meta .ok, .meta .no, .meta .nd { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+.meta .ok { background: var(--verde-vidrio); color: var(--verde); } .meta .no { background: var(--rojo-vidrio); color: var(--rojo-letra); } .meta .nd { background: rgba(255,255,255,.1); color: var(--tenue); }
+.meta .ventana { color: var(--tenue); font-variant-numeric: tabular-nums; }
+.meta a { color: var(--azul); }
+.nota { font-size: 13px; color: var(--tenue); margin: 12px 0 0; }
+.traza { font-size: 13px; color: var(--tenue); margin: 14px 0 0; }
+.traza span { display: inline-block; margin: 3px 6px 0 0; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--suave); }
+details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
+.detalle { color: var(--suave); font-size: 15px; margin-top: 12px; }
+.detalle ul { margin: 10px 0 0 18px; padding: 0; } .detalle li { margin: 5px 0; }
+.detalle svg { width: 100%; height: auto; display: block; }
+.storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.storyboard div { background: rgba(255,255,255,.08); border-radius: 12px; padding: 10px; font-size: 14px; }
+.otra { justify-self: center; }
+
+@media (max-width: 900px) {
+  .cifras, .cifras.dos { grid-template-columns: 1fr 1fr; } .cifra.grande { grid-column: span 2; }
+  .veredicto h1 { font-size: 26px; } #vacio h1 { font-size: 30px; }
+  header, main { padding-left: 14px; padding-right: 14px; }
+  .meta li { grid-template-columns: 26px 1fr; } .meta .ventana { grid-column: 2; }
+  .storyboard { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) { .bloque, .veredicto { padding: 18px 16px; } .paso { grid-template-columns: 30px 1fr auto; gap: 10px; padding: 12px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .vidrio, .vidrio:hover { transform: none !important; } }
 </style>
 </head>
-<body>
-<main>
-  <header><strong>Retina</strong> · <span>Revisa tu video antes de publicarlo.</span></header>
+<body data-estado="vacio">
+<canvas id="lienzo" aria-hidden="true"></canvas>
 
-  <button id="pantalla-subir" class="subir" type="button" aria-describedby="ayuda-subir">
-    <strong>Abre la revisión de tu video</strong><br>
-    <span id="ayuda-subir">Elige el archivo <code>resultado.json</code> que dejó Retina en la carpeta del video.</span>
-  </button>
-  <input id="archivo" type="file" accept=".json,application/json" class="oculto" aria-hidden="true" tabindex="-1">
-
-  <div id="error" class="error oculto" role="alert"></div>
-
-  <article id="pantalla-resultado" class="tarjeta oculto" aria-live="polite">
-    <div class="encabezado">
-      <span class="semaforo"><i aria-hidden="true"></i><span id="semaforo"></span></span>
-      <h1 id="titular"></h1>
-      <p class="sub" id="sub"></p>
+<div class="capa">
+  <header>
+    <div class="marca vidrio"><span class="ojo" aria-hidden="true"></span>Retina</div>
+    <span class="espacio"></span>
+    <div class="menu-fondo">
+      <button class="pastilla vidrio" id="abrir-fondos" type="button" aria-expanded="false" aria-controls="fondos">Fondo</button>
+      <div class="fondos vidrio" id="fondos" role="listbox" aria-label="Elige el fondo" hidden></div>
     </div>
+    <button class="pastilla vidrio" id="legible" type="button" aria-pressed="false">Más legible</button>
+  </header>
 
-    <div class="cifra">
-      <span class="numero" id="cifra-numero"></span>
-      <p><b id="cifra-texto"></b><br><span class="comparado" id="cifra-comparado"></span></p>
-    </div>
+  <main>
+    <div id="error" class="error oculto" role="alert"></div>
 
-    <section id="donde">
-      <h2>Dónde está el problema</h2>
-      <div class="barra" id="barra" role="img"></div>
-      <div class="tiempos"><span>0:00</span><span id="t-medio"></span><span id="t-fin"></span></div>
-      <p class="porque" id="porque"></p>
+    <!-- 1 · Vacío: elegir la revisión que dejó Retina -->
+    <section id="vacio" class="pantalla" aria-labelledby="t-vacio">
+      <div class="soltar vidrio" id="soltar" tabindex="0" role="button" aria-describedby="d-vacio">
+        <div class="gota vidrio" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        </div>
+        <h1 id="t-vacio">Abre la revisión de tu video</h1>
+        <p id="d-vacio">Retina deja un archivo <b>resultado.json</b> en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.</p>
+        <div class="botones">
+          <button class="boton" id="elegir" type="button">Elegir archivo</button>
+          <button class="boton vidrio" id="ejemplo" type="button">Ver el ejemplo</button>
+        </div>
+        <input type="file" id="archivo" accept=".json,application/json" hidden>
+        <p class="nota-vacio">El archivo no sale de tu computadora: el panel solo lo lee.</p>
+      </div>
     </section>
 
-    <p id="anzuelo" class="anzuelo oculto" role="note"></p>
+    <!-- 2 · Resultado -->
+    <section id="resultado" class="pantalla" aria-labelledby="titular" aria-live="polite">
+      <div class="tarjetas">
+        <div class="veredicto vidrio">
+          <span class="chip"><i></i><span id="semaforo"></span></span>
+          <h1 id="titular"></h1>
+          <p id="sub"></p>
+          <p class="titulo-video" id="titulo-video"></p>
+        </div>
 
-    <section id="seccion-hacer">
-      <div class="hacer">
-        <h2>Qué hacer</h2>
-        <p class="cambio" id="cambio"></p>
-        <ol class="pasos" id="pasos"></ol>
-        <button class="copiar" id="copiar" type="button">Copiar para el editor</button>
+        <div class="cifras" id="cifras"></div>
+
+        <div class="linea-bloque vidrio">
+          <h2 class="cabeza"><span id="t-linea"></span>
+            <span class="leyenda"><span><i></i>Tu video</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real-linea" class="oculto"><i class="r"></i>Lo que pasó</span></span></h2>
+          <div class="linea" id="linea" role="img">
+            <svg id="curvas" viewBox="0 0 1000 104" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+          <div class="escala" id="escala"></div>
+          <p class="texto-linea" id="texto-linea"></p>
+        </div>
+
+        <div class="bloque vidrio">
+          <h2>Por qué</h2>
+          <p class="porque" id="porque"></p>
+        </div>
+
+        <div class="bloque vidrio anzuelo oculto" id="anzuelo" role="note"></div>
+
+        <div class="bloque vidrio" id="seccion-hacer">
+          <h2>Qué hacer</h2>
+          <p class="cambio" id="cambio"></p>
+          <ol class="pasos" id="pasos"></ol>
+          <div class="pie-pasos" id="pie-pasos"><span id="progreso"></span>
+            <button class="boton vidrio" id="copiar" type="button">Copiar para el editor</button>
+          </div>
+          <p class="funciona oculto" id="funciona"></p>
+        </div>
+
+        <div class="bloque vidrio">
+          <h2>¿Qué vas a hacer?</h2>
+          <div class="acciones">
+            <button class="boton" id="d-cortar" type="button">Cortar como dice Retina</button>
+            <button class="boton vidrio" id="d-regrabar" type="button">Regrabar</button>
+            <button class="boton vidrio" id="d-publicar" type="button">Publicar así</button>
+          </div>
+          <p class="decision" id="decision" aria-live="polite"></p>
+        </div>
+
+        <div class="bloque vidrio oculto" id="bloque-meta">
+          <h2>Según lo que recomienda Meta</h2>
+          <ul class="meta" id="meta"></ul>
+          <p class="nota">Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.</p>
+        </div>
+
+        <div class="bloque vidrio">
+          <h2>Cómo lo revisó Retina</h2>
+          <p class="porque" id="confianza"></p>
+          <p class="traza oculto" id="traza"></p>
+          <details>
+            <summary>Ver detalle</summary>
+            <div class="detalle">
+              <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real" class="oculto"><i class="r"></i>Lo que pasó de verdad</span></div>
+              <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
+              <ul id="detalle-lista"></ul>
+              <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
+              <div id="storyboard" class="storyboard oculto"></div>
+            </div>
+          </details>
+        </div>
+
+        <button class="boton vidrio otra" id="otra" type="button">Abrir otra revisión</button>
       </div>
-      <p class="funciona" id="funciona"></p>
     </section>
+  </main>
+</div>
 
-    <div class="acciones">
-      <button class="principal" id="d-cortar" type="button">Cortar como dice Retina</button>
-      <button id="d-regrabar" type="button">Regrabar</button>
-      <button id="d-publicar" type="button">Publicar así</button>
-    </div>
-    <p class="decision" id="decision" aria-live="polite"></p>
-
-    <details>
-      <summary>Ver detalle</summary>
-      <div class="detalle">
-        <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real" class="oculto"><i class="r"></i>Lo que pasó de verdad</span></div>
-        <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
-        <ul id="detalle-lista"></ul>
-        <button class="copiar oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
-        <div id="storyboard" class="storyboard oculto"></div>
-      </div>
-    </details>
-  </article>
-</main>
 <script>
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
@@ -175,6 +337,8 @@ const HERRAMIENTAS = {  // lo que revisó el agente, en palabras de quien edita
 };
 let actual = null;
 
+function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
+
 function el(tag, attrs, texto) {  // todo lo que viene del JSON entra como texto, nunca como HTML
   const n = tag === "svg-text" ? document.createElementNS(NS, "text") : document.createElementNS(NS, tag);
   for (const [k, v] of Object.entries(attrs || {})) n.setAttribute(k, v);
@@ -182,25 +346,57 @@ function el(tag, attrs, texto) {  // todo lo que viene del JSON entra como texto
   return n;
 }
 
+function nodo(tag, clase, texto) { const n = document.createElement(tag); if (clase) n.className = clase; if (texto !== undefined) n.textContent = texto; return n; }
+
+function conTiempos(padre, texto) {  // los tiempos (0:04) se ven como pastillas; el resto entra como texto
+  padre.replaceChildren();
+  let i = 0;
+  for (const m of texto.matchAll(/\b\d+:\d{2}\b/g)) {
+    padre.append(texto.slice(i, m.index), nodo("span", "tc", m[0]));
+    i = m.index + m[0].length;
+  }
+  padre.append(texto.slice(i));
+  return padre;
+}
+
 function en(curva, dur, s) {  // la curva tiene 41 puntos repartidos en toda la duración
   const x = Math.min(40, (s / dur) * 40), i = Math.floor(x), f = x - i;
   return i >= 40 ? curva[40] : curva[i] * (1 - f) + curva[i + 1] * f;
 }
 
-function cifra(r) {
-  const p = r.prediccion, dur = r.video.duracion_s, s = dur >= 30 ? 15 : 3;
-  const tuyo = Math.round(100 * en(p.curva_predicha, dur, s)), otros = Math.round(100 * en(p.curva_parecidos, dur, s));
-  $("cifra-numero").textContent = String(tuyo);
-  $("cifra-texto").textContent = `de cada 100 personas que empiecen tu video seguirán viendo a los ${s} segundos.`;
-  const real = r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41
-    ? ` De verdad siguieron ${Math.round(100 * en(r.realidad.curva, dur, s))}.` : "";
-  $("cifra-comparado").textContent = `En videos parecidos siguen ${otros}.${real}`;
+const conReal = (r) => r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41;
+
+function cifras(r) {
+  const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, grande = dur >= 30 ? 15 : 3;
+  const momentos = [grande, ...(grande !== 3 ? [3] : []), fin];
+  $("cifras").className = `cifras${momentos.length === 2 ? " dos" : ""}`;
+  $("cifras").replaceChildren(...momentos.map((s, k) => {
+    const tuyo = Math.round(100 * en(p.curva_predicha, dur, s)), otros = Math.round(100 * en(p.curva_parecidos, dur, s));
+    const caja = nodo("div", `cifra vidrio${k ? "" : " grande"}`), n = nodo("div", "n", String(tuyo));
+    if (!k) n.append(nodo("small", "", "de cada 100"));
+    const que = k ? (s === fin ? `al terminar el inicio (${mmss(fin)})` : `a los ${s} segundos`)
+      : `personas que empiecen tu video seguirán viendo a los ${s} segundos`;
+    const vs = nodo("div", "vs", k ? `Parecidos: ${otros}` : `En videos parecidos, ${otros}`);
+    if (!k && tuyo < otros) vs.append(" · ", nodo("b", "", `${otros - tuyo} menos`));
+    if (conReal(r)) vs.append(` · De verdad: ${Math.round(100 * en(r.realidad.curva, dur, s))}`);
+    caja.append(n, nodo("div", "que", que), vs);
+    return caja;
+  }));
 }
 
-function barra(r) {
-  const dur = r.video.duracion_s, fin = dur / 4, e = r.explicacion, b = $("barra");
-  b.replaceChildren();
-  $("t-medio").textContent = mmss(fin / 2); $("t-fin").textContent = mmss(fin);
+function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos): curvas, partes a revisar y anzuelo
+  const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, e = r.explicacion, caja = $("linea"), svg = $("curvas");
+  $("t-linea").textContent = fin < 60 ? `Los primeros ${Math.round(fin)} segundos` : `El inicio: de 0:00 a ${mmss(fin)}`;
+  $("escala").replaceChildren(...[0, .25, .5, .75, 1].map((f) => nodo("span", "", mmss(f * fin))));
+  const curvas = [[p.curva_parecidos, "parecidos", "7 6", 2], [p.curva_predicha, "tuyo", "", 3]];
+  if (conReal(r)) curvas.push([r.realidad.curva, "real", "", 3]);
+  // El alto va de 100 hasta un poco abajo de la curva más baja del inicio, para que se vea la diferencia.
+  const piso = Math.max(0, Math.floor((Math.min(...curvas.flatMap(([c]) => c.slice(0, 11))) - 0.05) * 10) / 10);
+  const ruta = (c) => c.slice(0, 11).map((v, i) => `${i ? "L" : "M"}${(i * 100).toFixed(1)},${(8 + (1 - (v - piso) / (1 - piso)) * 88).toFixed(1)}`).join(" ");
+  $("leyenda-real-linea").classList.toggle("oculto", !conReal(r));
+  svg.replaceChildren(...curvas.map(([c, clase, guion, ancho]) => el("path", { d: ruta(c), class: clase, fill: "none", "stroke-width": ancho,
+    "vector-effect": "non-scaling-stroke", "stroke-linecap": "round", ...(guion ? { "stroke-dasharray": guion } : {}) })));
+  caja.querySelectorAll(".zona, .punto").forEach((x) => x.remove());
   const pct = (s) => `${Math.max(0, Math.min(100, (s / fin) * 100))}%`;
   let texto = `El inicio de tu video, de 0:00 a ${mmss(fin)}.`;
   if (e && e.que_cambiar && r.arranque.nivel !== "bajo") {
@@ -211,100 +407,135 @@ function barra(r) {
       .map((z) => [num(z[1]), num(z[2])]).filter(([i, f]) => f > i && i < fin);
     if (!zonas.length) zonas.push([e.momento_s, Math.min(fin, e.momento_s + fin / 5)]);
     for (const [i, f] of zonas) {
-      const m = document.createElement("div");
-      m.className = "marca"; m.style.left = pct(i); m.style.width = `calc(${pct(Math.min(f, fin))} - ${pct(i)})`;
-      b.append(m);
+      const m = nodo("div", "zona");
+      m.style.left = pct(i); m.style.width = `calc(${pct(Math.min(f, fin))} - ${pct(i)})`;
+      caja.append(m);
     }
     texto += ` Partes a revisar: ${zonas.map(([i, f]) => `${mmss(i)} a ${mmss(Math.min(f, fin))}`).join(", ")}.`;
   }
   if (e && e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno" && e.anzuelo_momento_s >= 0 && e.anzuelo_momento_s <= fin) {
-    const pnt = document.createElement("div"); pnt.className = "punto"; pnt.style.left = pct(e.anzuelo_momento_s); b.append(pnt);
+    const pnt = nodo("div", "punto"); pnt.style.left = pct(e.anzuelo_momento_s); caja.append(pnt);
+    texto += ` Lo que Meta castiga aparece en ${mmss(e.anzuelo_momento_s)}.`;
   }
-  b.setAttribute("aria-label", texto);
+  caja.setAttribute("aria-label", texto);
+  conTiempos($("texto-linea"), texto);
 }
 
 function grafica(r) {
   const p = r.prediccion, dur = r.video.duracion_s, W = 800, H = 280, m = { i: 44, d: 12, a: 12, b: 30 };
   const x = (i) => m.i + (i / 40) * (W - m.i - m.d);
   const y = (v) => m.a + (1 - v) * (H - m.a - m.b);
-  const linea = (c) => c.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const ruta = (c) => c.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
   const g = $("grafica");
-  g.replaceChildren();
-  g.append(el("rect", { x: x(0), y: m.a, width: x(10) - x(0), height: H - m.a - m.b, fill: "var(--zona)" }));
+  g.replaceChildren(el("rect", { x: x(0), y: m.a, width: x(10) - x(0), height: H - m.a - m.b, class: "zona-svg" }));
   for (const v of [0, .25, .5, .75, 1]) {
-    g.append(el("line", { x1: m.i, x2: W - m.d, y1: y(v), y2: y(v), stroke: "var(--linea)" }));
-    g.append(el("svg-text", { x: m.i - 8, y: y(v) + 4, "font-size": 12, "text-anchor": "end", fill: "var(--tenue)" }, `${v * 100}`));
+    g.append(el("line", { x1: m.i, x2: W - m.d, y1: y(v), y2: y(v), class: "rejilla" }));
+    g.append(el("svg-text", { x: m.i - 8, y: y(v) + 4, "text-anchor": "end", class: "eje" }, `${v * 100}`));
   }
-  for (const f of [0, .25, .5, .75, 1]) {
-    g.append(el("svg-text", { x: x(f * 40), y: H - 8, "font-size": 12, "text-anchor": "middle", fill: "var(--tenue)" }, mmss(f * dur)));
-  }
-  g.append(el("path", { d: linea(p.curva_parecidos), fill: "none", stroke: "var(--parecidos)", "stroke-width": 2, "stroke-dasharray": "5 5" }));
-  g.append(el("path", { d: linea(p.curva_predicha), fill: "none", stroke: "var(--curva)", "stroke-width": 2.5 }));
+  for (const f of [0, .25, .5, .75, 1]) g.append(el("svg-text", { x: x(f * 40), y: H - 8, "text-anchor": "middle", class: "eje" }, mmss(f * dur)));
+  g.append(el("path", { d: ruta(p.curva_parecidos), class: "parecidos", fill: "none", "stroke-width": 2, "stroke-dasharray": "5 5" }));
+  g.append(el("path", { d: ruta(p.curva_predicha), class: "tuyo", fill: "none", "stroke-width": 2.5 }));
   // «Predicción contra realidad»: solo si el caso ya se publicó y trae su curva real (realidad.curva, 41 puntos).
-  const hayReal = r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41;
-  if (hayReal) g.append(el("path", { d: linea(r.realidad.curva), fill: "none", stroke: "var(--azul)", "stroke-width": 2.5 }));
-  $("leyenda-real").classList.toggle("oculto", !hayReal);
+  if (conReal(r)) g.append(el("path", { d: ruta(r.realidad.curva), class: "real", fill: "none", "stroke-width": 2.5 }));
+  $("leyenda-real").classList.toggle("oculto", !conReal(r));
   g.setAttribute("aria-label", `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${mmss(dur)}, según Retina y según videos parecidos.`);
 }
 
-function item(padre, texto) { const li = document.createElement("li"); li.textContent = texto; padre.append(li); }
+const seguro = (u) => { try { const x = new URL(u); return x.protocol === "https:" ? x.href : null; } catch (_) { return null; } };
 
-function detalle(r) {
-  const l = r.licencia || {}, e = r.explicacion, ul = $("detalle-lista");
-  ul.replaceChildren();
-  item(ul, `La alerta compara el inicio de tu video (el primer cuarto) con ${l.comparado_con || "videos parecidos"}. Datos al ${l.datos_hasta || "—"}.`);
-  if (e) {
-    const conf = { alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" }[e.confianza] || e.confianza;
-    item(ul, `Qué tan segura está Retina de la explicación: ${conf}.`);
-    const traza = (e.licencia && e.licencia.traza) || [];
-    const usadas = [...new Set(traza.map((t) => t.herramienta || t.nombre || t).filter((h) => HERRAMIENTAS[h]))];
-    if (usadas.length) item(ul, `Para escribir esto, Retina ${usadas.map((h) => HERRAMIENTAS[h]).join("; ")}.`);
-  }
-  item(ul, "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.");
-  for (const n of l.no_pude_revisar || []) item(ul, `No revisé: ${n}`);
-  const cuadros = (e && e.storyboard) || [];
-  $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
-  $("storyboard").replaceChildren(...cuadros.map((c, i) => {
-    const d = document.createElement("div"); d.textContent = `${i + 1}. ${c}`; return d;
+function segunMeta(r) {  // revision_meta: buenas prácticas de Meta por ventanas del inicio, calculadas en código
+  const lista = Array.isArray(r.revision_meta) ? r.revision_meta : [];
+  $("bloque-meta").classList.toggle("oculto", !lista.length);
+  $("meta").replaceChildren(...lista.map((x) => {
+    const [clase, signo, dice] = x.cumple === true ? ["ok", "✓", "Cumple"] : x.cumple === false ? ["no", "✗", "No cumple"] : ["nd", "–", "Sin dato"];
+    const marca = nodo("span", clase, signo); marca.setAttribute("aria-label", dice); marca.setAttribute("role", "img");
+    const texto = nodo("span");
+    // Sin pastillas de tiempo: la evidencia trae proporciones como «9:16» que no son tiempos.
+    texto.append(nodo("b", "", x.regla || ""), document.createElement("br"), nodo("span", "", reloj(x.evidencia || "")));
+    const u = seguro(x.fuente);
+    if (u) {
+      const a = nodo("a", "", "Fuente de Meta"); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
+      texto.append(" · ", a);
+    }
+    const li = nodo("li"); li.append(marca, nodo("span", "ventana", x.ventana || ""), texto);
+    return li;
   }));
 }
 
+function item(padre, texto) { padre.append(nodo("li", "", texto)); }
+
+function revisado(r) {
+  const l = r.licencia || {}, e = r.explicacion, ul = $("detalle-lista");
+  const conf = e ? ({ alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" }[e.confianza] || e.confianza) : "";
+  $("confianza").textContent = e ? `Qué tan segura está Retina de la explicación: ${conf}.` : "Esta revisión se hizo sin la API de Meta.";
+  const traza = (e && e.licencia && e.licencia.traza) || [];
+  const usadas = [...new Set(traza.map((t) => t.herramienta || t.nombre || t).filter((h) => HERRAMIENTAS[h]))];
+  $("traza").classList.toggle("oculto", !usadas.length);
+  $("traza").replaceChildren("Para escribir esto, Retina: ", ...usadas.map((h) => nodo("span", "", HERRAMIENTAS[h])));
+  ul.replaceChildren();
+  item(ul, `La alerta compara el inicio de tu video (el primer cuarto) con ${l.comparado_con || "videos parecidos"}. Datos al ${l.datos_hasta || "—"}.`);
+  item(ul, "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.");
+  for (const n of l.no_pude_revisar || []) item(ul, `No revisé: ${n}`);
+  if (e && e.licencia && e.licencia.modelo) item(ul, `Escribió la explicación: ${e.licencia.modelo}${e.licencia.servido_por ? ` (${e.licencia.servido_por})` : ""}.`);
+  const cuadros = (e && e.storyboard) || [];
+  $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
+  $("storyboard").replaceChildren(...cuadros.map((c, i) => nodo("div", "", `${i + 1}. ${c}`)));
+}
+
+function pasos(e) {
+  const lista = (e && e.que_cambiar && e.pasos) || [];
+  $("pasos").replaceChildren(...lista.map((x, i) => {
+    const li = nodo("li", "paso"), b = nodo("button", "hecho", "✓");
+    b.type = "button"; b.setAttribute("aria-label", `Marcar el paso ${i + 1} como hecho`); b.setAttribute("aria-pressed", "false");
+    b.onclick = () => {
+      const on = li.classList.toggle("listo");
+      b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", `${on ? "Desmarcar" : "Marcar"} el paso ${i + 1} como hecho`);
+      progreso();
+    };
+    li.append(nodo("span", "num", String(i + 1)), conTiempos(nodo("p"), reloj(x)), b);
+    return li;
+  }));
+  $("pie-pasos").classList.toggle("oculto", !(e && e.que_cambiar));
+  progreso();
+}
+
+function progreso() {
+  const n = $("pasos").children.length;
+  $("progreso").textContent = n ? `${$("pasos").querySelectorAll(".listo").length} de ${n} hechos` : "";
+}
+
 function mostrar(r) {
-  if (!r || !r.arranque || !r.prediccion || !Array.isArray(r.prediccion.curva_predicha)) {
+  if (!r || !r.arranque || !r.prediccion || !Array.isArray(r.prediccion.curva_predicha) || !r.video || !(r.video.duracion_s > 0)) {
     throw new Error("Este archivo no es una revisión de Retina (le falta el arranque o la curva).");
   }
   actual = r;
-  const a = r.arranque, e = r.explicacion, n = NIVELES[a.nivel] || NIVELES.medio;
-  $("pantalla-resultado").className = `tarjeta nivel-${a.nivel}`;
+  const e = r.explicacion, nivel = NIVELES[r.arranque.nivel] ? r.arranque.nivel : "medio", n = NIVELES[nivel];
+  $("resultado").className = `pantalla nivel-${nivel}`;
   $("semaforo").textContent = n.semaforo; $("titular").textContent = n.titular; $("sub").textContent = n.sub;
-  cifra(r); barra(r);
+  $("titulo-video").textContent = r.video.titulo || "";
+  cifras(r); linea(r);
   if (e) {
-    $("porque").textContent = reloj(e.por_que);
-    $("cambio").textContent = e.que_cambiar ? reloj(e.que_cambiar)
-      : (a.nivel === "bajo" ? "No hace falta cambiar el inicio." : "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano.");
-    $("pasos").replaceChildren(...(e.pasos || []).map((x) => { const li = document.createElement("li"); li.textContent = reloj(x); return li; }));
-    $("copiar").classList.toggle("oculto", !e.que_cambiar);
-    $("funciona").replaceChildren();
-    if (e.lo_que_funciona) {
-      const b = document.createElement("b"); b.textContent = "Ya funciona: ";
-      $("funciona").append(b, reloj(e.lo_que_funciona));
-    }
+    conTiempos($("porque"), reloj(e.por_que));
+    conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar)
+      : (nivel === "bajo" ? "No hace falta cambiar el inicio." : "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano."));
+    $("funciona").classList.toggle("oculto", !e.lo_que_funciona);
+    $("funciona").replaceChildren(nodo("b", "", "Ya funciona: "), conTiempos(nodo("span"), reloj(e.lo_que_funciona || "")));
     const hay = e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno";
     $("anzuelo").classList.toggle("oculto", !hay);
     if (hay) {
       const cuando = e.anzuelo_momento_s >= 0 ? `En ${mmss(e.anzuelo_momento_s)}` : "En el video";
-      $("anzuelo").textContent = `${cuando} tu video ${ANZUELOS[e.anzuelo_detectado] || "trae algo que Meta castiga"}` +
-        `${e.anzuelo_frase ? `: «${e.anzuelo_frase}»` : ""}. Meta reparte menos los videos con esto; quítalo antes de publicar.`;
+      $("anzuelo").replaceChildren(nodo("h2", "", "Quítalo antes de publicar"), conTiempos(nodo("p", "porque"),
+        `${cuando} tu video ${ANZUELOS[e.anzuelo_detectado] || "trae algo que Meta castiga"}${e.anzuelo_frase ? `: «${e.anzuelo_frase}»` : ""}. ` +
+        "Meta reparte menos los videos con esto."));
     }
   } else {
     $("porque").textContent = "Esta revisión se hizo sin la API de Meta: vemos el riesgo, pero no el porqué.";
-    $("cambio").textContent = ""; $("pasos").replaceChildren(); $("funciona").replaceChildren();
-    $("copiar").classList.add("oculto"); $("anzuelo").classList.add("oculto");
+    $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  grafica(r); detalle(r);
+  pasos(e); segunMeta(r); grafica(r); revisado(r);
+  $("decision").textContent = "";
   $("error").classList.add("oculto");
-  $("pantalla-subir").classList.add("oculto");
-  $("pantalla-resultado").classList.remove("oculto");
+  estado("resultado");
 }
 
 function textoParaEditor() {
@@ -320,6 +551,7 @@ $("copiar").onclick = async () => {
 function fallo(mensaje) {
   $("error").textContent = `No pude abrir esta revisión. ${mensaje} Vuelve a elegir el archivo o avisa a quien corrió Retina.`;
   $("error").classList.remove("oculto");
+  estado("vacio");
 }
 
 function decidir(que, texto) {
@@ -331,6 +563,17 @@ function decidir(que, texto) {
   } catch (_) { /* sin almacenamiento */ }
 }
 
+async function leer(archivo) {
+  try { mostrar(JSON.parse(await archivo.text())); }
+  catch (err) { fallo(err.message || "El archivo no se pudo leer."); }
+}
+
+async function abrir(ruta) {
+  const r = await fetch(ruta);
+  if (!r.ok) throw new Error("No encontré esa revisión.");
+  mostrar(await r.json());
+}
+
 $("ver-storyboard").onclick = () => {
   const abierto = $("storyboard").classList.toggle("oculto") === false;
   $("ver-storyboard").setAttribute("aria-expanded", String(abierto));
@@ -338,11 +581,20 @@ $("ver-storyboard").onclick = () => {
 $("d-cortar").onclick = () => decidir("cortar", "Anotado: haces el cambio. Cuando tengas la nueva versión, pásala otra vez por Retina.");
 $("d-regrabar").onclick = () => decidir("regrabar", "Anotado: regrabas. Cuando tengas la nueva versión, pásala otra vez por Retina.");
 $("d-publicar").onclick = () => decidir("publicar", "Anotado: se publica así.");
-$("pantalla-subir").onclick = () => $("archivo").click();
-$("archivo").onchange = async (ev) => {
-  try { mostrar(JSON.parse(await ev.target.files[0].text())); }
-  catch (err) { fallo(err.message || "El archivo no se pudo leer."); }
+$("otra").onclick = () => { $("archivo").value = ""; estado("vacio"); };
+$("elegir").onclick = (e) => { e.stopPropagation(); $("archivo").click(); };
+$("ejemplo").onclick = (e) => {
+  e.stopPropagation();
+  abrir("../casos/demo/resultado.json").catch(() => fallo("Con doble clic el navegador no deja abrir el ejemplo: corre «python -m retina.demo» o elige el archivo."));
 };
+$("soltar").onclick = () => $("archivo").click();
+$("soltar").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivo").click(); } };
+$("archivo").onchange = (e) => { if (e.target.files[0]) leer(e.target.files[0]); };
+for (const ev of ["dragenter", "dragover"]) $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.add("encima"); });
+for (const ev of ["dragleave", "drop"]) $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.remove("encima"); });
+$("soltar").addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) leer(e.dataTransfer.files[0]); });
+$("legible").onclick = () => { const on = document.body.classList.toggle("legible"); $("legible").setAttribute("aria-pressed", String(on)); };
+
 // Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo; con doble clic, se elige el archivo.
 (async () => {
   // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
@@ -353,14 +605,207 @@ $("archivo").onchange = async (ev) => {
     if (u.origin === location.origin && /^\/casos\/[\w-]+\/resultado\.json$/.test(u.pathname)) propio = u.pathname;
     else { fallo("La dirección del caso no es válida: tiene que ser un resultado.json de la carpeta casos."); return; }
   }
-  const rutas = propio ? [propio] : ["resultado.json", "../casos/demo/resultado.json"];
-  for (const ruta of rutas) {
-    try {
-      const r = await fetch(ruta);
-      if (r.ok) { mostrar(await r.json()); return; }
-    } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
+  for (const ruta of propio ? [propio] : ["resultado.json", "../casos/demo/resultado.json"]) {
+    try { await abrir(ruta); return; } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
   }
+  if (propio) fallo("No encontré esa revisión.");
 })().catch((err) => fallo(err.message));
+
+// ---- Vidrio (WebGL): fondo, lente en las orillas, separación de color, esmerilado y ondas ----
+// Un solo lienzo dibuja el fondo y, dentro de cada cuadro .vidrio, el fondo doblado como lo doblaría un cristal grueso.
+// Los cuadros del HTML solo llevan texto, bisel y borde de luz: así el navegador no recalcula filtros y todo va fluido.
+// Fondos hechos con Muse Image (Meta), en panel/fondos/.
+const FONDOS = [
+  { id: "cristales", nombre: "Cristales", imgs: ["cinta", "ola", "flor"] },
+  { id: "oceano", nombre: "Océano", imgs: ["oceano"] },
+  { id: "aurora", nombre: "Aurora", imgs: ["aurora"] },
+  { id: "montanas", nombre: "Montañas", imgs: ["montanas"] },
+  { id: "seda", nombre: "Seda", imgs: ["seda"] },
+  { id: "espacio", nombre: "Espacio", imgs: ["espacio"] },
+  { id: "valle", nombre: "Valle", imgs: ["valle"], claro: true },
+  { id: "laguna", nombre: "Laguna", imgs: ["laguna"], claro: true },
+  { id: "flores", nombre: "Flores", imgs: ["flores"], claro: true },
+  { id: "cielo", nombre: "Cielo", imgs: ["cielo"], claro: true },
+];
+const MAX = 24;
+const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const lienzo = $("lienzo");
+const gl = lienzo.getContext("webgl", { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+let actualFondo = FONDOS[0], conGL = false;
+
+const VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+const FS = `precision highp float;
+uniform sampler2D uA, uB; uniform vec2 uTamA, uTamB, uRes; uniform float uMezcla, uT, uDpr;
+uniform vec4 uR[${MAX}]; uniform vec4 uP[${MAX}]; uniform vec4 uO[${MAX}]; uniform int uN; uniform vec4 uTinte;
+vec2 cubrir(vec2 p, vec2 tam){ float s=max(uRes.x/tam.x,uRes.y/tam.y)*(1.07+.025*sin(uT*.045));
+  vec2 d=vec2(sin(uT*.031),cos(uT*.026))*.014*uRes; return (p-uRes*.5+d)/(tam*s)+.5; }
+vec3 fondo(vec2 p){ return mix(texture2D(uA,cubrir(p,uTamA)).rgb, texture2D(uB,cubrir(p,uTamB)).rgb, uMezcla); }
+vec3 muestra(vec2 p, float f){ if(f<.5) return fondo(p); vec2 o=vec2(f,0.); vec2 q=vec2(0.,f);
+  return (fondo(p)*2.+fondo(p+o)+fondo(p-o)+fondo(p+q)+fondo(p-q)+fondo(p+(o+q)*.7)+fondo(p-(o+q)*.7))/8.; }
+float sdr(vec2 p, vec2 h, float r){ vec2 q=abs(p)-h+r; return length(max(q,0.))+min(max(q.x,q.y),0.)-r; }
+void main(){
+  vec2 p=vec2(gl_FragCoord.x, uRes.y-gl_FragCoord.y);
+  vec3 col=fondo(p);
+  for(int i=0;i<${MAX};i++){ if(i>=uN) break;
+    vec4 r=uR[i]; vec2 h=r.zw*.5; vec2 c=r.xy+h; float rad=uP[i].x; float d=sdr(p-c,h,rad);
+    if(d<0.){
+      float ancho=min(34.*uDpr, min(h.x,h.y)*.7);
+      float k=smoothstep(-ancho,0.,d);
+      vec2 e=vec2(1.,0.);
+      vec2 n=normalize(vec2(sdr(p-c+e.xy,h,rad)-sdr(p-c-e.xy,h,rad), sdr(p-c+e.yx,h,rad)-sdr(p-c-e.yx,h,rad))+1e-5);
+      vec2 off=-n*pow(k,2.)*30.*uDpr;
+      float amp=uP[i].z; float luzOnda=0.;
+      if(amp>.001){ vec2 dv=p-uO[i].xy; float L=length(dv);
+        float caida=exp(-L*.008/uDpr);
+        float onda=sin(L*.065/uDpr-uO[i].z*7.)*caida;
+        off+=dv/(L+1.)*onda*amp*26.*uDpr;
+        luzOnda=pow(max(0.,onda),3.)*amp*.34+pow(max(0.,-onda),4.)*amp*.08; }
+      float f=uP[i].y*uDpr;
+      vec3 v=vec3(muestra(p+off*1.12,f).r, muestra(p+off,f).g, muestra(p+off*.88,f).b);
+      float borde=smoothstep(-2.5*uDpr,0.,d);
+      col=v*1.05+vec3(.015)+borde*.08+vec3(.75,.9,1.)*luzOnda;
+      break; }
+  }
+  col=mix(col,uTinte.rgb,uTinte.a);
+  gl_FragColor=vec4(col,1.);
+}`;
+
+function compilar() {
+  const sh = (t, src) => { const s = gl.createShader(t); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; };
+  const pr = gl.createProgram();
+  gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr);
+  if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error("no enlazó");
+  gl.useProgram(pr);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const u = {}; for (const n of ["uA", "uB", "uTamA", "uTamB", "uRes", "uMezcla", "uT", "uDpr", "uR", "uP", "uO", "uN", "uTinte"]) u[n] = gl.getUniformLocation(pr, n);
+  gl.uniform1i(u.uA, 0); gl.uniform1i(u.uB, 1);
+  return u;
+}
+
+function textura(unidad) {
+  const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unidad); gl.bindTexture(gl.TEXTURE_2D, t);
+  for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([8, 14, 32, 255]));
+  return { t, unidad, w: 1, h: 1 };
+}
+function subir(tex, img) {  // con doble clic (file://) el navegador no deja pasar la imagen a WebGL: lanza un error
+  gl.activeTexture(gl.TEXTURE0 + tex.unidad); gl.bindTexture(gl.TEXTURE_2D, tex.t);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); tex.w = img.naturalWidth; tex.h = img.naturalHeight;
+}
+const cache = {};
+const imagen = (nombre) => cache[nombre] || (cache[nombre] = new Promise((ok, mal) => {
+  const im = new Image(); im.onload = () => ok(im); im.onerror = mal; im.src = `fondos/fondo-${nombre}.webp`;
+}));
+
+// Ondas: un resorte por cuadro; la onda nace donde pasa el cursor y se asienta sola
+const ondas = new Map();
+let ultimo = null;
+document.addEventListener("pointermove", (e) => {
+  if (quieto || !conGL) return;
+  const ahora = performance.now();
+  const rapidez = ultimo ? Math.hypot(e.clientX - ultimo.x, e.clientY - ultimo.y) / Math.max(8, ahora - ultimo.t) : 0;
+  ultimo = { x: e.clientX, y: e.clientY, t: ahora };
+  const cuadro = e.target.closest && e.target.closest(".vidrio");
+  if (!cuadro) return;
+  const o = ondas.get(cuadro) || { amp: 0, vel: 0, obj: 0, x: e.clientX, y: e.clientY, fase: 0 };
+  o.obj = Math.min(1, Math.max(o.obj, rapidez * 0.9));
+  o.x += (e.clientX - o.x) * 0.35; o.y += (e.clientY - o.y) * 0.35;
+  ondas.set(cuadro, o);
+});
+
+function sinGL() {  // sin WebGL: imagen fija de fondo y esmerilado CSS
+  conGL = false;
+  document.body.classList.add("sin-gl");
+  document.body.style.backgroundImage = `url("fondos/fondo-${actualFondo.imgs[0]}.webp")`;
+}
+
+function iniciarGL() {
+  const u = compilar();
+  const A = textura(0), B = textura(1);
+  let mezcla = 0, cambio = null, siguiente = 0;
+  const R = new Float32Array(MAX * 4), P = new Float32Array(MAX * 4), O = new Float32Array(MAX * 4);
+  let dpr = 1;
+  const tam = () => { dpr = Math.min(1.5, devicePixelRatio || 1); lienzo.width = Math.round(innerWidth * dpr); lienzo.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, lienzo.width, lienzo.height); };
+  addEventListener("resize", tam); tam();
+  const pasar = (tex, im) => { try { subir(tex, im); } catch (_) { sinGL(); } };
+
+  window.ponerFondoGL = async (f) => {
+    const a = await imagen(f.imgs[0]); pasar(A, a); mezcla = 0; cambio = null; siguiente = 1;
+    if (f.imgs.length > 1) imagen(f.imgs[1]);
+  };
+
+  const t0 = performance.now();
+  let previo = t0;
+  const cuadro = (ahora) => {
+    if (!conGL) return;
+    const dt = Math.min(0.05, (ahora - previo) / 1000); previo = ahora;
+    const t = quieto ? 0 : (ahora - t0) / 1000;
+    // cruce lento entre las imágenes de un mismo fondo (cada 20 s, tarda 4 s)
+    if (actualFondo.imgs.length > 1 && !quieto) {
+      if (!cambio && t % 20 < dt + 0.001 && t > 1) {
+        const n = actualFondo.imgs[siguiente % actualFondo.imgs.length];
+        imagen(n).then((im) => { pasar(B, im); cambio = { inicio: performance.now() }; });
+      }
+      if (cambio) {
+        mezcla = Math.min(1, (performance.now() - cambio.inicio) / 4000);
+        if (mezcla >= 1) { imagen(actualFondo.imgs[siguiente % actualFondo.imgs.length]).then((im) => pasar(A, im)); mezcla = 0; cambio = null; siguiente++; }
+      }
+    }
+    // los cuadros de vidrio visibles, del de más arriba (menú) al de más abajo
+    const els = [...document.querySelectorAll(".fondos:not([hidden]), .vidrio:not(.fondos)")].filter((x) => x.offsetParent !== null || x.classList.contains("fondos"));
+    let n = 0;
+    for (const x of els) {
+      if (n >= MAX) break;
+      const r = x.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight || r.width < 2) continue;
+      const rad = Math.min(parseFloat(getComputedStyle(x).borderTopLeftRadius) || 0, r.width / 2, r.height / 2);
+      const esmerilado = x.matches(".bloque, .linea-bloque") && document.body.dataset.estado === "resultado" ? 7 : x.matches(".fondos") ? 9 : 1.5;
+      const o = ondas.get(x);
+      if (o) { o.vel += (o.obj - o.amp) * 0.12; o.vel *= 0.84; o.amp += o.vel; o.obj *= 0.94; o.fase += dt; if (o.amp < 0.002 && o.obj < 0.002) ondas.delete(x); }
+      R.set([r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr], n * 4);
+      P.set([rad * dpr, esmerilado, o ? Math.max(0, o.amp) : 0, 0], n * 4);
+      O.set([o ? o.x * dpr : 0, o ? o.y * dpr : 0, o ? o.fase : 0, 0], n * 4);
+      n++;
+    }
+    const claro = document.body.dataset.tema === "claro", res = document.body.dataset.estado === "resultado";
+    const tinte = claro ? [1, 1, 1, res ? 0.22 : 0.06] : [0.016, 0.035, 0.09, res ? 0.42 : 0.12];
+    gl.uniform2f(u.uRes, lienzo.width, lienzo.height); gl.uniform1f(u.uT, t); gl.uniform1f(u.uDpr, dpr); gl.uniform1f(u.uMezcla, mezcla);
+    gl.uniform2f(u.uTamA, A.w, A.h); gl.uniform2f(u.uTamB, B.w, B.h);
+    gl.uniform4fv(u.uR, R); gl.uniform4fv(u.uP, P); gl.uniform4fv(u.uO, O); gl.uniform1i(u.uN, n); gl.uniform4fv(u.uTinte, tinte);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, A.t); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, B.t);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(cuadro);
+  };
+  conGL = true;
+  requestAnimationFrame(cuadro);
+}
+
+try { if (gl && location.protocol !== "file:") iniciarGL(); } catch (err) { console.warn("Sin WebGL:", err); }
+if (!conGL) sinGL();
+
+function ponerFondo(id) {
+  const f = FONDOS.find((x) => x.id === id) || FONDOS[0];
+  actualFondo = f;
+  document.body.dataset.tema = f.claro ? "claro" : "oscuro";
+  if (conGL) window.ponerFondoGL(f).catch(sinGL); else document.body.style.backgroundImage = `url("fondos/fondo-${f.imgs[0]}.webp")`;
+  document.querySelectorAll(".opcion").forEach((o) => o.setAttribute("aria-selected", String(o.dataset.id === f.id)));
+  try { localStorage.setItem("retina-fondo", f.id); } catch (_) { /* sin almacenamiento */ }
+}
+for (const f of FONDOS) {
+  const b = nodo("button", "opcion");
+  b.type = "button"; b.dataset.id = f.id; b.setAttribute("role", "option");
+  const img = document.createElement("img"); img.src = `fondos/mini-${f.imgs[0]}.webp`; img.alt = "";
+  b.append(img, nodo("span", "", f.nombre)); b.onclick = () => ponerFondo(f.id); $("fondos").append(b);
+}
+$("abrir-fondos").onclick = () => {
+  const abierto = $("fondos").hidden; $("fondos").hidden = !abierto; $("abrir-fondos").setAttribute("aria-expanded", String(abierto));
+};
+document.addEventListener("click", (e) => { if (!e.target.closest(".menu-fondo")) { $("fondos").hidden = true; $("abrir-fondos").setAttribute("aria-expanded", "false"); } });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { $("fondos").hidden = true; $("abrir-fondos").setAttribute("aria-expanded", "false"); } });
+let guardado = null; try { guardado = localStorage.getItem("retina-fondo"); } catch (_) { /* sin almacenamiento */ }
+ponerFondo(guardado || "cristales");
 </script>
 </body>
 </html>

@@ -95,8 +95,14 @@ Only the Python standard library is needed for the demo.
 
 It opens the review card in your browser, served only on your machine (127.0.0.1), with the example
 case in `casos/demo/`. The card answers three questions in plain words: **will the start of my video lose
-people, where, and what exactly do I change** (numbered steps with clock times an editor can follow).
+people, where, and what exactly do I change** (numbered steps with clock times an editor can follow),
+plus a check of the first 3 and 10 seconds against Meta's public recommendations, each with its source.
 `--caso PATH` opens any other `resultado.json` inside the repo.
+
+The panel is a "liquid glass" interface drawn with WebGL over backgrounds generated with
+**Muse Image** (`panel/fondos/`); it falls back to plain CSS when WebGL is not available or the file is
+opened with a double click. It only paints text from the JSON (never HTML) and only loads cases from
+`casos/` on the same site.
 
 ## How to run it with your own key
 
