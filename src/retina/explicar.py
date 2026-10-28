@@ -193,12 +193,22 @@ def pedir_abierto(datos: dict, aviso: str) -> dict:
     mismos datos y el mismo validador después."""
     from . import baseten
     c = cuerpo(datos, aviso)
-    mensajes = [{"role": "system", "content": c["input"][0]["content"][0]["text"]},
+    props = esquema()["properties"]
+    campos = "; ".join(f"«{k}»: " + ("uno de " + ", ".join(v["enum"]) if "enum" in v else v["type"]) for k, v in props.items())
+    formato = ("\n\nFORMATO DE RESPUESTA: devuelve solo un objeto JSON válido, sin texto antes ni después y sin "
+               f"bloques de código, con exactamente estas claves: {campos}. Las listas son listas de textos.")
+    mensajes = [{"role": "system", "content": c["input"][0]["content"][0]["text"] + formato},
                 {"role": "user", "content": c["input"][1]["content"][0]["text"]}]
-    texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=8000)
-    if not texto.strip():
-        raise RuntimeError("Spark Open no devolvió la explicación.")
-    return json.loads(texto[texto.find("{"):texto.rfind("}") + 1])
+    # Como Spark 1.3, a veces gasta la salida pensando y no escribe el JSON: se repite con más espacio.
+    for tope in (8000, 14000):
+        texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=tope)
+        i, f = texto.find("{"), texto.rfind("}")
+        if i >= 0 and f > i:
+            try:
+                return json.loads(texto[i:f + 1])
+            except json.JSONDecodeError:
+                pass
+    raise RuntimeError("Spark Open no devolvió la explicación en JSON.")
 
 
 def pedir(datos: dict, aviso: str, motor: str = "api") -> dict:

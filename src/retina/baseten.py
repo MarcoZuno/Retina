@@ -51,31 +51,22 @@ def usd(uso) -> float:
 
 
 def chat(servicio: str, mensajes: list[dict], esquema: dict | None = None, max_tokens: int = 8000) -> str:
-    """Devuelve el texto de la respuesta. Con esquema pide JSON estricto; si el servidor no lo
-    acepta, pide JSON simple y el validador de Retina revisa lo demás."""
-    from openai import BadRequestError, OpenAI
+    """Devuelve el texto de la respuesta. `esquema` se ignora aquí: lo describe quien arma los mensajes."""
+    from openai import OpenAI
 
+    # Spark Open en las Model APIs de Baseten no acepta salida estructurada ni modo JSON (docs de Baseten,
+    # 28-oct-2026): el formato se pide en las instrucciones y el validador de Retina revisa lo demás.
     _revisar_tope(max_tokens)
     cliente = OpenAI(api_key=_llave(), base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=2)
-    formatos = ([{"type": "json_schema", "json_schema": {"name": "retina", "strict": True, "schema": esquema}}]
-                if esquema else []) + [{"type": "json_object"}]
     t0 = time.time()
-    for i, formato in enumerate(formatos):
-        try:
-            r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens,
-                                                response_format=formato)
-            break
-        except BadRequestError:
-            if i == len(formatos) - 1:
-                raise
+    r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens)
     meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage),
-                        entrada=getattr(r.usage, "prompt_tokens", 0), salida=getattr(r.usage, "completion_tokens", 0),
-                        formato=formato["type"])
+                        entrada=getattr(r.usage, "prompt_tokens", 0), salida=getattr(r.usage, "completion_tokens", 0))
     return r.choices[0].message.content or ""
 
 
 def main() -> None:
-    texto = chat("humo", [{"role": "user", "content": 'Responde solo con este JSON: {"ok": true}'}], max_tokens=50)
+    texto = chat("humo", [{"role": "user", "content": 'Responde solo con este JSON: {"ok": true}'}], max_tokens=1000)
     print(texto, f"· gastado en Baseten: USD {gastado_usd():.4f}")
 
 
