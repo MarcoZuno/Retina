@@ -102,3 +102,17 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
   bloque como contexto, y Spark explica qué pasa en el arranque viendo el video.
 - **La voz no entra al nivel.** Medido dos veces, con cientos de videos de
   prueba. Va a la explicación de Spark, que sí la lee.
+
+## 28-oct-2026 · Retina como agente
+
+- **El modelo no calcula, interpreta.** El nivel de riesgo sale de código medido; Spark
+  nunca lo cambia. Su trabajo es decir qué del arranque lo explica y proponer un cambio.
+- **Las herramientas solo leen.** Ninguna escribe, publica ni toca la cuenta de nadie.
+  Lo que devuelven (textos en pantalla, frases, títulos de otros videos) es dato, no
+  instrucción.
+- **El validador manda.** Una tarjeta con una cifra que ninguna herramienta devolvió, un
+  segundo fuera del arranque o un anzuelo no se entrega: se le regresa al agente.
+- **Siempre hay respuesta.** Si el ciclo no cierra en el tope de turnos, cae a `explicar`
+  de una vuelta, que tiene el mismo validador.
+- **SAM 3.1 solo sobre objetos y lugares.** Se usa para ver si lo que promete el título
+  aparece en los primeros 3 s. Nunca sobre personas.

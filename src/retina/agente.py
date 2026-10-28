@@ -140,7 +140,7 @@ def correr_agente(carpeta: Path, modelo: Modelo, voz: dict) -> dict:
         r = meta_api.responder("agente", {
             "model": MODELO, "instructions": instrucciones(), "input": conversacion, "tools": HERRAMIENTAS,
             "parallel_tool_calls": False, "store": False, "reasoning": {"effort": "medium"},
-            "max_output_tokens": 6000, "prompt_cache_key": "retina-agente-v1"})
+            "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v1"})
         salida = r.get("output", [])
         conversacion += [x for x in salida if x.get("type") != "reasoning"]  # sin store no se reenvía el razonamiento
         llamadas = [x for x in salida if x.get("type") == "function_call"]

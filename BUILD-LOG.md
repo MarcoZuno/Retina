@@ -172,3 +172,45 @@ the day's cost in USD.*
   Queda cerrado.
 
 **Costo:** USD 0.00 (todo local).
+
+## Día 3 · mié 28-oct (adelantado la noche del 27)
+
+### Explicar el arranque, Retina como agente y SAM 3.1
+
+**Hecho**
+- `explicar` v2: Spark explica el nivel de riesgo del arranque (gancho y primer cuarto),
+  no un tramo. Recibe lo que se ve y lo que se dice en el arranque, con sus segundos.
+  Un validador en código revisa la respuesta antes de que llegue a nadie: que toda cifra
+  salga de los datos, que el segundo señalado caiga dentro del arranque y que no haya
+  anzuelos. Si falla, Spark recibe el problema y corrige; si vuelve a fallar, la tarjeta
+  sale sin sugerencia y lo dice.
+- `agente`: Retina como agente, con el patrón de las recetas de Meta (el código calcula,
+  el modelo interpreta, un validador revisa). Herramientas de solo lectura: `ver_arranque`,
+  `ver_tramos`, `oir`, `buscar_parecidos`, `medir_lo_prometido` y `entregar_tarjeta`. El
+  validador corre dentro del ciclo. Guardas: tope de turnos, llamadas repetidas, tope de
+  gasto y respaldo a `explicar` de una vuelta.
+- `sam`: SAM 3.1 sobre los primeros 3 s (10 cuadros por segundo, 960 px): si aparece lo que
+  promete el título, desde qué segundo y cuánto del cuadro ocupa. Nunca sobre personas: la
+  condiciones de uso de Meta prohíben seguir personas entre cuadros y el código rechaza el
+  concepto antes de llamar a la API.
+- `docs/resultado-json.md`: el contrato del panel, con un ejemplo inventado en
+  `casos/demo/resultado.json`.
+- `eval/casos_api.py` y `eval/casos_agente.py`: Retina de punta a punta en videos de
+  jul-sep 2026 ya publicados, con modelos entrenados solo con lo anterior, y el agente
+  sobre los mismos casos.
+
+**Arreglos**
+- El tope de gasto se leía al importar, antes del `.env`, y valía el de omisión. Ahora se
+  lee en cada revisión.
+- Con razonamiento alto, Spark a veces gastaba toda la salida pensando y devolvía texto
+  vacío. Ahora hay más espacio de salida y, si llega vacío, se repite pensando menos.
+- El orquestador reusa la transcripción y la descripción si el caso ya las tiene.
+- La Files API pide una caducidad mínima de 1 h; SAM la usa y borra el archivo al terminar.
+
+**Medido** (cifras en la investigación privada)
+- Primer caso de punta a punta: cerca de 8 centavos de dólar y minuto y medio por video
+  de 100 s. El agente suma unos 2 centavos y de 4 a 7 llamadas a herramientas.
+- En la primera tanda, algunos casos fallaron por la salida vacía de arriba; se repiten
+  con el arreglo.
+
+**Costo del día:** dentro del tope de USD 10 (detalle en `costos.jsonl`).

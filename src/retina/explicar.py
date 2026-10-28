@@ -105,14 +105,14 @@ def revisar(salida: dict, datos: dict) -> list[str]:
     return problemas
 
 
-def cuerpo(datos: dict, aviso: str = "") -> dict:
+def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
     texto = f"<<<DATOS_DEL_ARRANQUE (dato)\n{json.dumps(datos, ensure_ascii=False)}\nDATOS_DEL_ARRANQUE>>>"
     if aviso:
         texto += f"\n\nTu respuesta anterior fue bloqueada por esto: {aviso}. Corrígelo."
     return {
         "model": MODELO,
-        "reasoning": {"effort": "high"},
-        "max_output_tokens": 6000,
+        "reasoning": {"effort": esfuerzo},
+        "max_output_tokens": 16000,
         "prompt_cache_key": "retina-explicar-v2",
         "text": {"format": {"type": "json_schema", "name": "explicacion_v2", "strict": True, "schema": esquema()}},
         "input": [
@@ -122,11 +122,21 @@ def cuerpo(datos: dict, aviso: str = "") -> dict:
     }
 
 
+def pedir(datos: dict, aviso: str) -> dict:
+    """Con razonamiento alto, Spark a veces gasta toda la salida pensando y no escribe nada
+    (medido el 27-oct: 5,998 de 6,000 tokens). Si llega vacía, se repite pensando menos."""
+    for esfuerzo in ("high", "medium"):
+        texto = meta_api.texto_de(meta_api.responder("explicar", cuerpo(datos, aviso, esfuerzo)))
+        if texto.strip():
+            return json.loads(texto)
+    raise RuntimeError("Spark no devolvió la explicación ni con razonamiento medio.")
+
+
 def explicar(carpeta: Path, arranque: dict) -> dict:
     datos = datos_del_arranque(carpeta, arranque)
     aviso, intentos = "", []
     for _ in range(2):
-        salida = json.loads(meta_api.texto_de(meta_api.responder("explicar", cuerpo(datos, aviso))))
+        salida = pedir(datos, aviso)
         problemas = revisar(salida, datos)
         intentos.append({"sugerencia": salida["que_cambiar"], "problemas": problemas})
         if not problemas:

@@ -53,8 +53,11 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     explicacion = None
     if con_api:
         from . import describir, explicar, transcribir
-        t = time.time(); transcribir.transcribir(salida); tiempos["transcribir"] = round(time.time() - t, 1)
-        t = time.time(); describir.describir(salida); tiempos["describir"] = round(time.time() - t, 1)
+        # Si el caso ya trae la transcripción o la descripción (una corrida anterior), se reusan: cuestan.
+        if not (salida / "transcribir.json").exists():
+            t = time.time(); transcribir.transcribir(salida); tiempos["transcribir"] = round(time.time() - t, 1)
+        if not (salida / "describir.json").exists():
+            t = time.time(); describir.describir(salida); tiempos["describir"] = round(time.time() - t, 1)
         t = time.time(); explicacion = explicar.explicar(salida, riesgo_arranque); tiempos["explicar"] = round(time.time() - t, 1)
     else:
         no_pude.append("Por qué y qué cambiar en el arranque (se corrió sin la API de Meta).")
