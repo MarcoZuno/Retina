@@ -150,7 +150,7 @@ const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart
 // Retina escribe «segundo 4» o «del segundo 4 al 11»; la persona lee tiempos de reloj: 0:04, 0:11.
 const seg = (x) => mmss(parseFloat(x.replace(",", ".")));
 const reloj = (t) => (t || "")
-  .replace(/\b([Dd]el) segundo (\d+(?:[.,]\d+)?) al (\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
+  .replace(/\b([Dd]el) segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
   .replace(/\b([Dd]el|[Ee]l|[Dd]esde el|[Ee]n el) segundo (\d+(?:[.,]\d+)?)/g, (_, d, a) => `${d} ${seg(a)}`)
   .replace(/\bsegundo (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
 const ANZUELOS = {  // nombres legibles si la tarjeta no trae la frase (reglas/anzuelos-v1.json)
@@ -207,7 +207,7 @@ function barra(r) {
     // Las partes débiles son los tramos «del segundo A al B» que cita la explicación; si no cita ninguno,
     // se marca un pedazo desde donde empieza el cambio.
     const num = (x) => parseFloat(x.replace(",", "."));
-    const zonas = [...(e.por_que || "").matchAll(/del segundo (\d+(?:[.,]\d+)?) al (\d+(?:[.,]\d+)?)/gi)]
+    const zonas = [...(e.por_que || "").matchAll(/del segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/gi)]
       .map((z) => [num(z[1]), num(z[2])]).filter(([i, f]) => f > i && i < fin);
     if (!zonas.length) zonas.push([e.momento_s, Math.min(fin, e.momento_s + fin / 5)]);
     for (const [i, f] of zonas) {
