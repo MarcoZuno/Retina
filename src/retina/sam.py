@@ -1,0 +1,133 @@
+"""SAM 3.1: ¿se ve en los primeros 3 segundos lo que promete el título?
+
+Recorta los primeros 3 s del MP4 ligero (10 cuadros por segundo, 960 px de
+lado largo, como piden las recetas de Meta), lo sube con caducidad y le pide a
+SAM 3.1 que segmente un objeto nombrado con una frase corta («bread», «flooded
+road»). Devuelve en qué segundo aparece por primera vez, en cuántos cuadros se
+ve y cuánto del cuadro ocupa como máximo.
+
+Nunca se usa sobre personas: la condiciones de uso de Meta prohíben seguir a
+personas entre cuadros, y Retina no identifica a nadie. El código rechaza el
+concepto antes de llamar a la API.
+
+Uso:
+    python -m retina.sam CARPETA --concepto "flooded road"
+"""
+from __future__ import annotations
+
+import argparse
+import asyncio
+import json
+import re
+import time
+import unicodedata
+from contextlib import aclosing
+from pathlib import Path
+
+from . import meta_api
+from .segmentar import _correr
+
+MODELO = "sam-3.1"
+SEGUNDOS, FPS = 3, 10
+USD_POR_CUADRO = 0.20 / 1000  # dev.meta.ai/models/sam-3-1, 27-oct-2026
+PERSONAS = re.compile(
+    r"\b(persona|personas|gente|hombre|mujer|nino|nina|ninos|bebe|cara|rostro|presentador|presentadora|"
+    r"senor|senora|chico|chica|joven|actor|actriz|doctor|doctora|policia|person|people|human|man|men|"
+    r"woman|women|face|faces|child|children|kid|kids|boy|girl|baby|guy|host|presenter|crowd)\b")
+
+
+def normalizar(texto: str) -> str:
+    return unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode().lower().strip()
+
+
+def es_persona(concepto: str) -> bool:
+    return bool(PERSONAS.search(normalizar(concepto)))
+
+
+def recortar(carpeta: Path) -> Path:
+    clip = carpeta / "primeros-3s.mp4"
+    if not clip.exists():
+        _correr(["-i", str(carpeta / "ligero.mp4"), "-t", str(SEGUNDOS), "-an", "-r", str(FPS),
+                 "-vf", "scale='if(gt(iw,ih),min(960,iw),-2)':'if(gt(iw,ih),-2,min(960,ih))'",
+                 "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", str(clip)])
+    return clip
+
+
+async def _segmentar(file_id: str, concepto: str):
+    from meta_sam_parser import parse_responses_stream, video_segmentation_format
+    from openai import AsyncOpenAI
+
+    async def eventos(stream):
+        # La API manda content_part.done pero no output_text.done, que el parser necesita para
+        # cerrar el carril; se fabrica como en las recetas de Meta (07_sam/01_api_basics).
+        cerrados = set()
+        async for ev in stream:
+            d = ev.model_dump() if hasattr(ev, "model_dump") else dict(ev)
+            carril = (d.get("item_id"), d.get("output_index"), d.get("content_index"))
+            if d.get("type") == "response.output_text.done":
+                if carril not in cerrados:
+                    cerrados.add(carril); yield d
+                continue
+            yield d
+            parte = d.get("part")
+            if (d.get("type") == "response.content_part.done" and carril not in cerrados and isinstance(parte, dict)
+                    and parte.get("type") == "output_text" and isinstance(parte.get("text"), str)):
+                cerrados.add(carril)
+                yield {"type": "response.output_text.done", "item_id": d.get("item_id"),
+                       "output_index": d.get("output_index"), "content_index": d.get("content_index"), "text": parte["text"]}
+
+    async with AsyncOpenAI(base_url=meta_api.BASE, api_key=meta_api._llave()) as api:
+        stream = await api.responses.create(model=MODELO, stream=True, input=[{
+            "type": "message", "role": "user",
+            "content": [{"type": "input_text", "text": concepto}, {"type": "input_video", "file_id": file_id}]}])
+        async with stream, aclosing(eventos(stream)) as evs:
+            parsed = parse_responses_stream(evs, video_segmentation_format())
+            async with parsed:
+                async for _ in parsed:
+                    pass
+                return await parsed.final_result()
+
+
+def medir(carpeta: Path, concepto: str) -> dict:
+    concepto = concepto.strip()[:60]
+    if not concepto:
+        return {"error": "El concepto va vacío."}
+    if es_persona(concepto):
+        return {"error": "SAM no se usa sobre personas (condiciones de uso de Meta). Nombra un objeto o un lugar."}
+    cuadros = SEGUNDOS * FPS
+    meta_api._revisar_tope(cuadros * USD_POR_CUADRO)
+    clip = recortar(carpeta)
+    file_id = meta_api.subir_archivo(clip)  # caducidad mínima de la API: 1 h
+    t0 = time.time()
+    try:
+        r = asyncio.run(_segmentar(file_id, concepto))
+    finally:
+        meta_api.borrar_archivo(file_id)
+    meta_api._registrar("sam", MODELO, time.time() - t0, cuadros * USD_POR_CUADRO, cuadros=cuadros)
+    if r.outcome.status != "completed":
+        return {"concepto": concepto, "error": f"SAM no terminó: {getattr(r.outcome, 'reason', 'sin motivo')}"}
+    from meta_sam_parser import decode_mask_to_raster
+    por_cuadro: dict[int, float] = {}
+    for rec in r.records:
+        if rec.kind == "mask" and rec.frame is not None:
+            px = sum(decode_mask_to_raster(rec.mask)) / max(rec.mask.width * rec.mask.height, 1)
+            por_cuadro[rec.frame.frame_index] = por_cuadro.get(rec.frame.frame_index, 0.0) + px
+    salida = {"concepto": concepto, "segundos_revisados": SEGUNDOS,
+              "aparece": bool(por_cuadro),
+              "primer_segundo": round(min(por_cuadro) / FPS, 1) if por_cuadro else None,
+              "pct_de_cuadros_donde_se_ve": round(100 * len(por_cuadro) / cuadros) if por_cuadro else 0,
+              "pct_maximo_del_cuadro": round(100 * max(por_cuadro.values()), 1) if por_cuadro else 0.0}
+    (carpeta / "sam.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
+    return salida
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("carpeta", type=Path)
+    ap.add_argument("--concepto", required=True)
+    a = ap.parse_args()
+    print(json.dumps(medir(a.carpeta, a.concepto), ensure_ascii=False, indent=1))
+
+
+if __name__ == "__main__":
+    main()

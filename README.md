@@ -2,10 +2,18 @@
 
 **Before you publish, see where your audience leaves.**
 
-Retina watches a video draft before it goes to Facebook, predicts the stretch
-where more people will drop off than in similar videos, explains why, and
-sketches the fix. After publishing, it compares the real retention curve with
-the predicted one.
+Retina watches a video draft before it goes to Facebook and tells you whether
+its opening (the hook and the first quarter) will lose more people than
+similar videos did. Then an agent built on Muse Spark looks at the video,
+listens to it, compares it with similar openings that held their audience,
+explains why, and proposes one concrete edit. After publishing, it compares
+the real retention curve with the predicted one.
+
+Why the opening and not "the exact second": Facebook reports the retention
+curve in whole percentage points. Past the first quarter of a video, the drop
+between two stretches is almost always 0 or 1 point, so the exact stretch is
+rounding noise. We promise what the data supports
+([`docs/decisiones.md`](docs/decisiones.md)).
 
 Built by Badabun (Mexico) for the Meta Global AI Developer Hackathon 2026 ·
 Startup track · theme *Build for Your World*.
@@ -19,7 +27,7 @@ Team: **Josafat Ruvalcaba** (lead).
 
 ## Status
 
-Day 1 of 10 (26-Oct-2026). See [`BUILD-LOG.md`](BUILD-LOG.md) for the dated
+Day 3 of 10 (28-Oct-2026). See [`BUILD-LOG.md`](BUILD-LOG.md) for the dated
 diary and [`docs/decisiones.md`](docs/decisiones.md) for every decision.
 
 ## Architecture
@@ -34,9 +42,22 @@ draft MP4 ─► segmentar ─► 40 stretches aligned to the 41-point curve + W
                ├─► transcribir  (Muse Voice Transcribe)  speech turns, silences
                ├─► embeber      (V-JEPA 2, open weights, our GPU)  one vector per stretch
                └─► describir    (Muse Spark 1.3, Files API, strict JSON)  what is on screen
-                        └─► predecir (own regression) ─► risky stretch vs. similar videos
-                                 └─► explicar (Spark) ─► storyboard (Muse Image) ─► panel
+                        └─► predecir + arranque (own regressions) ─► curve and opening risk vs. similar videos
+                                 └─► agente (Spark + tools + validator) ─► card ─► storyboard (Muse Image) ─► panel
 ```
+
+The agent follows the pattern in Meta's cookbook: **code computes, the model
+interprets, a validator checks.** Its tools only read what the services already
+computed: `ver_arranque` (risk level and where the opening ends), `ver_tramos`
+(what is on screen), `oir` (what is said, with seconds), `buscar_parecidos` (how
+similar videos that held their audience open), `medir_lo_prometido` (SAM 3.1 on
+the first 3 seconds: does what the title promises appear, from which second and
+how big) and `entregar_tarjeta`. The validator rejects the card if it cites a
+number that no tool returned, points to a second outside the opening, or
+suggests engagement bait; the agent then corrects it. Guards: turn cap, repeated
+calls, the project budget cap, and a one-shot fallback (`explicar`). SAM is
+never used on people: Meta's acceptable use policy forbids tracking people
+across frames, and the code refuses the request before calling the API.
 
 ### Service catalog
 
@@ -45,13 +66,16 @@ If a service is not in this table, it does not exist.
 | Service | Input → output | Meta model | Cost per call | Status |
 |---|---|---|---|---|
 | `segmentar` | MP4 → frames per stretch, 24 kHz mono WAV, 480p MP4 | ffmpeg (no model) | 0 | ✅ day 1 |
-| `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ code, pending key |
-| `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | measured day 1 | ✅ code, pending key |
+| `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ day 2 |
+| `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | ≈ USD 0.05 / 100 s | ✅ day 2 |
 | `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | ✅ day 2 |
-| `predecir` | vectors + descriptors + metadata → 41-point curve + risky stretch | own regression | 0 | v0 (metadata only) ✅ day 1 · v1 day 3 |
-| `explicar` | stretch + descriptors + bait list → explanation + suggestion | Muse Spark 1.3 | ≈ USD 0.01 | ✅ code, pending key |
+| `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression | 0 | ✅ day 1 |
+| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | ✅ day 2 |
+| `explicar` | opening + descriptors + speech → why + one edit (one shot, validated) | Muse Spark 1.3 | ≈ USD 0.015 | ✅ day 3 |
+| `agente` | case folder → card, with tools and the validator in the loop | Muse Spark 1.3 | ≈ USD 0.02 | ✅ day 3 |
+| `sam` | first 3 s + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.006 | ✅ day 3 |
 | `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ day 2 |
-| `storyboard` | suggestion + 3 reference images → 3 PNG (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ code, pending key |
+| `storyboard` | suggestion + 3 reference images → 3 PNG (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ code |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | day 7 |
 | `escuchar` | post id → real curve + labeled comments | Graph API + Spark | ≈ USD 0.02 | day 7 |
 | `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ day 1 |
@@ -68,27 +92,32 @@ pip install -r requirements.txt
 # Put MODEL_API_KEY in a .env OUTSIDE the repo (default: un .env fuera del repo),
 # or point RETINA_ENV to it. See .env.example.
 cd src
-python -m retina.segmentar VIDEO.mp4 --salida ../datos/casos/demo
 python -m retina.gate1 ping                      # one real call to Spark
-python -m retina.gate1 video ../datos/casos/demo   # token count + transcription
-python -m retina.describir ../datos/casos/demo     # JSON per stretch
+# Whole pipeline on a published video (the models are trained on private data):
+python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json \
+    --salida ../datos/casos/demo --con-api
+python -m retina.agente ../datos/casos/demo --modelo MODELO.pkl --voz VOZ.jsonl
 ```
+
+The panel reads only `resultado.json`; its contract is in
+[`docs/resultado-json.md`](docs/resultado-json.md), with a made-up example in
+[`casos/demo/resultado.json`](casos/demo/resultado.json).
 
 Requires Python 3.10+ and ffmpeg (on PATH or in `FFMPEG`).
 
 ## Results
 
-Measured on videos the model never saw (Jul–Sep 2026), against today's
-rule ("average of same format, talent and duration over the previous 90 days").
-No number is reported before it is measured.
+Measured on videos the model never saw (Jul–Sep 2026), against today's rule
+("average of same format, talent and duration over the previous 90 days").
+No number is reported before it is measured, and figures from Badabun's
+private data are published only with management's approval.
 
-| Metric | Baseline | Target | Retina |
-|---|---|---|---|
-| Mean absolute error at 15 s | to be measured | ≤ 9.3 pts | — |
-| Error at 3 s | to be measured | ≤ baseline | — |
-| Error at mid-video | to be measured | ≤ baseline | — |
-| Spearman, rank of retention | to be measured | ≥ 0.50 | — |
-| Hit on the stretch of largest abnormal drop (exact / ±1) | to be measured | +10 pts | — |
+| Question | What we found |
+|---|---|
+| Does the predicted curve beat today's rule? | Yes, on all five measures (error at 3 s, 15 s, mid-video, end, whole curve). Figures pending approval. |
+| When Retina says the opening risk is "high", does the opening really lose more people? | In the large majority of cases, clearly above the base rate. Figures pending approval. |
+| Can it point to the exact stretch where people leave? | No. Past the opening it does worse than always guessing the most common stretch, because the curve comes in whole points. We dropped that promise. |
+| Does speech help the risk level? | No, measured twice. Speech goes to the agent's explanation instead. |
 
 ## Prior infrastructure and data (not built during the event)
 

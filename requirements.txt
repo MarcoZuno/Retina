@@ -1,2 +1,4 @@
 requests>=2.31
 numpy>=1.26
+openai>=1.0
+meta_sam_parser==0.1.0

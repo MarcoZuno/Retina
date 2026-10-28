@@ -28,7 +28,7 @@ from .predecir import Modelo, caidas
 from .voz import BLOQUES, bloques
 
 MODELO = "muse-spark-1.3"
-MAX_TURNOS = 10
+MAX_TURNOS = 12
 REPETIDAS = 2  # la misma llamada con los mismos datos, más de esto, corta el ciclo
 
 
@@ -39,7 +39,7 @@ def _herramienta(nombre: str, descripcion: str, props: dict) -> dict:
 
 RANGO = {"desde_s": {"type": "number"}, "hasta_s": {"type": "number"}}
 HERRAMIENTAS = [
-    _herramienta("ver_arranque", "Nivel de riesgo del arranque, dónde terminan el gancho y el primer cuarto, "
+    _herramienta("ver_arranque", "Título del video, nivel de riesgo del arranque, dónde terminan el gancho y el primer cuarto, "
                  "y cuánta gente se va en videos parecidos en cada parte.", {}),
     _herramienta("ver_tramos", "Lo que se ve en pantalla entre dos segundos: qué pasa, texto en pantalla, "
                  "plano, cambios de plano, presentador.", RANGO),
@@ -48,6 +48,10 @@ HERRAMIENTAS = [
                  "talento): su título y lo que dicen en el arranque. «buenos» = retuvieron mejor que sus parecidos; "
                  "«malos» = perdieron más.",
                  {"cuales": {"type": "string", "enum": ["buenos", "malos"]}, "n": {"type": "integer"}}),
+    _herramienta("medir_lo_prometido", "SAM 3.1 sobre los primeros 3 s: si aparece lo que promete el título, desde qué "
+                 "segundo, en cuántos cuadros y cuánto del cuadro ocupa. El concepto es una frase corta en inglés de un "
+                 "objeto o un lugar («flooded road», «sweet bread»). Nunca personas: el código lo rechaza. Cuesta: úsala "
+                 "una vez, como mucho dos.", {"concepto": {"type": "string"}}),
     _herramienta("entregar_tarjeta", "Entrega la tarjeta final. El código la revisa; si devuelve problemas, corrige y "
                  "vuelve a entregar.", explicar.esquema()["properties"]),
 ]
@@ -68,9 +72,10 @@ class Caja:
         self.vistos: list = []
 
     def ver_arranque(self) -> dict:
-        d = self.datos
-        return {k: d[k] for k in ("duracion_video_s", "gancho_s", "primer_cuarto_s", "nivel_de_riesgo",
-                                  "perdida_extra_predicha_pp", "caida_de_videos_parecidos_pp")}
+        d, v = self.datos, self.resultado["video"]
+        campos = ("duracion_video_s", "gancho_s", "primer_cuarto_s", "nivel_de_riesgo",
+                  "perdida_extra_predicha_pp", "caida_de_videos_parecidos_pp")
+        return {"titulo": titulo_limpio(v.get("titulo") or "", v["codigo"]), **{k: d[k] for k in campos}}
 
     def ver_tramos(self, desde_s: float, hasta_s: float) -> dict:
         return {"tramos": [t for t in self.datos["tramos"] if t["fin_s"] > desde_s and t["inicio_s"] < hasta_s]}
@@ -104,6 +109,10 @@ class Caja:
                            "arranque": "retuvo mejor que sus parecidos" if cuales == "buenos" else "perdió más que sus parecidos",
                            "dice_en_el_arranque": dice[:400]})
         return {"videos": salida, "comparados_con": "mismo talento y duración" if grupo is mismos else "misma duración"}
+
+    def medir_lo_prometido(self, concepto: str) -> dict:
+        from .sam import medir
+        return medir(self.carpeta, concepto)
 
     def correr(self, nombre: str, args: dict) -> dict:
         if nombre == "entregar_tarjeta":
