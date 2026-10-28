@@ -43,6 +43,11 @@ Reglas de la tarjeta (el validador la rechaza si no se cumplen):
   engañar; mejor reeditar con lo grabado que regrabar. Si el nivel es «bajo» y
   no hay anzuelo, no vemos un problema claro: va vacío, «tipo_de_cambio» en
   «ninguno» y el storyboard vacío.
+- «pasos»: de 1 a 4 pasos, en orden, para hacer ese cambio en el editor de
+  video. Cada paso es una sola acción con su segundo, que alguien sin
+  experiencia pueda seguir: «Corta del segundo 5 al 8», «Ponlo al inicio del
+  video», «Revisa que el texto del precio siga en pantalla». 140 caracteres
+  como máximo por paso. Sin cambio, sin pasos.
 - «momento_s»: el segundo donde empieza lo que hay que cambiar, dentro del
   arranque.
 - NUNCA sugieras: pedir comentarios, likes, reacciones o compartidos; mandar

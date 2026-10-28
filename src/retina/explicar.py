@@ -29,6 +29,7 @@ FIN_ARRANQUE = BLOQUES[1][1]  # tramos 0-9: gancho + primer cuarto
 CAMPOS_TRAMO = ("que_pasa", "texto_en_pantalla", "tipo_de_plano", "cambio_de_plano",
                 "presentador_en_pantalla", "tipo_de_gancho")
 MAX_CARACTERES = 220  # por campo de texto: la tarjeta se lee de un vistazo
+MAX_PASOS, MAX_CARACTERES_PASO = 4, 140  # «qué hacer» en pasos que un editor sigue sin explicación
 # Lo que la persona no tiene por qué entender: jerga del sistema y cifras internas de audiencia.
 JERGA = re.compile(r"\bpp\b|puntos porcentuales|%|de cada 100|\bs\d+(?:[.,]\d+)?\b|\btramos?\b|"
                    r"ver_arranque|ver_tramos|\boir\b|buscar_parecidos|medir_lo_prometido|entregar_tarjeta|"
@@ -45,6 +46,7 @@ def esquema() -> dict:
         "por_que": {"type": "string"},
         "lo_que_funciona": {"type": "string"},
         "que_cambiar": {"type": "string"},
+        "pasos": {"type": "array", "items": {"type": "string"}},
         "tipo_de_cambio": {"type": "string", "enum": CAMBIOS},
         "momento_s": {"type": "number"},
         "anzuelo_detectado": {"type": "string", "enum": ["ninguno", *ids_anzuelos()]},
@@ -96,7 +98,7 @@ def cifras_inventadas(salida: dict, datos: dict) -> list[str]:
     """Números del texto que no salen de los datos (se acepta el redondeo a entero)."""
     en_datos = {float(n.replace(",", ".")) for n in _NUM.findall(json.dumps(datos, ensure_ascii=False))}
     validos = en_datos | {float(round(x)) for x in en_datos} | {float(int(x)) for x in en_datos} | {0.0, 1.0, 2.0, 3.0}
-    texto = " ".join([salida["por_que"], salida["lo_que_funciona"], salida["que_cambiar"]])
+    texto = " ".join([salida["por_que"], salida["lo_que_funciona"], salida["que_cambiar"], *salida.get("pasos", [])])
     return sorted({n for n in _NUM.findall(texto) if float(n.replace(",", ".")) not in validos})
 
 
@@ -131,9 +133,11 @@ def revisar(salida: dict, datos: dict) -> list[str]:
                             ("confianza", ["baja", "media", "alta"])):
         if salida.get(campo) not in opciones:  # el agente no tiene esquema estricto: se revisa aquí
             problemas.append(f"{campo} «{salida.get(campo)}» no es un valor válido ({', '.join(opciones)})")
-    texto = " ".join([sin_citas_a_quitar(salida["que_cambiar"]), salida["lo_que_funciona"], *salida["storyboard"]])
+    pasos = salida.get("pasos", [])
+    texto = " ".join([sin_citas_a_quitar(salida["que_cambiar"]), salida["lo_que_funciona"], *salida["storyboard"],
+                      *(sin_citas_a_quitar(p) for p in pasos)])
     problemas += [f"{r['regla']} (frases: {', '.join(r['frases'])})" for r in integridad.revisar(texto)]
-    if t := toca_intocable(salida["que_cambiar"]):
+    if t := toca_intocable(" ".join([salida["que_cambiar"], *pasos])):
         problemas.append(f"la sugerencia toca algo intocable: {', '.join(t)}")
     for campo in ("por_que", "lo_que_funciona", "que_cambiar"):
         if j := sorted({m.group(0) for m in JERGA.finditer(salida[campo])}):
@@ -141,6 +145,15 @@ def revisar(salida: dict, datos: dict) -> list[str]:
                              "Di los segundos como «segundo 4» y no cites porcentajes")
         if len(salida[campo]) > MAX_CARACTERES:
             problemas.append(f"«{campo}» mide {len(salida[campo])} caracteres; el máximo es {MAX_CARACTERES}")
+    if salida["que_cambiar"].strip() and not 1 <= len(pasos) <= MAX_PASOS:
+        problemas.append(f"«pasos» tiene que traer de 1 a {MAX_PASOS} pasos para hacer el cambio en el editor")
+    if not salida["que_cambiar"].strip() and pasos:
+        problemas.append("sin cambio no van «pasos»")
+    for i, p in enumerate(pasos, 1):
+        if j := sorted({m.group(0) for m in JERGA.finditer(p)}):
+            problemas.append(f"el paso {i} trae jerga o cifras internas: {', '.join(j)}")
+        if len(p) > MAX_CARACTERES_PASO:
+            problemas.append(f"el paso {i} mide {len(p)} caracteres; el máximo es {MAX_CARACTERES_PASO}")
     if salida["anzuelo_detectado"] != "ninguno":
         if not salida.get("anzuelo_frase", "").strip():
             problemas.append("marcaste un anzuelo pero no dijiste cuál frase o qué se ve en «anzuelo_frase»")
@@ -165,9 +178,9 @@ def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
         "model": MODELO,
         "reasoning": {"effort": esfuerzo},
         "max_output_tokens": 16000,
-        "prompt_cache_key": "retina-explicar-v3",  # gitleaks:allow (etiqueta de caché, no es llave)
+        "prompt_cache_key": "retina-explicar-v4",  # gitleaks:allow (etiqueta de caché, no es llave)
         "store": False,
-        "text": {"format": {"type": "json_schema", "name": "explicacion_v3", "strict": True, "schema": esquema()}},
+        "text": {"format": {"type": "json_schema", "name": "explicacion_v4", "strict": True, "schema": esquema()}},
         "input": [
             {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": instrucciones()}]},
             {"type": "message", "role": "user", "content": [{"type": "input_text", "text": texto}]},
@@ -196,9 +209,9 @@ def explicar(carpeta: Path, arranque: dict) -> dict:
             break
         aviso = "; ".join(problemas)
     else:
-        salida.update(que_cambiar="", tipo_de_cambio="ninguno", storyboard=[])
+        salida.update(que_cambiar="", pasos=[], tipo_de_cambio="ninguno", storyboard=[])
         salida["no_pude_verificar"].append("No hubo una sugerencia que pasara el validador y el filtro de integridad.")
-    salida["licencia"] = {"modelo": MODELO, "instrucciones": "skills/explicar.md (explicar-v3)",
+    salida["licencia"] = {"modelo": MODELO, "instrucciones": "skills/explicar.md (explicar-v4)",
                           "reglas": integridad.reglas()["version"], "intentos": intentos}
     (carpeta / "explicar.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
     return salida

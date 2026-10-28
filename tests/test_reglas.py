@@ -30,13 +30,13 @@ class FiltroDeAnzuelos(unittest.TestCase):
     def test_atrapa_las_evasiones_de_la_auditoria(self):
         for texto in ["c0menten abajo", "co-menten", "сomenten", "pon 👍 si te gustó", "escriban su opinión",
                       "d4le l1ke", "mándalo al grupo de WhatsApp", "esto se cura en casa", "sorteo de un celular",
-                      "no te vayas, al final te digo"]:
+                      "no te vayas, al final te digo", "deja tu comentario"]:
             with self.subTest(texto=texto):
                 self.assertTrue(ids(texto), f"debió bloquear: {texto}")
 
     def test_deja_pasar_las_sugerencias_normales(self):
         for texto in ["Pon el dato en pantalla desde el segundo 3", "Corta el silencio del segundo 3 al 8",
-                      "el cura del pueblo", "pásalo al inicio", "Adelanta la imagen de la pila de tortillas"]:
+                      "el cura del pueblo", "pásalo al inicio", "deja tu explicación justo después de la fachada", "Adelanta la imagen de la pila de tortillas"]:
             with self.subTest(texto=texto):
                 self.assertEqual(ids(texto), [], f"no debió bloquear: {texto}")
 
@@ -47,7 +47,8 @@ class FiltroDeAnzuelos(unittest.TestCase):
 
 def tarjeta(**cambios) -> dict:
     t = dict(por_que="Del segundo 0.6 al 4.9 no se ve la pila de tortillas.", lo_que_funciona="",
-             que_cambiar="Mueve el plano de la pila al segundo 0.", tipo_de_cambio="reordenar", momento_s=0.0,
+             que_cambiar="Mueve el plano de la pila al segundo 0.", pasos=["Corta el plano de la pila y ponlo al inicio."],
+             tipo_de_cambio="reordenar", momento_s=0.0,
              anzuelo_detectado="ninguno", anzuelo_frase="", anzuelo_momento_s=-1, confianza="media",
              storyboard=[], no_pude_verificar=[])
     t.update(cambios)
@@ -82,6 +83,11 @@ class Validador(unittest.TestCase):
 
     def test_texto_largo(self):
         self.assertTrue(any("caracteres" in x for x in explicar.revisar(tarjeta(por_que="a" * 300), DATOS)))
+
+    def test_el_cambio_viene_en_pasos(self):
+        self.assertTrue(any("pasos" in x for x in explicar.revisar(tarjeta(pasos=[]), DATOS)))
+        self.assertTrue(any("paso 1" in x for x in explicar.revisar(tarjeta(pasos=["a" * 200]), DATOS)))
+        self.assertTrue(explicar.revisar(tarjeta(pasos=["Pide que comenten abajo"]), DATOS))
 
     def test_intocables(self):
         self.assertTrue(explicar.toca_intocable("Muestra la lata sin pixelar desde el segundo 2"))

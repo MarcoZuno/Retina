@@ -150,6 +150,11 @@
   "por_que": "Del segundo 0.0 al 7.2 la presentadora saluda y dice su nombre antes de decir de qué trata el video, y el texto en pantalla no menciona el pan hasta el segundo 9.6.",
   "lo_que_funciona": "El primer truco, del segundo 14.4 al 21.6, se ve en un plano cerrado y se entiende sin audio.",
   "que_cambiar": "Abrir con el plano del pan duro contra el pan suave y el texto «3 trucos para que tu pan no se endurezca»; el saludo va después del primer truco.",
+  "pasos": [
+   "Corta el plano del pan duro contra el pan suave (segundo 14.4) y ponlo al inicio del video.",
+   "Pon encima el texto «3 trucos para que tu pan no se endurezca».",
+   "Mueve el saludo de la presentadora para después del primer truco."
+  ],
   "tipo_de_cambio": "adelantar_dato",
   "momento_s": 0.0,
   "anzuelo_detectado": "ninguno",

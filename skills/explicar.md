@@ -1,6 +1,6 @@
 ---
 estacion: explicar
-version: explicar-v3
+version: explicar-v4
 fecha: 2026-10-28
 duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort high
@@ -40,6 +40,11 @@ Reglas:
    Prefiere reeditar con lo que ya está grabado antes que regrabar.
    Si el nivel es «bajo» y no hay anzuelo, no vemos un problema claro: deja
    «que_cambiar» vacío, «tipo_de_cambio» en «ninguno» y el storyboard vacío.
+3b. «pasos»: de 1 a 4 pasos, en orden, para hacer ese cambio en el editor de
+  video. Cada paso es una sola acción con su segundo, que alguien sin
+  experiencia pueda seguir: «Corta del segundo 5 al 8», «Ponlo al inicio del
+  video», «Revisa que el texto del precio siga en pantalla». 140 caracteres
+  como máximo por paso. Sin cambio, sin pasos.
 4. «momento_s»: el segundo donde empieza lo que hay que cambiar. Tiene que
    estar dentro del arranque que viene en los datos.
 5. NUNCA sugieras nada de esto: pedir comentarios, likes, reacciones o

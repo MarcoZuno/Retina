@@ -5,7 +5,7 @@
   "uso": "Retina nunca sugiere nada de esta lista. Si lo ve en un borrador, lo marca con la regla. El esquema de describir toma sus valores de aquí y el filtro de integridad bloquea cualquier sugerencia que contenga una de las frases (sin acentos, sin mayúsculas, con letras y números de imitación normalizados). Con * al final cubre las terminaciones; sin * es palabra exacta.",
   "anzuelos": [
     {"id": "pide_interaccion", "nombre": "Pide comentarios, likes, reacciones o compartidos a cambio de algo", "fuente": "Normas de distribución de contenido de Meta (engagement bait)",
-     "frases": ["coment*", "dale like", "like", "likes", "me gusta", "compart*", "etiquet*", "si estas de acuerdo", "reaccion*", "suscrib*", "sigueme", "siguenos", "escribe si", "escriban si", "escribe amen", "escriban su opinion", "escribe tu opinion", "deja tu", "dejanos tu", "amen si", "danos tu opinion", "vota"],
+     "frases": ["coment*", "dale like", "like", "likes", "me gusta", "compart*", "etiquet*", "si estas de acuerdo", "reaccion*", "suscrib*", "sigueme", "siguenos", "escribe si", "escriban si", "escribe amen", "escriban su opinion", "escribe tu opinion", "deja tu comentario", "deja tu opinion", "deja tu like", "deja tu reaccion", "dejanos tu", "amen si", "danos tu opinion", "vota"],
      "emojis": ["👍", "❤", "♥", "🔥", "😮", "😢", "😡", "😂", "👇", "🙏"]},
     {"id": "mira_hasta_el_final", "nombre": "«Mira hasta el final» o promesas de recompensa por quedarse", "fuente": "Normas de distribución de contenido de Meta; consejos de monetización de Meta",
      "frases": ["hasta el final", "no te vayas", "quedate hasta", "al final te digo", "al final revelamos", "espera al final", "no lo quites"]},

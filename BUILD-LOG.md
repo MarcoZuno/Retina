@@ -296,3 +296,16 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
   apaga con `0`.
 
 **Costo:** USD 0.
+
+### Día 3 (noche) · ¿Lo que ya medimos del video mejora el nivel? No. Y la tarjeta trae pasos
+
+- `eval/arranque_con_video.py`: el nivel de hoy contra el mismo nivel más V-JEPA 2, ritmo visual
+  y audio del arranque. Regla escrita antes de correr (`docs/decisiones.md`). En jul-sep la
+  variante elegida no mejora; las de V-JEPA dieron una pista, y la confirmación en ene-jun 2026,
+  con la variante fijada de antemano, tampoco gana. El nivel se queda como está.
+- La tarjeta trae `pasos`: de 1 a 4 acciones para el editor, con el validador revisando cada una.
+  El panel convierte «segundo 12» en 0:12. Probado en un caso real.
+- Filtro de anzuelos: «deja tu» bloqueaba «deja tu explicación»; ahora solo «deja tu comentario»,
+  «tu opinión», «tu like».
+
+**Costo:** USD 0.03 (un caso para probar los pasos).

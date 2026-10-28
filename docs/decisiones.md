@@ -137,3 +137,35 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
 - **Qué salió.** No le gana al azar y el modelo de datos le gana en los mismos pares.
 - **Qué se decide.** El nivel sale del modelo; Spark explica y propone. Es mejor reportar lo que
   no funcionó que prometer que «ver el video» predice.
+
+## 28-oct-2026 (noche) · Regla escrita ANTES de medir si el video mejora el nivel
+
+Prueba gratis (`eval/arranque_con_video.py`): el modelo de hoy (arranque-v2, sin voz) contra el
+mismo modelo más un ajuste con lo que ya se mide en local del arranque (V-JEPA 2 de los tramos 0-9
+resumido, cambio visual entre tramos como ritmo, y audio por tramo).
+
+- Entrena con lo publicado antes del 1-jul-2026; prueba en jul-sep 2026 con los videos que
+  tengan vectores, **sin los 50 casos del gate** (con ellos se afinaron instrucciones).
+- Todo se elige con entrenamiento (castigo del ajuste con el último 20 % por fecha).
+- **Una sola comparación principal:** correlación entre el exceso predicho y el real del
+  arranque, en los mismos videos, con y sin el ajuste. Remuestreo de 2,000.
+- **Gana** si la mejora es mayor que cero en el lado pesimista del intervalo del 95 %. Si no,
+  el nivel se queda como está y se reporta. Se reportan todas las variantes probadas.
+
+**Resultado (28-oct, noche): no gana con la regla.** La variante que eligió la validación
+(ritmo visual) no mejoró nada. Las variantes con V-JEPA sí subieron la correlación en la prueba,
+pero no fueron las elegidas, así que eso es una pista, no un resultado.
+
+**Confirmación escrita antes de correr:** variante fija «V-JEPA, PCA de 32», el castigo se elige
+igual que antes con entrenamiento. Entrena con lo publicado antes del 1-ene-2026 y prueba en
+ene-jun 2026, una ventana que no se había usado como prueba. Misma comparación y misma regla:
+gana si la mejora es mayor que cero en el lado pesimista del intervalo del 95 %.
+
+**Resultado de la confirmación (28-oct, noche): no gana.** En ene-jun 2026 la variante fijada no
+mejora la correlación (el intervalo cruza el cero). Con esto son cuatro pruebas de «mirar el video
+para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V-JEPA en local.
+- **Qué se decide.** El nivel se queda con el modelo de datos. La ficha de hechos con Spark (A
+  del plan, unos USD 30) no se corre antes del viernes: la prueba gratis era su filtro y no pasó.
+- **Dónde sí entra el video:** en explicar dónde y por qué, y en los pasos para arreglarlo.
+- **La tarjeta trae «pasos»:** de 1 a 4 acciones en orden para hacer el cambio en el editor, cada
+  una con su segundo. El panel muestra los segundos como reloj (0:05).

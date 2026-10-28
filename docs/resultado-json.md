@@ -20,6 +20,7 @@ vuelta. Los dos dan los mismos campos; `explicacion.licencia.fuente` dice cuál 
 | `explicacion.momento_s` | Segundo donde empieza lo que hay que cambiar. Siempre dentro del arranque. | Marca en la línea de tiempo, en m:ss. Si es menor que 1, «desde el primer segundo» y sin marca. |
 | `explicacion.lo_que_funciona` | Lo que el arranque ya hace bien. Puede venir vacío. | Línea en verde, opcional. |
 | `explicacion.anzuelo_detectado` | `ninguno` o el id de la regla (ver `reglas/anzuelos-v1.json`) si el video ya trae algo que Meta castiga. | Tarjeta roja. |
+| `explicacion.pasos` | De 1 a 4 pasos, en orden, para hacer el cambio en el editor; cada uno una acción con su segundo. Vacío si no hay cambio. | Lista numerada debajo de «Qué hacer», con los segundos como 0:05. |
 | `explicacion.anzuelo_frase`, `explicacion.anzuelo_momento_s` | La frase o lo que se ve, y el segundo donde aparece (-1 si no hay anzuelo). | «En 0:25: Comparte esta información…». Si hay anzuelo, `que_cambiar` siempre dice cómo quitarlo. |
 | `explicacion.storyboard` | Tres cuadros en texto. Las imágenes salen aparte con `retina.storyboard --aprobar`. | Botón «Ver storyboard». |
 | `explicacion.confianza` | `baja`, `media` o `alta`. | Junto a la explicación. |

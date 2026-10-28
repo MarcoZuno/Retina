@@ -50,6 +50,7 @@
   .licencia { font-size: 13px; color: var(--suave); }
   .licencia ul { margin: 4px 0 0; padding-left: 18px; }
   .oculto { display: none !important; }
+  .pasos { margin: 8px 0 12px 22px; padding: 0; } .pasos li { margin: 6px 0; }
   .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
   .storyboard div { background: var(--fondo); border: 1px solid var(--linea); border-radius: 10px; padding: 10px; font-size: 14px; }
   .error { border-left: 6px solid var(--rojo); }
@@ -76,6 +77,7 @@
       <h2 id="titular"></h2>
       <p id="porque"></p>
       <p id="cambio" class="cambio"></p>
+      <ol id="pasos" class="pasos"></ol>
       <p id="funciona" class="funciona"></p>
       <div class="botones"><button class="secundario oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button></div>
       <div id="storyboard" class="storyboard oculto"></div>
@@ -107,6 +109,12 @@
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
 const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+// Retina escribe «segundo 4» o «del segundo 4 al 11»; la persona lee tiempos de reloj: 0:04, 0:11.
+const seg = (x) => mmss(parseFloat(x.replace(",", ".")));
+const reloj = (t) => (t || "")
+  .replace(/\b([Dd]el) segundo (\d+(?:[.,]\d+)?) al (\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
+  .replace(/\b([Dd]el|[Ee]l|[Dd]esde el|[Ee]n el) segundo (\d+(?:[.,]\d+)?)/g, (_, d, a) => `${d} ${seg(a)}`)
+  .replace(/\bsegundo (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
 const ANZUELOS = {  // nombres legibles si la tarjeta no trae la frase (reglas/anzuelos-v1.json)
   pide_interaccion: "pide comentarios, reacciones o compartidos", mira_hasta_el_final: "pide quedarse hasta el final",
   esconde_el_dato: "esconde el dato que promete el título", exageracion: "exagera lo que el video no sostiene",
@@ -172,11 +180,14 @@ function mostrar(r) {
   $("tarjeta-nivel").className = `tarjeta nivel ${a.nivel}`;
   $("titular").textContent = TITULARES[a.nivel] || "Revisión del arranque";
   if (e) {
-    $("porque").textContent = e.por_que;
+    $("porque").textContent = reloj(e.por_que);
     const desde = e.momento_s >= 1 ? `Desde ${mmss(e.momento_s)}: ` : "Desde el primer segundo: ";
-    $("cambio").textContent = e.que_cambiar ? `Qué cambiar. ${desde}${e.que_cambiar}`
+    $("cambio").textContent = e.que_cambiar ? `Qué hacer. ${desde}${reloj(e.que_cambiar)}`
       : (a.nivel === "bajo" ? "" : "No hubo una sugerencia que pasara nuestras reglas. Revisa el arranque a mano.");
-    $("funciona").textContent = e.lo_que_funciona ? `✓ Ya funciona: ${e.lo_que_funciona}` : "";
+    $("funciona").textContent = e.lo_que_funciona ? `✓ Ya funciona: ${reloj(e.lo_que_funciona)}` : "";
+    $("pasos").replaceChildren(...(e.pasos || []).map((x) => {
+      const li = document.createElement("li"); li.textContent = reloj(x); return li;
+    }));
     const cuadros = e.storyboard || [];
     $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
     $("storyboard").replaceChildren(...cuadros.map((c, i) => {
@@ -190,7 +201,7 @@ function mostrar(r) {
     }
   } else {
     $("porque").textContent = "Todavía no hay explicación: esta revisión se hizo sin la API de Meta, así que solo vemos el riesgo, no el porqué.";
-    $("cambio").textContent = ""; $("funciona").textContent = "";
+    $("cambio").textContent = ""; $("funciona").textContent = ""; $("pasos").replaceChildren();
     $("ver-storyboard").classList.add("oculto"); $("alerta").classList.add("oculto");
   }
   grafica(r);
