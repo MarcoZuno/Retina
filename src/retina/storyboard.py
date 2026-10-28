@@ -40,6 +40,7 @@ def generar(explicacion: Path, estilo: list[Path], aprobar: bool) -> list[Path]:
     if not aprobar:
         print("Sin --aprobar no se genera nada.")
         return []
+    meta_api._revisar_tope(0.01 * len(cuadros))
     refs = [{"image_url": "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()} for p in estilo[:3]]
     salidas = []
     for i, c in enumerate(cuadros, 1):

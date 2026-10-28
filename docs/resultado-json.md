@@ -8,6 +8,10 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 
 ## Lo que muestra la tarjeta
 
+`explicacion` la escribe el agente (`--con-api --voz`) o, sin `--voz`, `explicar` de una
+vuelta. Los dos dan los mismos campos; `explicacion.licencia.fuente` dice cuál fue
+(`agente` o `explicar (respaldo)`) y `licencia.traza` lista las herramientas que usó.
+
 | Campo | Qué es | Cómo se muestra |
 |---|---|---|
 | `arranque.nivel` | `alto`, `medio` o `bajo`: si el gancho y el primer cuarto del video van a perder más gente que videos parecidos. | El titular de la tarjeta (textos abajo). |

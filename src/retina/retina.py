@@ -1,14 +1,15 @@
 """Orquestador de Retina: un borrador -> resultado.json para el panel.
 
 Orden: segmentar -> embeber (V-JEPA 2 local) -> predecir la curva -> riesgo del
-arranque -> [con API: transcribir -> describir -> explicar el arranque]. Cada paso guarda su
+arranque -> [con API: transcribir -> describir -> el agente explica el arranque (o
+«explicar» de una vuelta si no hay --voz)]. Cada paso guarda su
 salida en la carpeta del caso; si un paso no corre, la «licencia» del
 resultado dice qué no se pudo revisar. El storyboard no corre aquí: cuesta y
 necesita aprobación (retina.storyboard --aprobar).
 
 Uso:
     python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --salida CARPETA \
-        --codigo NOTB0000 --talento "NOMBRE" --fecha "2026-10-28 18:00" --titulo "..." [--con-api]
+        --codigo NOTB0000 --talento "NOMBRE" --fecha "2026-10-28 18:00" --titulo "..." [--con-api [--voz VOZ.jsonl]]
 """
 from __future__ import annotations
 
@@ -25,7 +26,7 @@ from .segmentar import segmentar
 
 
 def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, fecha: str,
-           titulo: str, con_api: bool, arranque: Path, ver_video: bool = True) -> dict:
+           titulo: str, con_api: bool, arranque: Path, ver_video: bool = True, voz: Path | None = None) -> dict:
     tiempos, no_pude = {}, []
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
 
@@ -45,7 +46,8 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     v = {"fecha": datetime.strptime(fecha, "%Y-%m-%d %H:%M"), "dur": man["duracion_s"], "codigo": codigo,
          "talento": talento.upper().strip(), "archivo": titulo}
     v["cubeta"] = cubeta(v["dur"])
-    t = time.time(); pred = Modelo.cargar(modelo).predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
+    m = Modelo.cargar(modelo)
+    t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
 
     from .arranque import Arranque
     riesgo_arranque = Arranque.cargar(arranque).predecir(v, np.array(pred["curva_parecidos"]))
@@ -58,7 +60,8 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             t = time.time(); transcribir.transcribir(salida); tiempos["transcribir"] = round(time.time() - t, 1)
         if not (salida / "describir.json").exists():
             t = time.time(); describir.describir(salida); tiempos["describir"] = round(time.time() - t, 1)
-        t = time.time(); explicacion = explicar.explicar(salida, riesgo_arranque); tiempos["explicar"] = round(time.time() - t, 1)
+        if voz is None:
+            t = time.time(); explicacion = explicar.explicar(salida, riesgo_arranque); tiempos["explicar"] = round(time.time() - t, 1)
     else:
         no_pude.append("Por qué y qué cambiar en el arranque (se corrió sin la API de Meta).")
         no_pude.append("La voz y los silencios (se corrió sin la API de Meta).")
@@ -84,7 +87,15 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             "no_pude_revisar": no_pude,
         },
     }
-    (salida / "resultado.json").write_text(json.dumps(resultado, ensure_ascii=False, indent=1), encoding="utf-8")
+    def escribir() -> None:
+        (salida / "resultado.json").write_text(json.dumps(resultado, ensure_ascii=False, indent=1), encoding="utf-8")
+
+    escribir()
+    if con_api and voz is not None:  # el agente lee resultado.json, así que va después de escribirlo
+        from .agente import cargar_voz, correr_agente
+        t = time.time(); resultado["explicacion"] = correr_agente(salida, m, cargar_voz(voz))
+        tiempos["agente"] = round(time.time() - t, 1)
+        escribir()
     return resultado
 
 
@@ -99,8 +110,9 @@ def main() -> None:
     ap.add_argument("--titulo", default="")
     ap.add_argument("--con-api", action="store_true", help="Usa la Meta Model API (cuesta).")
     ap.add_argument("--arranque", type=Path, required=True, help="Modelo del riesgo del arranque (JSON de retina.arranque).")
+    ap.add_argument("--voz", type=Path, help="Voz de la historia (voz.jsonl): activa el agente en lugar de explicar.")
     a = ap.parse_args()
-    r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque)
+    r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque, voz=a.voz)
     a_ = r["arranque"]
     print(f"Riesgo del arranque: {a_['nivel']} ({a_['exceso_arranque_pp']:+} pp contra videos parecidos) · {r['tiempos_s']}")
 
