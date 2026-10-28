@@ -170,11 +170,28 @@ class FormatoDelPanel(unittest.TestCase):
 
 
 class SoloPublicados(unittest.TestCase):
-    def test_sin_confirmar_publicado_no_va_a_meta(self):
+    def setUp(self):
+        self.antes = os.environ.get("RETINA_SOLO_PUBLICADOS")
+
+    def tearDown(self):
+        if self.antes is None:
+            os.environ.pop("RETINA_SOLO_PUBLICADOS", None)
+        else:
+            os.environ["RETINA_SOLO_PUBLICADOS"] = self.antes
+
+    def test_con_candado_sin_confirmar_publicado_no_va_a_meta(self):
         from retina.retina import correr
+        os.environ["RETINA_SOLO_PUBLICADOS"] = "1"
         with self.assertRaises(ValueError):
             correr(Path("no-existe.mp4"), Path("m.pkl"), Path("salida"), "X", "", "2026-10-28 10:00", "", True,
                    Path("a.json"), publicado=False)
+
+    def test_el_candado_viene_encendido_y_se_apaga_con_cero(self):
+        from retina.retina import solo_publicados
+        os.environ.pop("RETINA_SOLO_PUBLICADOS", None)
+        self.assertTrue(solo_publicados() or os.environ.get("RETINA_SOLO_PUBLICADOS") == "0")
+        os.environ["RETINA_SOLO_PUBLICADOS"] = "0"
+        self.assertFalse(solo_publicados())
 
 
 if __name__ == "__main__":

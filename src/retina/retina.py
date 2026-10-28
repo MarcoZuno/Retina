@@ -8,8 +8,11 @@ la API falla, el resultado se queda con lo que sí corrió y la «licencia» dic
 no se pudo revisar. El storyboard no corre aquí: cuesta y necesita aprobación
 (retina.storyboard --aprobar).
 
-A la API de Meta solo van videos ya publicados (regla de la casa): con --con-api
-hay que pasar --ya-publicado o el código se niega.
+Retina está hecha para revisar un video ANTES de publicarlo. Para quien lo use
+con contenido de una empresa hay un candado: con RETINA_SOLO_PUBLICADOS=1 (lo
+que viene por omisión) a la API de Meta solo van videos ya publicados y hay que
+confirmarlo con --ya-publicado. Un creador con su propio video lo apaga con
+RETINA_SOLO_PUBLICADOS=0 en su .env.
 
 Uso:
     python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json --salida CARPETA \
@@ -21,17 +24,25 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import time
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 
+from . import meta_api
 from .curvas import cubeta
 from .segmentar import segmentar
 
 # Lo que se paga y depende del video: si el video cambia, se borra para no explicar otro.
 PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4")
+
+
+def solo_publicados() -> bool:
+    """El candado se lee después del .env; encendido salvo que se apague con un 0."""
+    meta_api._cargar_env()
+    return os.environ.get("RETINA_SOLO_PUBLICADOS", "1").strip() != "0"
 
 
 def huella(video: Path) -> str:
@@ -67,8 +78,9 @@ def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
 def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, fecha: str,
            titulo: str, con_api: bool, arranque: Path, ver_video: bool = True, voz: Path | None = None,
            publicado: bool = False) -> dict:
-    if con_api and not publicado:
-        raise ValueError("A la API de Meta solo van videos ya publicados: confirma con --ya-publicado.")
+    if con_api and not publicado and solo_publicados():
+        raise ValueError("El candado está encendido: a la API de Meta solo van videos ya publicados. "
+                         "Confírmalo con --ya-publicado, o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
     tiempos, no_pude = {}, []
     preparar_carpeta(video, salida)
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
@@ -156,7 +168,7 @@ def main() -> None:
     ap.add_argument("--fecha", default=datetime.now().strftime("%Y-%m-%d %H:%M"))
     ap.add_argument("--titulo", default="")
     ap.add_argument("--con-api", action="store_true", help="Usa la Meta Model API (cuesta).")
-    ap.add_argument("--ya-publicado", action="store_true", help="Confirma que el video ya está publicado.")
+    ap.add_argument("--ya-publicado", action="store_true", help="Confirma que el video ya está publicado (lo pide el candado RETINA_SOLO_PUBLICADOS=1).")
     ap.add_argument("--arranque", type=Path, required=True, help="Modelo del riesgo del arranque (JSON de retina.arranque).")
     ap.add_argument("--voz", type=Path, help="Voz de la historia (voz.jsonl): activa el agente en lugar de explicar.")
     a = ap.parse_args()

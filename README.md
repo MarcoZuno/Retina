@@ -103,8 +103,10 @@ The panel reads only `resultado.json`; its contract is in
 [`docs/resultado-json.md`](docs/resultado-json.md), with a made-up example in
 [`casos/demo/resultado.json`](casos/demo/resultado.json).
 
-Requires Python 3.12 and ffmpeg (on PATH or in `FFMPEG`). Only already-published videos
-go to Meta's API: `--con-api` requires `--ya-publicado`.
+Requires Python 3.12 and ffmpeg (on PATH or in `FFMPEG`). Retina is built to review a video *before* you publish it. For company content there is a lock,
+on by default (`RETINA_SOLO_PUBLICADOS=1`): only already-published videos go to Meta's API and
+`--con-api` requires `--ya-publicado`. If the video is yours, turn it off with
+`RETINA_SOLO_PUBLICADOS=0` in your `.env`.
 
 Tests (no API key, no private data): `python -m unittest discover -s tests`.
 

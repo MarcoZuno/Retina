@@ -284,3 +284,15 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 - 11 de 524 juicios fallaron con HTTP 400 (archivo ya caducado al reusarlo); se dejan fuera.
 
 **Costo:** USD 9.08 (524 juicios a unos USD 0.017).
+
+### Día 3 (noche) · Predicción contra realidad y candado
+
+- `eval/prediccion_vs_real.py`: en los 50 casos del gate compara la curva que predijo Retina y la
+  regla de hoy contra la curva real (a los 3 s, 15 s, mitad, final y toda la curva) y si el nivel
+  del arranque acertó. Retina queda más cerca que la regla en la mayoría de los videos y en los
+  cinco puntos. Cifras en el reporte interno.
+- El candado de «solo publicados» se vuelve un ajuste (`RETINA_SOLO_PUBLICADOS`, encendido por
+  omisión). Retina está hecha para revisar antes de publicar; un creador con su propio video lo
+  apaga con `0`.
+
+**Costo:** USD 0.
