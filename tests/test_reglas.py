@@ -124,6 +124,38 @@ class Validador(unittest.TestCase):
 
     def test_intocables(self):
         self.assertTrue(explicar.toca_intocable("Muestra la lata sin pixelar desde el segundo 2"))
+
+
+class SparkOpenConRescate(unittest.TestCase):
+    """«abierto+api»: Spark Open escribe la tarjeta; Spark 1.3 solo rescata la que el validador rechazó."""
+
+    def escribir(self, respuestas: dict):
+        llamadas = []
+
+        def pedir(datos, aviso, motor):
+            llamadas.append(motor)
+            r = respuestas[motor]
+            if isinstance(r, Exception):
+                raise r
+            return dict(r)
+        salida, intentos, quien = explicar.escribir(DATOS, explicar.MOTORES["abierto+api"], pedir)
+        return salida, intentos, quien, llamadas
+
+    def test_si_spark_open_pasa_no_se_llama_a_spark_13(self):
+        _, _, quien, llamadas = self.escribir({"abierto": tarjeta(), "api": tarjeta()})
+        self.assertEqual((quien, llamadas), ("abierto", ["abierto"]))
+
+    def test_spark_13_rescata_la_que_el_validador_rechaza_dos_veces(self):
+        buena = tarjeta(que_cambiar="Pon el plano de la pila en el segundo 0.")
+        salida, intentos, quien, llamadas = self.escribir({"abierto": tarjeta(por_que="a" * 300), "api": buena})
+        self.assertEqual(llamadas, ["abierto", "abierto", "api"])
+        self.assertEqual((quien, salida["que_cambiar"]), ("api", buena["que_cambiar"]))
+        self.assertEqual([i["motor"] for i in intentos], ["abierto", "abierto", "api"])
+        self.assertEqual(intentos[-1]["problemas"], [])
+
+    def test_un_formato_invalido_de_spark_open_tambien_se_rescata(self):
+        _, _, quien, llamadas = self.escribir({"abierto": RuntimeError("sin JSON"), "api": tarjeta()})
+        self.assertEqual((quien, llamadas), ("api", ["abierto", "abierto", "api"]))
         self.assertTrue(explicar.toca_intocable("Corta del segundo 3 al 16 y quita el logo de la página"))
         self.assertTrue(explicar.toca_intocable("Quita la pregunta ¿Estás a favor? del final"))
         self.assertFalse(explicar.toca_intocable("Pon el dato en pantalla desde el segundo 0"))

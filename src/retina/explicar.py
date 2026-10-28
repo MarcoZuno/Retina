@@ -255,24 +255,46 @@ def pedir(datos: dict, aviso: str, motor: str = "api") -> dict:
     raise RuntimeError("Spark no devolvió la explicación ni con razonamiento medio.")
 
 
+# «abierto+api»: Spark Open (pesos abiertos) escribe la tarjeta y Spark 1.3 solo rescata la que el
+# validador le rechazó dos veces. Medido el 28-oct en 50 casos: Spark Open escribe 39 y Spark 1.3 rescata 11.
+MOTORES = {"api": ("api",), "abierto": ("abierto",), "abierto+api": ("abierto", "api")}
+
+
+def escribir(datos: dict, motores: tuple, pedir=pedir) -> tuple[dict, list, str]:
+    """Pide la tarjeta a cada motor en orden, dos intentos cada uno, hasta que una pase el validador.
+    Devuelve la última tarjeta, los intentos y qué motor la escribió."""
+    salida, intentos = None, []
+    for k, motor in enumerate(motores):
+        aviso, hay_rescate = "", k + 1 < len(motores)
+        for _ in range(2):
+            try:
+                s = pedir(datos, aviso, motor)
+                problemas = revisar(s, datos)
+            except (RuntimeError, TypeError, KeyError, AttributeError) as e:
+                if not hay_rescate:
+                    raise
+                intentos.append({"motor": motor, "sugerencia": "", "problemas": [f"respuesta con formato inválido ({type(e).__name__})"]})
+                continue
+            salida = s
+            intentos.append({"motor": motor, "sugerencia": s["que_cambiar"], "problemas": problemas})
+            if not problemas:
+                return salida, intentos, motor
+            aviso = "; ".join(problemas)
+    return salida, intentos, motores[-1]
+
+
 def explicar(carpeta: Path, arranque: dict, motor: str = "api", nombre: str = "explicar.json") -> dict:
     datos = datos_del_arranque(carpeta, arranque)
-    aviso, intentos = "", []
-    for _ in range(2):
-        salida = pedir(datos, aviso, motor)
-        problemas = revisar(salida, datos)
-        intentos.append({"sugerencia": salida["que_cambiar"], "problemas": problemas})
-        if not problemas:
-            break
-        aviso = "; ".join(problemas)
-    else:
+    salida, intentos, quien = escribir(datos, MOTORES[motor])
+    if intentos[-1]["problemas"]:
         salida.update(que_cambiar="", pasos=[], tipo_de_cambio="ninguno", storyboard=[])
         salida["no_pude_verificar"].append("No hubo una sugerencia que pasara el validador y el filtro de integridad.")
     from . import baseten
-    salida["licencia"] = {"modelo": baseten.MODELO if motor == "abierto" else MODELO,
-                          "servido_por": "Baseten" if motor == "abierto" else "Meta Model API",
+    salida["licencia"] = {"modelo": baseten.MODELO if quien == "abierto" else MODELO,
+                          "servido_por": "Baseten" if quien == "abierto" else "Meta Model API",
                           "instrucciones": "skills/explicar.md (explicar-v5)",
-                          "reglas": integridad.reglas()["version"], "intentos": intentos}
+                          "reglas": integridad.reglas()["version"], "intentos": intentos,
+                          "rescate": quien != MOTORES[motor][0]}
     (carpeta / nombre).write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
     return salida
 
@@ -280,11 +302,11 @@ def explicar(carpeta: Path, arranque: dict, motor: str = "api", nombre: str = "e
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("carpeta", type=Path)
-    ap.add_argument("--abierto", action="store_true", help="Con Muse Spark Open en Baseten (pesos abiertos).")
+    ap.add_argument("--motor", choices=list(MOTORES), default="api",
+                    help="api: Spark 1.3 · abierto: Muse Spark Open en Baseten · abierto+api: Spark Open con rescate de Spark 1.3.")
     a = ap.parse_args()
     arranque = json.loads((a.carpeta / "resultado.json").read_text(encoding="utf-8"))["arranque"]
-    s = explicar(a.carpeta, arranque, "abierto" if a.abierto else "api",
-                 "explicar-abierto.json" if a.abierto else "explicar.json")
+    s = explicar(a.carpeta, arranque, a.motor, "explicar.json" if a.motor == "api" else f"explicar-{a.motor.replace('+', '-y-')}.json")
     print(json.dumps({k: s[k] for k in ("por_que", "que_cambiar", "momento_s", "confianza", "anzuelo_detectado")},
                      ensure_ascii=False, indent=1))
 
