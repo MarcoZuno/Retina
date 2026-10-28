@@ -92,3 +92,13 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
   sumar años viejos no lo mejora.
 - **Los videos de prueba no cambian** (jul-sep 2026), para comparar contra
   todo lo medido antes.
+
+## 27-oct-2026 (noche) · Qué sí dice el panel
+
+- **El nivel del arranque es la promesa.** Alto, medio o bajo, contra videos
+  parecidos. Es lo único que se sostuvo en las dos pruebas (2024 y jul-sep 2026).
+- **El bloque no se promete.** Predecir cuál de los cinco bloques pierde más no
+  le gana a decir siempre el más común. Se muestra la caída de los parecidos por
+  bloque como contexto, y Spark explica qué pasa en el arranque viendo el video.
+- **La voz no entra al nivel.** Medido dos veces, con cientos de videos de
+  prueba. Va a la explicación de Spark, que sí la lee.

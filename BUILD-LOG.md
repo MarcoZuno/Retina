@@ -151,3 +151,24 @@ the day's cost in USD.*
 - Prueba jul-sep 2026: cuando dice «alto», el arranque sí pierde de más en la gran
   mayoría de los casos; cuando dice «bajo», en la mitad. En 2024, el mismo orden.
 - La voz no cambia el nivel de riesgo (sí ayuda a la curva a los 3 s).
+
+### Día 2 (noche) · Base final con toda la voz
+
+**Hecho**
+- Whisper local transcribió miles de videos de 2025-2026 que tenían archivo y no tenían voz
+  (unas dos horas en la GPU de prototipos). V-JEPA 2 y el audio quedaron para toda la base con archivo.
+- Se reentrenó el riesgo del arranque con la voz nueva.
+- Arreglo: con la voz apagada para el nivel, `predecir` le pasaba la voz al modelo sin
+  voz y tronaba por tamaño de matriz. Ahora solo la recibe el modelo con voz.
+
+**Medido** (cifras en la investigación privada)
+- Con cuatro veces más videos con voz en la prueba de jul-sep 2026, la voz sigue sin
+  mejorar el nivel de riesgo. El nivel sale sin voz.
+- En 2026 la voz tampoco mejora la curva (en 2024 sí, a los 3 s). La v0 sigue ganándole
+  a la regla de hoy en las 5 medidas.
+- Decir cuál de los cinco bloques pierde más no le gana a decir siempre el más común.
+  El panel muestra el nivel del arranque; el bloque va como contexto, no como predicción.
+- El tramo exacto con video y audio, ahora con 2024: peor que la posición más común.
+  Queda cerrado.
+
+**Costo:** USD 0.00 (todo local).

@@ -66,7 +66,7 @@ class Arranque:
 
     def predecir(self, v: dict, base: np.ndarray, tramos: list | None = None) -> dict:
         clave = "con_voz" if tramos and self.USAR_VOZ_EN_NIVEL else "sin_voz"
-        p = self._X(self.rasgos, v, base, tramos if tramos else None) @ self.W[clave]
+        p = self._X(self.rasgos, v, base, tramos if clave == "con_voz" else None) @ self.W[clave]
         arranque = float(p[0] + p[1])
         medio, alto = self.cortes[clave]
         nivel = "alto" if arranque >= alto else "medio" if arranque >= medio else "bajo"
