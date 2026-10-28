@@ -175,6 +175,15 @@ class FormatoDelPanel(unittest.TestCase):
         self.assertEqual(explicar.revisar(r["explicacion"], datos), [])
 
 
+class Demo(unittest.TestCase):
+    def test_la_demo_solo_sirve_el_panel_y_los_casos(self):
+        from retina.demo import PERMITIDO
+        for ruta in ("/panel/", "/panel/index.html", "/casos/demo/resultado.json"):
+            self.assertTrue(PERMITIDO.match(ruta), ruta)
+        for ruta in ("/.git/config", "/README.md", "/casos/", "/casos/../.env", "/src/retina/meta_api.py"):
+            self.assertFalse(PERMITIDO.match(ruta), ruta)
+
+
 class SoloPublicados(unittest.TestCase):
     def setUp(self):
         self.antes = os.environ.get("RETINA_SOLO_PUBLICADOS")

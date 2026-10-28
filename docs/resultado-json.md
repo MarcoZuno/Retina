@@ -65,3 +65,7 @@ los 15 segundos; en videos parecidos, 62»), la barra del inicio con las partes 
 «del segundo A al B» que cita `por_que`), «Qué hacer» con los `pasos` y un botón para copiarlos al
 editor, y lo técnico escondido en «Ver detalle». Los segundos se muestran como reloj (0:05).
 `python -m retina.demo` lo abre con un caso, sin llave.
+
+`realidad.curva` (opcional, 41 puntos): la curva real de un video ya publicado. Si viene, el panel
+la dibuja junto a la predicción y dice cuántos siguieron de verdad. Es para la demo «predicción
+contra realidad»; un video sin publicar no la trae.

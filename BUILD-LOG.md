@@ -318,3 +318,11 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
   `textContent`, misma CSP. Sin desborde a 360 px (medido con Playwright).
 - `python -m retina.demo`: sirve el repo solo en 127.0.0.1 y abre el panel con un caso. Sin llave,
   sin GPU y sin paquetes extra. Rechaza rutas fuera del repo.
+- Revisión de seguridad automática del commit: la demo servía toda la carpeta del repo y el panel
+  aceptaba `?caso=` de otro sitio con una ruta `//dominio`. Ahora la demo solo sirve el panel y
+  `casos/<carpeta>/resultado.json`, revisa que la petición venga a 127.0.0.1 o localhost (contra
+  DNS rebinding) y no lista carpetas; el panel solo acepta un `resultado.json` de `casos/` del
+  mismo sitio, y si la ruta no vale no abre nada. Probado con curl y Playwright.
+- `CLAUDE.md` del repo y paquete de despliegue de la demo estática (`deploy/`: Dockerfile con
+  nginx, cabeceras de seguridad, solo panel y casos, contenedor de solo lectura, cómo apagarlo).
+  No se pudo probar la imagen aquí: esta PC no tiene Docker.

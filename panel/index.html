@@ -67,6 +67,7 @@
   .leyenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--suave); margin: 6px 0 12px; }
   .leyenda i { display: inline-block; width: 22px; border-top: 2.5px solid var(--curva); vertical-align: middle; margin-right: 6px; }
   .leyenda i.p { border-top: 2px dashed var(--parecidos); }
+  .leyenda i.r { border-top: 2.5px solid var(--azul); }
   svg { width: 100%; height: auto; display: block; }
   .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
   .storyboard div { background: var(--zona); border: 1px solid var(--linea); border-radius: 10px; padding: 10px; font-size: 14px; }
@@ -133,7 +134,7 @@
     <details>
       <summary>Ver detalle</summary>
       <div class="detalle">
-        <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span></div>
+        <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real" class="oculto"><i class="r"></i>Lo que pasó de verdad</span></div>
         <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
         <ul id="detalle-lista"></ul>
         <button class="copiar oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
@@ -191,7 +192,9 @@ function cifra(r) {
   const tuyo = Math.round(100 * en(p.curva_predicha, dur, s)), otros = Math.round(100 * en(p.curva_parecidos, dur, s));
   $("cifra-numero").textContent = String(tuyo);
   $("cifra-texto").textContent = `de cada 100 personas que empiecen tu video seguirán viendo a los ${s} segundos.`;
-  $("cifra-comparado").textContent = `En videos parecidos siguen ${otros}.`;
+  const real = r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41
+    ? ` De verdad siguieron ${Math.round(100 * en(r.realidad.curva, dur, s))}.` : "";
+  $("cifra-comparado").textContent = `En videos parecidos siguen ${otros}.${real}`;
 }
 
 function barra(r) {
@@ -237,6 +240,10 @@ function grafica(r) {
   }
   g.append(el("path", { d: linea(p.curva_parecidos), fill: "none", stroke: "var(--parecidos)", "stroke-width": 2, "stroke-dasharray": "5 5" }));
   g.append(el("path", { d: linea(p.curva_predicha), fill: "none", stroke: "var(--curva)", "stroke-width": 2.5 }));
+  // «Predicción contra realidad»: solo si el caso ya se publicó y trae su curva real (realidad.curva, 41 puntos).
+  const hayReal = r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41;
+  if (hayReal) g.append(el("path", { d: linea(r.realidad.curva), fill: "none", stroke: "var(--azul)", "stroke-width": 2.5 }));
+  $("leyenda-real").classList.toggle("oculto", !hayReal);
   g.setAttribute("aria-label", `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${mmss(dur)}, según Retina y según videos parecidos.`);
 }
 
@@ -338,8 +345,15 @@ $("archivo").onchange = async (ev) => {
 };
 // Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo; con doble clic, se elige el archivo.
 (async () => {
+  // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
   const pedido = new URLSearchParams(location.search).get("caso");
-  const rutas = pedido && !/^[a-z]+:/i.test(pedido) ? [pedido] : ["resultado.json", "../casos/demo/resultado.json"];
+  let propio = null;
+  if (pedido) {
+    const u = new URL(pedido, location.href);
+    if (u.origin === location.origin && /^\/casos\/[\w-]+\/resultado\.json$/.test(u.pathname)) propio = u.pathname;
+    else { fallo("La dirección del caso no es válida: tiene que ser un resultado.json de la carpeta casos."); return; }
+  }
+  const rutas = propio ? [propio] : ["resultado.json", "../casos/demo/resultado.json"];
   for (const ruta of rutas) {
     try {
       const r = await fetch(ruta);
