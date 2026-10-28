@@ -1,0 +1,31 @@
+{
+ "version": "recomendaciones-meta-v1",
+ "fecha": "2026-10-28",
+ "nota": "Recomendaciones públicas de Meta para video en el feed y Reels. Retina las revisa por ventanas del inicio; son buenas prácticas, no una predicción.",
+ "reglas": [
+  {"id": "gancho_3s", "ventana": "0:00–0:03", "hasta_s": 3,
+   "regla": "Algo que detenga a la gente en los primeros 3 segundos",
+   "fuente": "https://www.facebook.com/business/ads/automation/tailored-campaigns",
+   "por_que": "Meta reporta que hasta el 47 % del valor de un video está en los primeros 3 segundos."},
+  {"id": "mensaje_3s", "ventana": "0:00–0:03", "hasta_s": 3,
+   "regla": "El mensaje principal aparece pronto (en texto o en voz)",
+   "fuente": "https://www.facebook.com/business/ads/automation/tailored-campaigns",
+   "por_que": "Meta pide que el mensaje clave vaya al inicio."},
+  {"id": "promesa_3s", "ventana": "0:00–0:03", "hasta_s": 3,
+   "regla": "Lo que promete el título se ve en los primeros 3 segundos",
+   "fuente": "https://www.facebook.com/business/news/updated-features-for-video-ads",
+   "por_que": "Si lo prometido tarda, el inicio no cumple lo que anuncia el título."},
+  {"id": "sin_sonido_10s", "ventana": "0:00–0:10", "hasta_s": 10,
+   "regla": "Se entiende sin sonido (texto en pantalla la mayor parte del tiempo)",
+   "fuente": "https://www.facebook.com/business/help/1675722002698686",
+   "por_que": "Meta dice que la mayoría ve el feed sin sonido."},
+  {"id": "original", "ventana": "Todo el inicio", "hasta_s": null,
+   "regla": "Contenido propio, no material de otros resubido",
+   "fuente": "https://creators.facebook.com/blog/how-to-continue-succeeding-with-facebook-on-video",
+   "por_que": "Meta dice que el contenido resubido sin editar difícilmente funciona."},
+  {"id": "vertical", "ventana": "Formato", "hasta_s": null,
+   "regla": "Video vertical 9:16",
+   "fuente": "https://www.facebook.com/business/ads/facebook-instagram-reels-ads",
+   "por_que": "Meta recomienda 9:16 para Reels."}
+ ]
+}

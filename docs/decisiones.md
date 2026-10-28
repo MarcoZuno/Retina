@@ -169,3 +169,14 @@ para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V
 - **Dónde sí entra el video:** en explicar dónde y por qué, y en los pasos para arreglarlo.
 - **La tarjeta trae «pasos»:** de 1 a 4 acciones en orden para hacer el cambio en el editor, cada
   una con su segundo. El panel muestra los segundos como reloj (0:05).
+
+## 28-oct-2026 (noche) · Revisión «según Meta» por ventanas (idea de la empresa)
+
+- **Qué es.** Revisar desde los primeros segundos lo que Meta recomienda en público: gancho y
+  mensaje en los primeros 3 s, que se entienda sin sonido en los primeros 10, que lo prometido se vea
+  pronto, contenido propio y video vertical. Cada regla con su fuente (`reglas/recomendaciones-meta-v1.json`).
+- **Qué salió en los 50 casos** (`eval/revision_meta_casos.py`): los videos de Badabun ya cumplen casi
+  todo (casi todos abren con gancho y mensaje y casi todos se entienden sin sonido). Lo único que separa
+  es si lo prometido se ve en los primeros 3 s, y con 10 casos medidos la diferencia no es clara.
+- **Qué se decide.** Entra como «Según Meta», buenas prácticas con su segundo y su fuente, sin
+  prometer que predicen. Sirve más a un creador que empieza que a un equipo que ya domina lo básico.

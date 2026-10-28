@@ -69,3 +69,9 @@ editor, y lo técnico escondido en «Ver detalle». Los segundos se muestran com
 `realidad.curva` (opcional, 41 puntos): la curva real de un video ya publicado. Si viene, el panel
 la dibuja junto a la predicción y dice cuántos siguieron de verdad. Es para la demo «predicción
 contra realidad»; un video sin publicar no la trae.
+
+`revision_meta` (lista): lo que Meta recomienda para el inicio, revisado por ventanas (0:00–0:03,
+0:00–0:10, todo el inicio, formato). Cada elemento trae `id`, `ventana`, `regla`, `cumple`
+(true/false), `evidencia` (con su segundo) y `fuente` (la página de Meta que lo respalda). Se
+calcula en código con lo que ya dejaron describir, transcribir y SAM. Son buenas prácticas, no una
+predicción: el panel las muestra como «Según Meta».

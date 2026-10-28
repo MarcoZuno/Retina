@@ -329,3 +329,11 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 - Los 50 casos del gate, otra vez con el agente y la tarjeta con pasos: 50 de 50 los escribió el
   agente (ninguno cayó al respaldo); 38 traen cambio con sus pasos y 12 no necesitan cambio.
   **Costo:** USD 1.45 (total del proyecto: USD 16.36 de 50).
+
+### Día 3 (noche, 3) · «Según Meta» por ventanas
+
+- `src/retina/revision_meta.py` y `reglas/recomendaciones-meta-v1.json`: gancho y mensaje en 0-3 s,
+  sin sonido en 0-10 s, lo prometido en 0-3 s (SAM), contenido propio y vertical, cada uno con su
+  evidencia y la página de Meta que lo respalda. Corre en el orquestador sin llamar a la API.
+- En los 50 casos casi todo se cumple; se presenta como buenas prácticas, no como predicción
+  (`docs/decisiones.md`). Tests: 26. **Costo:** USD 0.

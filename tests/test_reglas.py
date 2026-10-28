@@ -184,6 +184,18 @@ class Demo(unittest.TestCase):
             self.assertFalse(PERMITIDO.match(ruta), ruta)
 
 
+class RevisionMeta(unittest.TestCase):
+    def test_cada_recomendacion_trae_su_fuente_de_meta(self):
+        reglas = json.loads((RAIZ / "reglas" / "recomendaciones-meta-v1.json").read_text(encoding="utf-8"))["reglas"]
+        self.assertGreaterEqual(len(reglas), 5)
+        for r in reglas:
+            self.assertRegex(r["fuente"], r"^https://(www\.facebook\.com|creators\.facebook\.com)/")
+
+    def test_sin_datos_no_inventa(self):
+        from retina.revision_meta import revisar
+        self.assertEqual(revisar(Path("no-existe")), [])
+
+
 class SoloPublicados(unittest.TestCase):
     def setUp(self):
         self.antes = os.environ.get("RETINA_SOLO_PUBLICADOS")

@@ -153,6 +153,11 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
                                                  explicar.explicar, salida, riesgo_arranque)
         else:
             no_pude.append("Por qué y qué cambiar en el arranque (no hubo descripción del video).")
+        if (salida / "describir.json").exists():
+            # Lo que Meta recomienda para los primeros segundos, calculado en código (no llama a la API).
+            from .revision_meta import revisar
+            resultado["revision_meta"] = _paso("revision_meta", tiempos, no_pude,
+                                               "Las recomendaciones de Meta para el inicio", revisar, salida) or []
     no_pude.append("La música: no se analiza la letra ni la licencia.")
     escribir()
     return resultado
