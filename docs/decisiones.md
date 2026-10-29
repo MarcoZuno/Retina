@@ -180,3 +180,24 @@ para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V
   es si lo prometido se ve en los primeros 3 s, y con 10 casos medidos la diferencia no es clara.
 - **Qué se decide.** Entra como «Según Meta», buenas prácticas con su segundo y su fuente, sin
   prometer que predicen. Sirve más a un creador que empieza que a un equipo que ya domina lo básico.
+
+## 28-oct-2026 (noche) · ¿Las herramientas mejoran la tarjeta? Regla escrita antes de medir
+
+- **Qué se mide.** En los mismos 50 casos, la tarjeta del agente (Spark Open con herramientas y el
+  validador en el ciclo) contra la tarjeta de una sola vuelta (Spark Open con los mismos datos, sin
+  herramientas; las dos con el rescate de Spark 1.3). Un juez ciego (Muse Spark 1.3) recibe lo que se
+  ve y se dice en el arranque y las dos tarjetas como «1» y «2», sin saber cuál es cuál, y elige cuál le
+  sirve más a quien edita. Cada par se juzga en los dos órdenes; solo cuenta si elige la misma las dos
+  veces (`eval/juez_tarjetas.py`).
+- **Regla.** Si el agente gana al menos 60 % de los pares con veredicto firme y hay al menos 20 pares
+  firmes, decimos que las herramientas mejoran la tarjeta, con la cifra. Si no, no lo decimos y
+  reportamos el resultado tal cual.
+- **Límite.** El juez es un modelo, no un editor: mide qué tarjeta parece más útil y mejor apoyada en
+  los datos, no si retiene más gente.
+- **Resultado (misma noche).** 50 casos juzgados en los dos órdenes; 39 con veredicto firme. El juez
+  prefirió la tarjeta de una sola vuelta en 27 y la del agente en 12 (31 %); en 11 cambió de opinión
+  al cambiar el orden. La regla no se cumple: **no decimos que las herramientas mejoren la tarjeta.**
+  Límite a la vista: el juez solo recibe los datos que tuvo la tarjeta de una vuelta, así que lo que el
+  agente sacó de SAM o de videos parecidos puede parecerle inventado. El agente sigue por omisión por lo
+  que sí está medido (cierra solo los 50 casos y corrige lo que el validador le regresa), y la revisión
+  humana de las tarjetas queda pendiente. Costo: USD 0.80.

@@ -215,10 +215,10 @@ the day's cost in USD.*
 
 **Costo del día:** dentro del tope de USD 10 (detalle en `costos.jsonl`).
 
-### Día 3 (mañana) · Arreglos de la auditoría
+### Día 3 (27-oct, 23:59) · Arreglos de la auditoría
 
-Siete revisores independientes (jurado, ingeniería, producto, datos, seguridad, redes y
-negocio) auditaron Retina el 28-oct. Esto se arregló el mismo día:
+Siete revisiones independientes hechas con agentes de IA, cada uno con un perfil (jurado,
+ingeniería, producto, datos, seguridad, redes y negocio), auditaron Retina. Esto se arregló el mismo día:
 
 **El riesgo del arranque, contra una vara justa**
 - La regla de hoy no distingue tipos de producción, y un tipo casi siempre perdía de más:
@@ -267,7 +267,7 @@ negocio) auditaron Retina el 28-oct. Esto se arregló el mismo día:
 
 **Costo:** unos centavos (3 casos reales para probar las instrucciones nuevas).
 
-### Día 3 (tarde) · Juez por pares
+### Día 3 (28-oct, 10:05) · Juez por pares
 
 ¿Mirar el video aporta algo que los datos del video no dan? Spark 1.3 ve el arranque de dos
 videos reales del mismo tipo (los 50 casos del gate, publicados jul-sep 2026) y dice cuál
@@ -285,7 +285,7 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 
 **Costo:** USD 9.08 (524 juicios a unos USD 0.017).
 
-### Día 3 (noche) · Predicción contra realidad y candado
+### Día 3 (28-oct, 11:35) · Predicción contra realidad y candado
 
 - `eval/prediccion_vs_real.py`: en los 50 casos del gate compara la curva que predijo Retina y la
   regla de hoy contra la curva real (a los 3 s, 15 s, mitad, final y toda la curva) y si el nivel
@@ -297,7 +297,7 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 
 **Costo:** USD 0.
 
-### Día 3 (noche) · ¿Lo que ya medimos del video mejora el nivel? No. Y la tarjeta trae pasos
+### Día 3 (28-oct, 12:22) · ¿Lo que ya medimos del video mejora el nivel? No. Y la tarjeta trae pasos
 
 - `eval/arranque_con_video.py`: el nivel de hoy contra el mismo nivel más V-JEPA 2, ritmo visual
   y audio del arranque. Regla escrita antes de correr (`docs/decisiones.md`). En jul-sep la
@@ -310,7 +310,7 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 
 **Costo:** USD 0.03 (un caso para probar los pasos).
 
-### Día 3 (noche, 2) · Panel del concurso y demo de un minuto
+### Día 3 (28-oct, 12:29) · Panel del concurso y demo de un minuto
 
 - Panel rehecho para quien edita, a partir de una maqueta: semáforo,
   una cifra «de cada 100», barra del inicio con las partes a revisar, pasos numerados con botón
@@ -330,10 +330,49 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
   agente (ninguno cayó al respaldo); 38 traen cambio con sus pasos y 12 no necesitan cambio.
   **Costo:** USD 1.45 (total del proyecto: USD 16.36 de 50).
 
-### Día 3 (noche, 3) · «Según Meta» por ventanas
+### Día 3 (28-oct, 13:56) · «Según Meta» por ventanas
 
 - `src/retina/revision_meta.py` y `reglas/recomendaciones-meta-v1.json`: gancho y mensaje en 0-3 s,
   sin sonido en 0-10 s, lo prometido en 0-3 s (SAM), contenido propio y vertical, cada uno con su
   evidencia y la página de Meta que lo respalda. Corre en el orquestador sin llamar a la API.
 - En los 50 casos casi todo se cumple; se presenta como buenas prácticas, no como predicción
   (`docs/decisiones.md`). Tests: 26. **Costo:** USD 0.
+
+### Día 3 (28-oct, 14:16–16:49) · Muse Spark Open, validador y panel Liquid Glass
+
+- Conexión con **Muse Spark Open** en la Model API de Baseten, con tope propio (USD 30). No acepta
+  modo JSON: el formato va en las instrucciones.
+- El validador tumbaba tarjetas que citaban entre comillas el anzuelo que el video ya dice para
+  quitarlo. Arreglado: cuenta como quitar si lo citado está en lo que se dice o se ve.
+- Una sola vuelta, mismos 50 casos: Spark 1.3 pasa el validador a la primera en 46; Spark Open en 28.
+- Panel del concurso con el diseño «liquid glass» (WebGL sobre fondos hechos con Muse Image; sin
+  WebGL, CSS), conectado al `resultado.json` real.
+
+### Día 3 (28-oct, 18:08–18:29) · El agente corre en Spark Open
+
+- Spark Open sí hace llamadas a herramientas por Chat Completions. El mismo ciclo del agente
+  (herramientas, validador, guardas) corre con Spark 1.3 o con Spark Open; con `abierto+api`, Spark
+  1.3 solo rescata si el ciclo de Spark Open no cierra.
+- Mismos 50 casos: el agente en Spark Open cerró los 50 solo (0 rescates), 42 corregidos por él
+  mismo tras un rechazo del validador, 5.6 turnos, USD 0.038 por video. Pasa a ser el motor por omisión.
+- Con razonamiento alto, la tarjeta de una vuelta no mejoró (22 contra 28): ahí se quedó el de fábrica.
+- El panel muestra el storyboard dibujado con Muse Image y quién escribió la tarjeta.
+
+### Día 3 (28-oct, 18:56–20:41) · Galería y prototipo para subir un video
+
+- `retina.demo --casos DIR --galeria`: lista los casos de una carpeta fuera del repo (`panel/galeria.html`).
+- `retina.app` + `panel/subir.html`: prototipo local para subir un MP4 ya publicado y recibir la tarjeta.
+  Probado de punta a punta: 1 min 40 s y USD 0.09.
+- Arreglo: un video ya publicado que el modelo tiene en su entrenamiento tronaba al calcular sus
+  parecidos; ahora se saca su fila de entrenamiento.
+
+### Día 3 (28-oct, 22:44 en adelante) · Segunda auditoría y arreglos
+
+- Cuatro revisiones con agentes de IA (jurado, seguridad, reproducibilidad, plan). Lo más grave: en
+  el commit `1eac254` se colaron datos reales de Badabun en pruebas y ejemplos. Se cambiaron por datos
+  inventados y se agregó un candado (`.gitleaks.toml`) que bloquea códigos internos de producción.
+- Juez ciego de tarjetas (regla escrita antes de medir): prefirió la tarjeta de una vuelta en 27 de 39
+  pares firmes y la del agente en 12. No decimos que las herramientas mejoren la tarjeta
+  (`docs/decisiones.md`). **Costo:** USD 0.80.
+- Aviso visible de «ejemplo inventado» en el panel, README corregido (lo que no es de Meta, tabla de
+  modelos, 50 casos que no son prueba limpia), dependencias fijadas, cabeceras de seguridad en la demo.

@@ -444,6 +444,21 @@ class SubirUnVideo(unittest.TestCase):
         self.assertFalse(pedido_propio({"Origin": "http://127.0.0.1:8790"}, 8790))  # sin la cabecera propia
         self.assertFalse(pedido_propio({"X-Retina": "1", "Origin": "https://otro-sitio.com"}, 8790))
 
+    def test_un_tamano_mal_formado_se_rechaza(self):
+        from retina.app import largo_valido
+        self.assertEqual(largo_valido("1048576"), 1048576)
+        for malo in (None, "", "abc", "-5", "1e9", "12 34"):
+            self.assertIsNone(largo_valido(malo), malo)
+
+    def test_el_avance_se_escribe_completo_o_no_se_escribe(self):
+        import tempfile
+        from retina.app import _escribir_estado
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            _escribir_estado(d, estado="error", mensaje="algo")
+            self.assertEqual(json.loads((d / "estado.json").read_text(encoding="utf-8"))["estado"], "error")
+            self.assertEqual(sorted(x.name for x in d.iterdir()), ["estado.json"])  # sin temporales sueltos
+
     def test_el_avance_sale_de_lo_que_ya_se_escribio(self):
         import tempfile
         from retina.app import estado

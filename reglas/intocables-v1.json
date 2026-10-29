@@ -1,7 +1,7 @@
 {
   "version": "intocables-v1",
   "fecha": "2026-10-28",
-  "estado": "BORRADOR: falta agregar lo de cada página (avisos de salud o de primeros auxilios, noticias). Hasta entonces, lo común a todas.",
+  "estado": "v1: lo común a todas las páginas. Lo propio de cada página (avisos de salud o de primeros auxilios, noticias) queda para después del concurso.",
   "uso": "Retina nunca sugiere quitar, cortar, tapar ni cambiar esto, porque es marca, ley o línea editorial. El validador bloquea la sugerencia si un verbo de la lista va junto a uno de estos elementos.",
   "elementos": [
     {"id": "logo", "nombre": "Logo o marca de la página", "frases": ["logo", "marca de la pagina", "cortinilla", "cintillo", "marca de agua de la pagina", "firma de la pagina"]},

@@ -43,6 +43,7 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
 
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".webp": "image/webp"}
     casos: Path | None = None
+    server_version, sys_version = "Retina", ""  # sin versión de Python en las respuestas
 
     def do_GET(self):  # noqa: N802 - nombre que pide http.server
         host = (self.headers.get("Host") or "").split(":")[0]
@@ -58,6 +59,11 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
         if self.path.split("?", 1)[0].endswith((".html", ".json", "/")):  # páginas y casos siempre frescos
             self.send_header("Cache-Control", "no-cache")
+        # Ninguna otra página puede incrustar estas en un marco, y el navegador no adivina tipos.
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Content-Security-Policy", "frame-ancestors 'none'")
+        self.send_header("Referrer-Policy", "no-referrer")
         super().end_headers()
 
     def translate_path(self, path):

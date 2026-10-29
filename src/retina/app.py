@@ -19,6 +19,7 @@ import argparse
 import functools
 import http.server
 import json
+import os
 import re
 import secrets
 import shutil
@@ -82,8 +83,16 @@ def estado(carpeta: Path) -> dict:
     return {"estado": "procesando", "paso": paso}
 
 
+def largo_valido(valor: str | None) -> int | None:
+    """El Content-Length solo si es un entero positivo escrito con dígitos."""
+    return int(valor) if valor and valor.isdigit() else None
+
+
 def _escribir_estado(carpeta: Path, **e) -> None:
-    (carpeta / "estado.json").write_text(json.dumps(e, ensure_ascii=False), encoding="utf-8")
+    """Se escribe a un temporal y se reemplaza de un golpe: quien lo lee nunca ve un archivo a medias."""
+    temporal = carpeta / "estado.json.tmp"
+    temporal.write_text(json.dumps(e, ensure_ascii=False), encoding="utf-8")
+    os.replace(temporal, carpeta / "estado.json")
 
 
 def revisar(carpeta: Path, datos: dict, modelos: dict) -> None:
@@ -104,6 +113,7 @@ def revisar(carpeta: Path, datos: dict, modelos: dict) -> None:
 class ConSubida(SoloElPanel):
     """El panel y la galería, más la API para subir un video y seguir su revisión."""
 
+    timeout = 60  # una conexión que deja de mandar datos se corta en vez de dejar un hilo colgado
     modelos: dict = {}
     fila: ThreadPoolExecutor | None = None
     talentos: list[str] = []
@@ -140,8 +150,8 @@ class ConSubida(SoloElPanel):
             datos = leer_datos(self.headers)
         except ValueError as e:
             return self._json(400, {"error": str(e)})
-        largo = int(self.headers.get("Content-Length") or 0)
-        if not 12 <= largo <= MAX_MB * 1024 * 1024:
+        largo = largo_valido(self.headers.get("Content-Length"))
+        if largo is None or not 12 <= largo <= MAX_MB * 1024 * 1024:
             return self._json(400, {"error": f"El video tiene que pesar menos de {MAX_MB} MB."})
         cabeza = self.rfile.read(12)
         if not es_mp4(cabeza):

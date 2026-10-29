@@ -1,0 +1,6 @@
+# Opcional: V-JEPA 2 (retina.embeber) y Whisper local (retina.transcribir_local). Necesitan GPU.
+# Sin esto el pipeline corre igual: el nivel de riesgo no depende de V-JEPA 2.
+# torch con CUDA: pip install torch==2.14.1 --index-url https://download.pytorch.org/whl/cu126
+torch==2.14.1
+transformers==5.21.0
+faster-whisper>=1.0
