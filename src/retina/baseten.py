@@ -50,19 +50,30 @@ def usd(uso) -> float:
     return ((entrada - cache) * PRECIO[0] + cache * PRECIO[1] + salida * PRECIO[2]) / 1e6
 
 
-def chat(servicio: str, mensajes: list[dict], esquema: dict | None = None, max_tokens: int = 8000) -> str:
-    """Devuelve el texto de la respuesta. `esquema` se ignora aquí: lo describe quien arma los mensajes."""
+def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfuerzo: str | None = None,
+              herramientas: list[dict] | None = None):
+    """Devuelve el mensaje de la respuesta: su texto y, si se le dieron herramientas, las que llamó.
+    `esfuerzo` (low, medium, high) es el razonamiento; Spark Open en Baseten lo respeta (Meta, 27-oct)."""
     from openai import OpenAI
 
-    # Spark Open en las Model APIs de Baseten no acepta salida estructurada ni modo JSON (docs de Baseten,
-    # 28-oct-2026): el formato se pide en las instrucciones y el validador de Retina revisa lo demás.
     _revisar_tope(max_tokens)
     cliente = OpenAI(api_key=_llave(), base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=2)
     t0 = time.time()
-    r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens)
+    extra = {"reasoning_effort": esfuerzo} if esfuerzo else {}
+    if herramientas:
+        extra["tools"] = herramientas
+    r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens, **extra)
     meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage),
                         entrada=getattr(r.usage, "prompt_tokens", 0), salida=getattr(r.usage, "completion_tokens", 0))
-    return r.choices[0].message.content or ""
+    return r.choices[0].message
+
+
+def chat(servicio: str, mensajes: list[dict], esquema: dict | None = None, max_tokens: int = 8000,
+         esfuerzo: str | None = None) -> str:
+    """Devuelve el texto de la respuesta. `esquema` se ignora aquí: lo describe quien arma los mensajes."""
+    # Spark Open en las Model APIs de Baseten no acepta salida estructurada ni modo JSON (docs de Baseten,
+    # 28-oct-2026): el formato se pide en las instrucciones y el validador de Retina revisa lo demás.
+    return completar(servicio, mensajes, max_tokens, esfuerzo).content or ""
 
 
 def main() -> None:

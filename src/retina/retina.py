@@ -77,7 +77,7 @@ def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
 
 def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, fecha: str,
            titulo: str, con_api: bool, arranque: Path, ver_video: bool = True, voz: Path | None = None,
-           publicado: bool = False) -> dict:
+           publicado: bool = False, motor: str = "") -> dict:
     if con_api and not publicado and solo_publicados():
         raise ValueError("El candado está encendido: a la API de Meta solo van videos ya publicados. "
                          "Confírmalo con --ya-publicado, o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
@@ -147,10 +147,10 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             if voz is not None:  # el agente lee resultado.json: por eso va después de escribirlo
                 from .agente import cargar_voz, correr_agente
                 resultado["explicacion"] = _paso("agente", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
-                                                 correr_agente, salida, m, cargar_voz(voz))
+                                                 correr_agente, salida, m, cargar_voz(voz), motor)
             else:
                 resultado["explicacion"] = _paso("explicar", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
-                                                 explicar.explicar, salida, riesgo_arranque)
+                                                 explicar.explicar, salida, riesgo_arranque, motor)
         else:
             no_pude.append("Por qué y qué cambiar en el arranque (no hubo descripción del video).")
         if (salida / "describir.json").exists():
@@ -176,9 +176,12 @@ def main() -> None:
     ap.add_argument("--ya-publicado", action="store_true", help="Confirma que el video ya está publicado (lo pide el candado RETINA_SOLO_PUBLICADOS=1).")
     ap.add_argument("--arranque", type=Path, required=True, help="Modelo del riesgo del arranque (JSON de retina.arranque).")
     ap.add_argument("--voz", type=Path, help="Voz de la historia (voz.jsonl): activa el agente en lugar de explicar.")
+    ap.add_argument("--motor", default="", choices=["", "api", "abierto", "abierto+api"],
+                    help="Quién escribe la tarjeta: api (Spark 1.3), abierto (Muse Spark Open) o abierto+api "
+                         "(Spark Open con rescate de Spark 1.3). Por omisión, RETINA_MOTOR del .env.")
     a = ap.parse_args()
     r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque,
-               voz=a.voz, publicado=a.ya_publicado)
+               voz=a.voz, publicado=a.ya_publicado, motor=a.motor)
     print(f"Riesgo del arranque: {r['arranque']['nivel']} · {r['tiempos_s']}")
     for x in r["licencia"]["no_pude_revisar"]:
         print(f"  no revisé: {x}")

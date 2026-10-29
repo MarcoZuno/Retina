@@ -5,7 +5,10 @@ en el ciclo) y anota turnos, herramientas, si cayó al respaldo y el costo.
 Así se compara contra «explicar» de una sola vuelta sobre los mismos videos.
 
 Uso (desde la raíz del repo):
-    python eval/casos_agente.py --casos CARPETA --voz VOZ.jsonl
+    python eval/casos_agente.py --casos CARPETA --voz VOZ.jsonl [--motor abierto+api]
+
+Con otro motor que no sea «api», cada caso escribe agente-MOTOR.json y la tabla es
+tabla-agente-MOTOR.jsonl: no se pisa lo que escribió Spark 1.3.
 """
 from __future__ import annotations
 
@@ -17,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from retina import meta_api  # noqa: E402
-from retina.agente import cargar_voz, correr_agente  # noqa: E402
+from retina.agente import MOTORES, cargar_voz, correr_agente  # noqa: E402
 from retina.predecir import Modelo  # noqa: E402
 
 
@@ -25,23 +28,27 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--casos", type=Path, required=True, help="La --salida de eval/casos_api.py.")
     ap.add_argument("--voz", type=Path, required=True)
+    ap.add_argument("--motor", choices=list(MOTORES), default="api")
+    ap.add_argument("--solo", type=int, default=0, help="Solo los primeros N casos que falten (para probar).")
     a = ap.parse_args()
     modelo = Modelo.cargar(a.casos / "modelos" / "predecir-hasta-corte.pkl")
     voz = cargar_voz(a.voz)
-    tabla = a.casos / "tabla-agente.jsonl"
+    sufijo = "" if a.motor == "api" else "-" + a.motor.replace("+", "-y-")
+    tabla = a.casos / f"tabla-agente{sufijo}.jsonl"
     hechos = {json.loads(l)["codigo"] for l in tabla.open(encoding="utf-8")} if tabla.exists() else set()
     codigos = [c for c in json.loads((a.casos / "casos.json").read_text(encoding="utf-8"))
-               if (a.casos / "casos" / c / "resultado.json").exists() and c not in hechos]
+               if (a.casos / "casos" / c / "resultado.json").exists() and c not in hechos][: a.solo or None]
     for i, c in enumerate(codigos, 1):
         t0, gasto0 = time.time(), meta_api.gastado_usd()
         try:
-            t = correr_agente(a.casos / "casos" / c, modelo, voz)
+            t = correr_agente(a.casos / "casos" / c, modelo, voz, a.motor, f"agente{sufijo}.json")
         except meta_api.TopeAlcanzado as e:
             print(f"Me detengo: {e}")
             break
         lic = t["licencia"]
         herramientas = [x["herramienta"] for x in lic["traza"] if "herramienta" in x]
-        fila = {"codigo": c, "fuente": lic["fuente"], "turnos": lic["turnos"], "herramientas": herramientas,
+        fila = {"codigo": c, "fuente": lic["fuente"], "escribio": lic["modelo"], "rescate": lic.get("rescate", False),
+                "falla": lic.get("falla"), "turnos": lic["turnos"], "herramientas": herramientas,
                 "entregas": herramientas.count("entregar_tarjeta"), "uso_sam": "medir_lo_prometido" in herramientas,
                 "uso_parecidos": "buscar_parecidos" in herramientas, "con_sugerencia": bool(t["que_cambiar"]),
                 "confianza": t["confianza"], "usd": round(meta_api.gastado_usd() - gasto0, 4),

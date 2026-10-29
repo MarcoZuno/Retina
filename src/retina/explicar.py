@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 from pathlib import Path
 
@@ -231,9 +232,10 @@ def pedir_abierto(datos: dict, aviso: str) -> dict:
                f"bloques de código, con exactamente estas claves: {campos}. Las listas son listas de textos.")
     mensajes = [{"role": "system", "content": c["input"][0]["content"][0]["text"] + formato},
                 {"role": "user", "content": c["input"][1]["content"][0]["text"]}]
-    # Como Spark 1.3, a veces gasta la salida pensando y no escribe el JSON: se repite con más espacio.
+    # Piensa con el mismo esfuerzo que Spark 1.3. Como él, a veces gasta la salida pensando y no escribe
+    # el JSON: se repite con más espacio.
     for tope in (8000, 14000):
-        texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=tope)
+        texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=tope, esfuerzo="high")
         i, f = texto.find("{"), texto.rfind("}")
         if i >= 0 and f > i:
             try:
@@ -258,6 +260,16 @@ def pedir(datos: dict, aviso: str, motor: str = "api") -> dict:
 # «abierto+api»: Spark Open (pesos abiertos) escribe la tarjeta y Spark 1.3 solo rescata la que el
 # validador le rechazó dos veces. Medido el 28-oct en 50 casos: Spark Open escribe 39 y Spark 1.3 rescata 11.
 MOTORES = {"api": ("api",), "abierto": ("abierto",), "abierto+api": ("abierto", "api")}
+MOTOR_POR_OMISION = "api"
+
+
+def motor_por_omision() -> str:
+    """RETINA_MOTOR del .env, leído al usarse (al importar el .env todavía no se ha cargado)."""
+    meta_api._cargar_env()
+    motor = os.environ.get("RETINA_MOTOR") or MOTOR_POR_OMISION
+    if motor not in MOTORES:
+        raise ValueError(f"RETINA_MOTOR debe ser uno de {', '.join(MOTORES)}; dice «{motor}».")
+    return motor
 
 
 def escribir(datos: dict, motores: tuple, pedir=pedir) -> tuple[dict, list, str]:
@@ -283,7 +295,8 @@ def escribir(datos: dict, motores: tuple, pedir=pedir) -> tuple[dict, list, str]
     return salida, intentos, motores[-1]
 
 
-def explicar(carpeta: Path, arranque: dict, motor: str = "api", nombre: str = "explicar.json") -> dict:
+def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "explicar.json") -> dict:
+    motor = motor or motor_por_omision()
     datos = datos_del_arranque(carpeta, arranque)
     salida, intentos, quien = escribir(datos, MOTORES[motor])
     if intentos[-1]["problemas"]:
@@ -302,11 +315,12 @@ def explicar(carpeta: Path, arranque: dict, motor: str = "api", nombre: str = "e
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("carpeta", type=Path)
-    ap.add_argument("--motor", choices=list(MOTORES), default="api",
+    ap.add_argument("--motor", choices=list(MOTORES), default="",
                     help="api: Spark 1.3 · abierto: Muse Spark Open en Baseten · abierto+api: Spark Open con rescate de Spark 1.3.")
     a = ap.parse_args()
     arranque = json.loads((a.carpeta / "resultado.json").read_text(encoding="utf-8"))["arranque"]
-    s = explicar(a.carpeta, arranque, a.motor, "explicar.json" if a.motor == "api" else f"explicar-{a.motor.replace('+', '-y-')}.json")
+    motor = a.motor or motor_por_omision()
+    s = explicar(a.carpeta, arranque, motor, "explicar.json" if motor == "api" else f"explicar-{motor.replace('+', '-y-')}.json")
     print(json.dumps({k: s[k] for k in ("por_que", "que_cambiar", "momento_s", "confianza", "anzuelo_detectado")},
                      ensure_ascii=False, indent=1))
 

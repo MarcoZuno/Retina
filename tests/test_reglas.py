@@ -16,7 +16,7 @@ import numpy as np
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-from retina import explicar, integridad, meta_api  # noqa: E402
+from retina import agente, explicar, integridad, meta_api  # noqa: E402
 from retina.curvas import _grupo_lento, cubeta, grupo_parecido  # noqa: E402
 from retina.sam import rechazo  # noqa: E402
 from retina.transcribir import silencios  # noqa: E402
@@ -160,6 +160,87 @@ class SparkOpenConRescate(unittest.TestCase):
         self.assertTrue(explicar.toca_intocable("Quita la pregunta ¿Estás a favor? del final"))
         self.assertFalse(explicar.toca_intocable("Pon el dato en pantalla desde el segundo 0"))
 
+    def test_spark_open_piensa_con_el_mismo_esfuerzo_que_spark_13(self):
+        from unittest import mock
+        from retina import baseten
+        pedidos = []
+
+        class Cliente:
+            def __init__(self, **_):
+                self.chat = self.completions = self
+
+            def create(self, **kw):
+                pedidos.append(kw)
+                uso = mock.Mock(prompt_tokens=10, completion_tokens=5, prompt_tokens_details=None)
+                return mock.Mock(usage=uso, choices=[mock.Mock(message=mock.Mock(content=json.dumps(tarjeta())))])
+        with mock.patch("openai.OpenAI", Cliente), mock.patch.object(baseten, "_llave", return_value="x"), \
+                mock.patch.object(meta_api, "_registrar"):
+            explicar.pedir_abierto(DATOS, "")
+        self.assertEqual(pedidos[0].get("reasoning_effort"), "high")
+
+
+class AgenteEnSparkOpen(unittest.TestCase):
+    """El agente corre en Spark Open (pesos abiertos); Spark 1.3 solo rescata si el ciclo no cierra."""
+
+    class Caja:
+        def correr(self, nombre, args):
+            ok = args.get("por_que") != "mala"
+            return {"aceptada": ok, "problemas": [] if ok else ["la tarjeta no pasa"]}
+
+    class Guion:
+        """Un modelo de mentira que entrega, en orden, las tarjetas que se le dan."""
+
+        def __init__(self, *tarjetas):
+            self.tarjetas, self.turnos = list(tarjetas), 0
+
+        def turno(self):
+            self.turnos += 1
+            if not self.tarjetas:
+                return [], "ya no sé qué más hacer"
+            return [{"id": str(self.turnos), "nombre": "entregar_tarjeta", "argumentos": json.dumps(self.tarjetas.pop(0))}], ""
+
+        def devolver(self, id_, salida):
+            pass
+
+        def insistir(self):
+            pass
+
+    def investigar(self, abierto, api):
+        return agente.investigar(self.Caja(), agente.MOTORES["abierto+api"], {"abierto": lambda: abierto, "api": lambda: api})
+
+    def test_si_el_ciclo_de_spark_open_cierra_spark_13_no_trabaja(self):
+        api = self.Guion({"por_que": "buena"})
+        tarjeta, _, quien, _ = self.investigar(self.Guion({"por_que": "buena"}), api)
+        self.assertEqual((quien, tarjeta["por_que"], api.turnos), ("abierto", "buena", 0))
+
+    def test_spark_13_rescata_cuando_spark_open_no_cierra(self):
+        abierto, api = self.Guion({"por_que": "mala"}), self.Guion({"por_que": "buena"})
+        _, traza, quien, _ = self.investigar(abierto, api)
+        self.assertEqual((quien, abierto.turnos, api.turnos), ("api", agente.MAX_TURNOS, 1))
+        self.assertEqual([t["motor"] for t in traza if "herramienta" in t], ["abierto", "api"])
+
+    def test_una_falla_de_red_de_spark_open_pasa_al_rescate(self):
+        class Caido(self.Guion):
+            def turno(self):
+                raise ConnectionError("sin red")
+        _, _, quien, fallas = self.investigar(Caido(), self.Guion({"por_que": "buena"}))
+        self.assertEqual(quien, "api")
+        self.assertIn("ConnectionError", fallas[0])
+
+    def test_spark_open_recibe_las_mismas_herramientas_en_formato_de_chat(self):
+        self.assertEqual({h["function"]["name"] for h in agente.HERRAMIENTAS_CHAT}, agente.NOMBRES)
+
+    def test_el_motor_por_omision_sale_del_env_al_usarse(self):
+        from unittest import mock
+        sin_archivo = {"RETINA_ENV": str(RAIZ / "no-existe.env")}
+        with mock.patch.dict(os.environ, {**sin_archivo, "RETINA_MOTOR": "api"}):
+            self.assertEqual(explicar.motor_por_omision(), "api")
+        with mock.patch.dict(os.environ, sin_archivo):
+            os.environ.pop("RETINA_MOTOR", None)
+            self.assertEqual(explicar.motor_por_omision(), explicar.MOTOR_POR_OMISION)
+        with mock.patch.dict(os.environ, {**sin_archivo, "RETINA_MOTOR": "gpt"}), self.assertRaises(ValueError):
+            explicar.motor_por_omision()
+
 
 class Sam(unittest.TestCase):
     def test_nunca_personas(self):
@@ -267,6 +348,41 @@ class Demo(unittest.TestCase):
         self.assertEqual(SoloElPanel.extensions_map[".webp"], "image/webp")
         for ruta in ("/.git/config", "/README.md", "/casos/", "/casos/../.env", "/src/retina/meta_api.py"):
             self.assertFalse(PERMITIDO.match(ruta), ruta)
+
+    def test_la_demo_sirve_las_ilustraciones_del_storyboard_de_un_caso(self):
+        from retina.demo import PERMITIDO
+        self.assertTrue(PERMITIDO.match("/casos/demo/agente-cuadro1-ilustracion-ia.webp"))
+        self.assertTrue(PERMITIDO.match("/casos/demo/explicar-cuadro3-ilustracion-ia.png"))
+        for ruta in ("/casos/demo/foto.png", "/casos/demo/agente-cuadro1-ilustracion-ia.svg",
+                     "/casos/demo/../x-ilustracion-ia.png", "/casos/demo/sub/x-ilustracion-ia.png"):
+            self.assertFalse(PERMITIDO.match(ruta), ruta)
+
+
+class StoryboardEnElPanel(unittest.TestCase):
+    """Las ilustraciones de Muse Image se anotan en el resultado.json del caso para que el panel las muestre."""
+
+    def anotar(self, storyboard_del_caso, storyboard_dibujado):
+        import tempfile
+        from retina import storyboard
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            (d / "resultado.json").write_text(json.dumps({"explicacion": {"storyboard": storyboard_del_caso}}), encoding="utf-8")
+            storyboard.anotar(d, storyboard_dibujado, [d / "agente-cuadro1-ilustracion-ia.png"])
+            return json.loads((d / "resultado.json").read_text(encoding="utf-8"))["explicacion"]
+
+    def test_las_ilustraciones_quedan_anotadas_en_el_caso(self):
+        e = self.anotar(["dos panes"], ["dos panes"])
+        self.assertEqual(e["storyboard_imagenes"], ["agente-cuadro1-ilustracion-ia.png"])
+
+    def test_si_son_de_otra_tarjeta_no_se_anotan(self):
+        self.assertNotIn("storyboard_imagenes", self.anotar(["dos panes"], ["una báscula"]))
+
+    def test_sin_resultado_no_se_crea_nada(self):
+        import tempfile
+        from retina import storyboard
+        with tempfile.TemporaryDirectory() as d:
+            storyboard.anotar(Path(d), ["a"], [Path(d) / "x-ilustracion-ia.png"])
+            self.assertEqual(list(Path(d).iterdir()), [])
 
 
 class RevisionMeta(unittest.TestCase):

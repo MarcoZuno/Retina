@@ -8,8 +8,12 @@ validador de «explicar» la revisa dentro del ciclo: si falla, Spark recibe los
 problemas y corrige. Guardas: tope de turnos, llamadas repetidas y el tope de
 gasto del proyecto. Si el ciclo no cierra, cae a «explicar» de una sola vuelta.
 
+El mismo ciclo corre con Spark 1.3 (API de Meta) o con Muse Spark Open (pesos
+abiertos, Baseten). Con «abierto+api», Spark Open investiga y escribe, y Spark
+1.3 solo rescata el caso si el ciclo de Spark Open no cierra.
+
 Uso:
-    python -m retina.agente CARPETA --modelo MODELO.pkl --voz VOZ.jsonl
+    python -m retina.agente CARPETA --modelo MODELO.pkl --voz VOZ.jsonl [--motor abierto+api]
         (CARPETA ya trae resultado.json, describir.json y transcribir.json)
 """
 from __future__ import annotations
@@ -21,7 +25,7 @@ import re
 from datetime import timedelta
 from pathlib import Path
 
-from . import explicar, meta_api
+from . import baseten, explicar, meta_api
 from .curvas import cubeta, regla_de_hoy
 from .esquemas import RAIZ
 from .predecir import Modelo, caidas
@@ -140,61 +144,137 @@ def instrucciones() -> str:
     return (RAIZ / "skills" / "agente.md").read_text(encoding="utf-8").split("---", 2)[2].strip()
 
 
-def correr_agente(carpeta: Path, modelo: Modelo, voz: dict) -> dict:
-    caja = Caja(carpeta, modelo, voz)
-    v = caja.resultado["video"]
-    conversacion = [{"type": "message", "role": "user", "content": [{"type": "input_text", "text":
-                     f"Revisa el arranque de este video de {v['duracion_s']:.0f} s y entrega la tarjeta."}]}]
-    traza, cuenta, tarjeta, falla = [], {}, None, None
+ENTREGA = "Entrega la tarjeta con entregar_tarjeta."
+HERRAMIENTAS_CHAT = [{"type": "function", "function": {k: h[k] for k in ("name", "description", "parameters")}}
+                     for h in HERRAMIENTAS]  # las mismas, en el formato de Chat Completions
+
+
+class ConSpark13:
+    """Spark 1.3 por la API de Meta (Responses API), razonamiento medio."""
+    modelo, servido_por = MODELO, "Meta Model API"
+
+    def __init__(self, inicio: str):
+        self.conv = [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": inicio}]}]
+
+    def turno(self) -> tuple[list[dict], str]:
+        r = meta_api.responder("agente", {
+            "model": MODELO, "instructions": instrucciones(), "input": self.conv, "tools": HERRAMIENTAS,
+            "parallel_tool_calls": False, "store": False, "reasoning": {"effort": "medium"},
+            "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v2"})  # gitleaks:allow
+        salida = r.get("output", [])
+        self.conv += [x for x in salida if x.get("type") != "reasoning"]  # sin store no se reenvía el razonamiento
+        return ([{"id": x["call_id"], "nombre": x["name"], "argumentos": x.get("arguments") or "{}"}
+                 for x in salida if x.get("type") == "function_call"], meta_api.texto_de(r))
+
+    def devolver(self, id_: str, salida: dict) -> None:
+        self.conv.append({"type": "function_call_output", "call_id": id_, "output": json.dumps(salida, ensure_ascii=False)})
+
+    def insistir(self) -> None:
+        self.conv.append({"type": "message", "role": "user", "content": [{"type": "input_text", "text": ENTREGA}]})
+
+
+class ConSparkOpen:
+    """Muse Spark Open (pesos abiertos) en Baseten, por Chat Completions: mismas instrucciones, mismas
+    herramientas y mismo validador. Piensa en alto: escribe peor que Spark 1.3 y pensar más le cuesta poco."""
+    modelo, servido_por = baseten.MODELO, "Baseten"
+
+    def __init__(self, inicio: str):
+        self.mensajes = [{"role": "system", "content": instrucciones()}, {"role": "user", "content": inicio}]
+
+    def turno(self) -> tuple[list[dict], str]:
+        m = baseten.completar("agente", self.mensajes, 16000, "high", HERRAMIENTAS_CHAT)
+        llamadas = [{"id": c.id, "nombre": c.function.name, "argumentos": c.function.arguments or "{}"}
+                    for c in (m.tool_calls or [])]
+        pedidas = [{"id": l["id"], "type": "function", "function": {"name": l["nombre"], "arguments": l["argumentos"]}}
+                   for l in llamadas]
+        self.mensajes.append({"role": "assistant", "content": m.content or "", **({"tool_calls": pedidas} if pedidas else {})})
+        return llamadas, m.content or ""
+
+    def devolver(self, id_: str, salida: dict) -> None:
+        self.mensajes.append({"role": "tool", "tool_call_id": id_, "content": json.dumps(salida, ensure_ascii=False)})
+
+    def insistir(self) -> None:
+        self.mensajes.append({"role": "user", "content": ENTREGA})
+
+
+CONVERSADORES = {"api": ConSpark13, "abierto": ConSparkOpen}
+# «abierto+api»: el agente corre en Spark Open (pesos abiertos) y Spark 1.3 solo rescata el caso si su ciclo no cierra.
+MOTORES = explicar.MOTORES
+
+
+def ciclo(caja, conv) -> tuple[dict | None, list, str | None]:
+    """Un modelo investiga con las herramientas hasta que el validador acepta su tarjeta o se acaban los turnos."""
+    traza, cuenta = [], {}
     for turno in range(1, MAX_TURNOS + 1):
         try:
-            r = meta_api.responder("agente", {
-                "model": MODELO, "instructions": instrucciones(), "input": conversacion, "tools": HERRAMIENTAS,
-                "parallel_tool_calls": False, "store": False, "reasoning": {"effort": "medium"},
-                "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v2"})  # gitleaks:allow
+            llamadas, texto = conv.turno()
         except meta_api.TopeAlcanzado:
             raise  # el tope no se rodea con el respaldo: también gasta
-        except Exception as e:  # noqa: BLE001 — falla de red o de la API: se cae al respaldo
-            falla = f"{type(e).__name__} en el turno {turno}"
-            break
-        salida = r.get("output", [])
-        conversacion += [x for x in salida if x.get("type") != "reasoning"]  # sin store no se reenvía el razonamiento
-        llamadas = [x for x in salida if x.get("type") == "function_call"]
+        except Exception as e:  # noqa: BLE001 — falla de red o de la API: pasa al rescate o al respaldo
+            return None, traza, f"{type(e).__name__} en el turno {turno}"
         if not llamadas:
-            traza.append({"turno": turno, "texto": meta_api.texto_de(r)[:300]})
-            conversacion.append({"type": "message", "role": "user", "content": [{"type": "input_text",
-                                 "text": "Entrega la tarjeta con entregar_tarjeta."}]})
+            traza.append({"turno": turno, "texto": texto[:300]})
+            conv.insistir()
             continue
+        tarjeta = None
         for c in llamadas:
             try:
-                args = json.loads(c.get("arguments") or "{}")
+                args = json.loads(c["argumentos"] or "{}")
             except json.JSONDecodeError:
                 args = {"_invalidos": True}
-            huella = hashlib.sha1(f"{c['name']}{json.dumps(args, sort_keys=True)}".encode()).hexdigest()
+            huella = hashlib.sha1(f"{c['nombre']}{json.dumps(args, sort_keys=True)}".encode()).hexdigest()
             cuenta[huella] = cuenta.get(huella, 0) + 1
             if cuenta[huella] > REPETIDAS:
                 res = {"error": "Ya hiciste esta misma llamada. Usa lo que ya tienes y entrega la tarjeta."}
             else:
                 try:
-                    res = {"error": "Los argumentos no eran JSON válido."} if "_invalidos" in args else caja.correr(c["name"], args)
+                    res = {"error": "Los argumentos no eran JSON válido."} if "_invalidos" in args else caja.correr(c["nombre"], args)
                 except meta_api.TopeAlcanzado:
                     raise
                 except Exception as e:  # noqa: BLE001 — una herramienta que falla se le dice al modelo y sigue
                     res = {"error": f"La herramienta falló: {type(e).__name__}"}
-            traza.append({"turno": turno, "herramienta": c["name"], "args": args if c["name"] != "entregar_tarjeta" else "…",
-                          "resultado": res if c["name"] == "entregar_tarjeta" else f"{len(json.dumps(res))} caracteres"})
-            conversacion.append({"type": "function_call_output", "call_id": c["call_id"],
-                                 "output": json.dumps(res, ensure_ascii=False)})
-            if c["name"] == "entregar_tarjeta" and res.get("aceptada"):
+            traza.append({"turno": turno, "herramienta": c["nombre"], "args": args if c["nombre"] != "entregar_tarjeta" else "…",
+                          "resultado": res if c["nombre"] == "entregar_tarjeta" else f"{len(json.dumps(res))} caracteres"})
+            conv.devolver(c["id"], res)
+            if c["nombre"] == "entregar_tarjeta" and res.get("aceptada"):
                 tarjeta = args
         if tarjeta:
-            break
-    fuente = "agente"
-    if tarjeta is None:  # el ciclo no cerró: una sola vuelta de «explicar», con su propio validador
-        tarjeta, fuente = explicar.explicar(carpeta, caja.resultado["arranque"]), "explicar (respaldo)"
-    tarjeta["licencia"] = {"modelo": MODELO, "instrucciones": "skills/agente.md (agente-v2)", "fuente": fuente,
-                           "turnos": len({t["turno"] for t in traza}), "traza": traza, "falla": falla}
-    (carpeta / "agente.json").write_text(json.dumps(tarjeta, ensure_ascii=False, indent=1), encoding="utf-8")
+            return tarjeta, traza, None
+    return None, traza, None
+
+
+def investigar(caja, motores: tuple, fabricas: dict) -> tuple[dict | None, list, str | None, list]:
+    """Corre el ciclo con cada motor en orden hasta que uno cierre. Devuelve la tarjeta (o None), la traza
+    con el motor de cada paso, qué motor la escribió y las fallas."""
+    traza, fallas = [], []
+    for motor in motores:
+        tarjeta, pasos, falla = ciclo(caja, fabricas[motor]())
+        traza += [{"motor": motor, **p} for p in pasos]
+        if falla:
+            fallas.append(f"{motor}: {falla}")
+        if tarjeta:
+            return tarjeta, traza, motor, fallas
+    return None, traza, None, fallas
+
+
+def correr_agente(carpeta: Path, modelo: Modelo, voz: dict, motor: str = "", nombre: str = "agente.json") -> dict:
+    motor = motor or explicar.motor_por_omision()
+    sufijo = "" if motor == "api" else "-" + motor.replace("+", "-y-")
+    caja = Caja(carpeta, modelo, voz)
+    v = caja.resultado["video"]
+    inicio = f"Revisa el arranque de este video de {v['duracion_s']:.0f} s y entrega la tarjeta."
+    fabricas = {m: (lambda m=m: CONVERSADORES[m](inicio)) for m in MOTORES[motor]}
+    tarjeta, traza, quien, fallas = investigar(caja, MOTORES[motor], fabricas)
+    if tarjeta is None:  # ningún ciclo cerró: una sola vuelta de «explicar», con su propio validador
+        tarjeta = explicar.explicar(carpeta, caja.resultado["arranque"], motor, f"explicar{sufijo}.json")
+        modelo_, servido, fuente = tarjeta["licencia"]["modelo"], tarjeta["licencia"]["servido_por"], "explicar (respaldo)"
+    else:
+        modelo_, servido, fuente = CONVERSADORES[quien].modelo, CONVERSADORES[quien].servido_por, "agente"
+    tarjeta["licencia"] = {"modelo": modelo_, "servido_por": servido, "instrucciones": "skills/agente.md (agente-v2)",
+                           "fuente": fuente, "motor": motor, "rescate": bool(quien) and quien != MOTORES[motor][0],
+                           "turnos": len({(t["motor"], t["turno"]) for t in traza}), "traza": traza,
+                           "falla": "; ".join(fallas) or None}
+    (carpeta / nombre).write_text(json.dumps(tarjeta, ensure_ascii=False, indent=1), encoding="utf-8")
     return tarjeta
 
 
@@ -210,10 +290,12 @@ def main() -> None:
     ap.add_argument("carpeta", type=Path)
     ap.add_argument("--modelo", type=Path, required=True)
     ap.add_argument("--voz", type=Path, required=True)
+    ap.add_argument("--motor", choices=list(MOTORES), default="",
+                    help="api: Spark 1.3 · abierto: Muse Spark Open en Baseten · abierto+api: Spark Open con rescate de Spark 1.3.")
     a = ap.parse_args()
-    t = correr_agente(a.carpeta, Modelo.cargar(a.modelo), cargar_voz(a.voz))
+    t = correr_agente(a.carpeta, Modelo.cargar(a.modelo), cargar_voz(a.voz), a.motor)
     print(json.dumps({k: t.get(k) for k in ("por_que", "que_cambiar", "momento_s", "confianza")}, ensure_ascii=False, indent=1))
-    print(f"{t['licencia']['fuente']} · {t['licencia']['turnos']} turnos · " +
+    print(f"{t['licencia']['fuente']} · {t['licencia']['modelo']} · {t['licencia']['turnos']} turnos · " +
           " → ".join(x.get("herramienta", "texto") for x in t["licencia"]["traza"]))
 
 
