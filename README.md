@@ -106,7 +106,8 @@ project budget cap.
 PYTHONPATH=src python -m retina.demo      # Windows PowerShell: $env:PYTHONPATH="src"; python -m retina.demo
 ```
 
-Only the Python standard library is needed for the demo.
+Only the Python standard library is needed for the demo. The interface is in Spanish and English: use the **English** button in the header,
+or open `/panel/?lang=en` (the made-up example is translated too, in `casos/demo-en/`).
 
 It opens the review card in your browser, served only on your machine (127.0.0.1), with the example
 case in `casos/demo/`. The card answers three questions in plain words: **will the start of my video lose

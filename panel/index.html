@@ -89,6 +89,9 @@ header { display: flex; align-items: center; gap: 12px; padding: 16px 22px; }
 .opcion[aria-selected="true"] img { outline: 2px solid #fff; outline-offset: 2px; }
 .pastilla { border: 0; color: var(--texto); font: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; cursor: pointer; min-height: 44px; }
 a.pastilla { display: inline-flex; align-items: center; text-decoration: none; }
+.ejemplo { margin: 0 0 14px; padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 600;
+  background: rgba(255,196,107,.20); color: var(--ambar-letra); box-shadow: inset 0 0 0 1px rgba(255,196,107,.45); }
+body[data-tema="claro"] .ejemplo { color: var(--ambar-letra); background: rgba(200,120,0,.12); }
 .opcion:focus-visible, .pastilla:focus-visible, .boton:focus-visible, .hecho:focus-visible, summary:focus-visible, .soltar:focus-visible, a:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
 main { flex: 1; display: grid; place-items: start center; padding: 8px 22px 48px; }
 .pantalla { display: none; width: 100%; }
@@ -190,7 +193,8 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
   .cifras, .cifras.dos { grid-template-columns: 1fr 1fr; } .cifra.grande { grid-column: span 2; }
   .veredicto h1 { font-size: 26px; } #vacio h1 { font-size: 30px; }
   header, main { padding-left: 14px; padding-right: 14px; }
-  .meta li { grid-template-columns: 26px 1fr; } .meta .ventana { grid-column: 2; }
+  header { flex-wrap: wrap; justify-content: flex-end; row-gap: 10px; } .pastilla { white-space: nowrap; }  /* con el botón de idioma no caben en una fila */
+  .meta li { grid-template-columns: 26px 1fr; } .meta .ventana, .meta li > span:last-child { grid-column: 2; }
   .storyboard { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 72%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
   .storyboard::-webkit-scrollbar { display: none; }
   .storyboard div { scroll-snap-align: start; }
@@ -208,10 +212,11 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
     <span class="espacio"></span>
     <a class="pastilla vidrio oculto" id="a-galeria" href="galeria.html">Todos los casos</a>
     <div class="menu-fondo">
-      <button class="pastilla vidrio" id="abrir-fondos" type="button" aria-expanded="false" aria-controls="fondos">Fondo</button>
-      <div class="fondos vidrio" id="fondos" role="listbox" aria-label="Elige el fondo" hidden></div>
+      <button class="pastilla vidrio" id="abrir-fondos" type="button" aria-expanded="false" aria-controls="fondos" data-t="fondo">Fondo</button>
+      <div class="fondos vidrio" id="fondos" role="listbox" aria-label="Elige el fondo" data-t-aria="elige_fondo" hidden></div>
     </div>
-    <button class="pastilla vidrio" id="legible" type="button" aria-pressed="false">Más legible</button>
+    <button class="pastilla vidrio" id="legible" type="button" aria-pressed="false" data-t="legible">Más legible</button>
+    <button class="pastilla vidrio" id="idioma" type="button" lang="en" title="Ver el panel en inglés">English</button>
   </header>
 
   <main>
@@ -223,20 +228,21 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         <div class="gota vidrio" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
         </div>
-        <h1 id="t-vacio">Abre la revisión de tu video</h1>
-        <p id="d-vacio">Retina deja un archivo <b>resultado.json</b> en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.</p>
+        <h1 id="t-vacio" data-t="vacio_titulo">Abre la revisión de tu video</h1>
+        <p id="d-vacio"><span data-t="vacio_p1">Retina deja un archivo </span><b>resultado.json</b><span data-t="vacio_p2"> en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.</span></p>
         <div class="botones">
-          <button class="boton" id="elegir" type="button">Elegir archivo</button>
-          <button class="boton vidrio" id="ejemplo" type="button">Ver el ejemplo</button>
+          <button class="boton" id="elegir" type="button" data-t="elegir">Elegir archivo</button>
+          <button class="boton vidrio" id="ejemplo" type="button" data-t="ver_ejemplo">Ver el ejemplo</button>
         </div>
         <input type="file" id="archivo" accept=".json,application/json" hidden>
-        <p class="nota-vacio">El archivo no sale de tu computadora: el panel solo lo lee.</p>
+        <p class="nota-vacio" data-t="nota_vacio">El archivo no sale de tu computadora: el panel solo lo lee.</p>
       </div>
     </section>
 
     <!-- 2 · Resultado -->
     <section id="resultado" class="pantalla" aria-labelledby="titular" aria-live="polite">
       <div class="tarjetas">
+        <p class="ejemplo oculto" id="aviso-ejemplo" role="note"></p>
         <div class="veredicto vidrio">
           <span class="chip"><i></i><span id="semaforo"></span></span>
           <h1 id="titular"></h1>
@@ -248,7 +254,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 
         <div class="linea-bloque vidrio">
           <h2 class="cabeza"><span id="t-linea"></span>
-            <span class="leyenda"><span><i></i>Tu video</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real-linea" class="oculto"><i class="r"></i>Lo que pasó</span></span></h2>
+            <span class="leyenda"><span><i></i><span data-t="tu_video">Tu video</span></span><span><i class="p"></i><span data-t="parecidos">Videos parecidos</span></span><span id="leyenda-real-linea" class="oculto"><i class="r"></i><span data-t="lo_que_paso">Lo que pasó</span></span></span></h2>
           <div class="linea" id="linea" role="img">
             <svg id="curvas" viewBox="0 0 1000 104" preserveAspectRatio="none" aria-hidden="true"></svg>
           </div>
@@ -257,18 +263,18 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         </div>
 
         <div class="bloque vidrio">
-          <h2>Por qué</h2>
+          <h2 data-t="por_que">Por qué</h2>
           <p class="porque" id="porque"></p>
         </div>
 
         <div class="bloque vidrio anzuelo oculto" id="anzuelo" role="note"></div>
 
         <div class="bloque vidrio" id="seccion-hacer">
-          <h2>Qué hacer</h2>
+          <h2 data-t="que_hacer">Qué hacer</h2>
           <p class="cambio" id="cambio"></p>
           <ol class="pasos" id="pasos"></ol>
           <div class="pie-pasos" id="pie-pasos"><span id="progreso"></span>
-            <button class="boton vidrio" id="copiar" type="button">Copiar para el editor</button>
+            <button class="boton vidrio" id="copiar" type="button" data-t="copiar">Copiar para el editor</button>
           </div>
           <p class="funciona oculto" id="funciona"></p>
           <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
@@ -276,37 +282,37 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         </div>
 
         <div class="bloque vidrio">
-          <h2>¿Qué vas a hacer?</h2>
+          <h2 data-t="que_vas">¿Qué vas a hacer?</h2>
           <div class="acciones">
-            <button class="boton" id="d-cortar" type="button">Cortar como dice Retina</button>
-            <button class="boton vidrio" id="d-regrabar" type="button">Regrabar</button>
-            <button class="boton vidrio" id="d-publicar" type="button">Publicar así</button>
+            <button class="boton" id="d-cortar" type="button" data-t="cortar">Cortar como dice Retina</button>
+            <button class="boton vidrio" id="d-regrabar" type="button" data-t="regrabar">Regrabar</button>
+            <button class="boton vidrio" id="d-publicar" type="button" data-t="publicar">Publicar así</button>
           </div>
           <p class="decision" id="decision" aria-live="polite"></p>
         </div>
 
         <div class="bloque vidrio oculto" id="bloque-meta">
-          <h2>Según lo que recomienda Meta</h2>
+          <h2 data-t="segun_meta">Según lo que recomienda Meta</h2>
           <ul class="meta" id="meta"></ul>
-          <p class="nota">Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.</p>
+          <p class="nota" data-t="nota_meta">Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.</p>
         </div>
 
         <div class="bloque vidrio">
-          <h2>Cómo lo revisó Retina</h2>
+          <h2 data-t="como_reviso">Cómo lo revisó Retina</h2>
           <p class="porque" id="confianza"></p>
           <p class="traza oculto" id="traza"></p>
           <p class="traza oculto" id="correccion"></p>
           <details>
-            <summary>Ver detalle</summary>
+            <summary data-t="ver_detalle">Ver detalle</summary>
             <div class="detalle">
-              <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real" class="oculto"><i class="r"></i>Lo que pasó de verdad</span></div>
+              <div class="leyenda"><span><i></i><span data-t="tu_video_pred">Tu video (lo que predice Retina)</span></span><span><i class="p"></i><span data-t="parecidos">Videos parecidos</span></span><span id="leyenda-real" class="oculto"><i class="r"></i><span data-t="lo_que_paso_real">Lo que pasó de verdad</span></span></div>
               <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
               <ul id="detalle-lista"></ul>
             </div>
           </details>
         </div>
 
-        <button class="boton vidrio otra" id="otra" type="button">Abrir otra revisión</button>
+        <button class="boton vidrio otra" id="otra" type="button" data-t="otra">Abrir otra revisión</button>
       </div>
     </section>
   </main>
@@ -316,46 +322,223 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
 const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
-// Retina escribe «segundo 4» o «del segundo 4 al 11»; la persona lee tiempos de reloj: 0:04, 0:11.
+// Retina escribe «segundo 4» o «del segundo 4 al 11» (en inglés, «second 4» o «from second 4 to 11»);
+// la persona lee tiempos de reloj: 0:04, 0:11. El caso puede venir en un idioma y el panel estar en el otro.
 const seg = (x) => mmss(parseFloat(x.replace(",", ".")));
 const reloj = (t) => (t || "")
   .replace(/\b([Dd]el) segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
   .replace(/\b([Dd]el|[Ee]l|[Dd]esde el|[Ee]n el) segundo (\d+(?:[.,]\d+)?)/g, (_, d, a) => `${d} ${seg(a)}`)
-  .replace(/\bsegundo (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
-const ANZUELOS = {  // nombres legibles si la tarjeta no trae la frase (reglas/anzuelos-v1.json)
-  pide_interaccion: "pide comentarios, reacciones o compartidos", mira_hasta_el_final: "pide quedarse hasta el final",
-  esconde_el_dato: "esconde el dato que promete el título", exageracion: "exagera lo que el video no sostiene",
-  cura_milagrosa: "promete una cura o resultado milagroso", material_ajeno: "usa material de otros sin transformarlo",
-  sorteo_falso: "ofrece un sorteo o regalo a cambio de interacción", saca_de_la_plataforma: "pide mandar el video fuera de Facebook",
-  ia_sin_etiqueta: "usa imagen o voz de IA sin etiqueta",
+  .replace(/\bsegundo (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a))
+  .replace(/\b([Ff]rom) second (\d+(?:[.,]\d+)?) to (?:second )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} to ${seg(b)}`)
+  .replace(/\bsecond (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
+
+// ---- Idioma: español por omisión; inglés con ?lang=en o con el botón del encabezado (se recuerda en este navegador) ----
+// Solo se traducen los textos fijos del panel. Lo que viene del resultado.json (por qué, pasos, storyboard, título)
+// es contenido del caso y se muestra tal cual: para la demo en inglés existe casos/demo-en/.
+const TEXTOS = {
+  es: {
+    anzuelos: {  // nombres legibles si la tarjeta no trae la frase (reglas/anzuelos-v1.json)
+      pide_interaccion: "pide comentarios, reacciones o compartidos", mira_hasta_el_final: "pide quedarse hasta el final",
+      esconde_el_dato: "esconde el dato que promete el título", exageracion: "exagera lo que el video no sostiene",
+      cura_milagrosa: "promete una cura o resultado milagroso", material_ajeno: "usa material de otros sin transformarlo",
+      sorteo_falso: "ofrece un sorteo o regalo a cambio de interacción", saca_de_la_plataforma: "pide mandar el video fuera de Facebook",
+      ia_sin_etiqueta: "usa imagen o voz de IA sin etiqueta",
+    },
+    niveles: {
+      alto: { semaforo: "Alerta", titular: "Tu video puede perder gente en los primeros segundos",
+              sub: "Más de lo que suele perder un video como este." },
+      medio: { semaforo: "Se puede mejorar", titular: "El inicio de tu video se puede mejorar",
+               sub: "Pierde un poco más de lo normal para un video como este." },
+      bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
+              sub: "Igual revisa el detalle antes de publicar." },
+    },
+    herramientas: {  // lo que revisó el agente, en palabras de quien edita
+      ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
+      oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
+      medir_lo_prometido: "revisó con SAM si lo que promete el título aparece en los primeros 3 segundos",
+    },
+    modelos: {  // quién escribió la tarjeta, en palabras de quien edita
+      "meta-models/muse-spark-open-1026": "Muse Spark Open, de pesos abiertos", "muse-spark-1.3": "Muse Spark 1.3",
+    },
+    rechazos: {  // por qué el validador le regresó la tarjeta al agente, en palabras de quien edita (ver RECHAZOS)
+      largo: "un texto era demasiado largo", castiga: "sugería algo que Meta castiga",
+      cifra: "traía una cifra que no salió de ninguna revisión", fuera: "señalaba un segundo fuera del inicio",
+      intocable: "tocaba algo que no se cambia (logo, título o avisos)", jerga: "usaba palabras técnicas o cifras internas",
+      sin_cambio: "no proponía ningún cambio", otra: "no pasaba una regla",
+    },
+    confianza: { alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" },
+    decisiones: {
+      cortar: "Anotado: haces el cambio. Cuando tengas la nueva versión, pásala otra vez por Retina.",
+      regrabar: "Anotado: regrabas. Cuando tengas la nueva versión, pásala otra vez por Retina.",
+      publicar: "Anotado: se publica así.",
+    },
+    fondos: {},  // en español, los nombres de FONDOS
+    idioma_boton: "English", idioma_destino: "en", idioma_titulo: "Ver el panel en inglés",
+    fondo: "Fondo", elige_fondo: "Elige el fondo", legible: "Más legible",
+    galeria: "Todos los casos", subir: "Revisar otro video",
+    vacio_titulo: "Abre la revisión de tu video", vacio_p1: "Retina deja un archivo ",
+    vacio_p2: " en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.",
+    elegir: "Elegir archivo", ver_ejemplo: "Ver el ejemplo", nota_vacio: "El archivo no sale de tu computadora: el panel solo lo lee.",
+    tu_video: "Tu video", parecidos: "Videos parecidos", lo_que_paso: "Lo que pasó",
+    tu_video_pred: "Tu video (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
+    por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado",
+    no_copio: "No se pudo copiar: selecciona el texto",
+    ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
+    que_vas: "¿Qué vas a hacer?", cortar: "Cortar como dice Retina", regrabar: "Regrabar", publicar: "Publicar así",
+    segun_meta: "Según lo que recomienda Meta",
+    nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
+    como_reviso: "Cómo lo revisó Retina", ver_detalle: "Ver detalle", otra: "Abrir otra revisión",
+    de_cada_100: "de cada 100",
+    siguen: (s) => `personas que empiecen tu video seguirán viendo a los ${s} segundos`,
+    a_los: (s) => `a los ${s} segundos`, al_terminar: (t) => `al terminar el inicio (${t})`,
+    en_parecidos: (n) => `En videos parecidos, ${n}`, parecidos_n: (n) => `Parecidos: ${n}`,
+    menos: (n) => `${n} menos`, de_verdad: (n) => ` · De verdad: ${n}`,
+    t_linea_seg: (n) => `Los primeros ${n} segundos`, t_linea_mm: (t) => `El inicio: de 0:00 a ${t}`,
+    linea_texto: (t) => `El inicio de tu video, de 0:00 a ${t}.`, partes: (l) => ` Partes a revisar: ${l}.`,
+    tramo: (a, b) => `${a} a ${b}`, castiga_en: (t) => ` Lo que Meta castiga aparece en ${t}.`,
+    grafica_aria: (d) => `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${d}, según Retina y según videos parecidos.`,
+    cumple: "Cumple", no_cumple: "No cumple", sin_dato: "Sin dato", fuente_meta: "Fuente de Meta",
+    confianza_txt: (c) => `Qué tan segura está Retina de la explicación: ${c}.`,
+    sin_api: "Esta revisión se hizo sin la API de Meta.",
+    traza_pre: (q) => `Para escribir esto, Retina${q ? ` (${q})` : ""}: `,
+    compara: (c, d) => `La alerta compara el inicio de tu video (el primer cuarto) con ${c}. Datos al ${d}.`,
+    parecidos_def: "videos parecidos",
+    no_promete: "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.",
+    no_revise: (n) => `No revisé: ${n}`,
+    escribio: (q, s) => `Escribió la explicación: ${q}${s ? ` (${s})` : ""}.`,
+    rescate: "Muse Spark Open no cerró esta revisión y la terminó Muse Spark 1.3.",
+    correccion: (n, p) => `Antes de mostrártela, el validador le regresó la tarjeta ${n === 1 ? "una vez" : `${n} veces`} y Retina la corrigió sola (${p}).`,
+    alt_ia: (c) => `Ilustración hecha con IA: ${c}`,
+    paso_aria: (on, i) => `${on ? "Desmarcar" : "Marcar"} el paso ${i} como hecho`,
+    progreso: (h, n) => `${h} de ${n} hechos`,
+    no_es_revision: "Este archivo no es una revisión de Retina (le falta el arranque o la curva).",
+    aviso_ejemplo: "Ejemplo inventado: no es un video real. Sirve para ver cómo se ve una revisión de Retina.",
+    sin_cambio_bajo: "No hace falta cambiar el inicio.",
+    sin_sugerencia: "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano.",
+    ya_funciona: "Ya funciona: ", quitalo: "Quítalo antes de publicar", anzuelo_otro: "trae algo que Meta castiga",
+    anzuelo_texto: (t, que, frase) => `${t ? `En ${t}` : "En el video"} tu video ${que}${frase ? `: «${frase}»` : ""}. Meta reparte menos los videos con esto.`,
+    sin_api_porque: "Esta revisión se hizo sin la API de Meta: vemos el riesgo, pero no el porqué.",
+    para_editor: "Qué hacer: ",
+    fallo: (m) => `No pude abrir esta revisión. ${m} Vuelve a elegir el archivo o avisa a quien corrió Retina.`,
+    no_se_leyo: "El archivo no se pudo leer.", no_encontre: "No encontré esa revisión.",
+    doble_clic: "Con doble clic el navegador no deja abrir el ejemplo: corre «python -m retina.demo» o elige el archivo.",
+    caso_invalido: "La dirección del caso no es válida: tiene que ser un resultado.json de la carpeta casos.",
+  },
+  en: {
+    anzuelos: {
+      pide_interaccion: "asks for comments, reactions or shares", mira_hasta_el_final: "asks people to watch until the end",
+      esconde_el_dato: "hides the fact the title promises", exageracion: "exaggerates what the video can't back up",
+      cura_milagrosa: "promises a miracle cure or result", material_ajeno: "uses other people's material without changing it",
+      sorteo_falso: "offers a giveaway or gift in exchange for engagement", saca_de_la_plataforma: "asks people to send the video outside Facebook",
+      ia_sin_etiqueta: "uses AI images or voice without a label",
+    },
+    niveles: {
+      alto: { semaforo: "Alert", titular: "Your video may lose people in the first few seconds",
+              sub: "More than a video like this usually loses." },
+      medio: { semaforo: "Could be better", titular: "Your video's opening could be better",
+               sub: "It loses a bit more than usual for a video like this." },
+      bajo: { semaforo: "No clear problem", titular: "We don't see a clear problem in the opening",
+              sub: "Still, check the details before publishing." },
+    },
+    herramientas: {
+      ver_arranque: "watched the opening and read the title", ver_tramos: "took a closer look at parts of the opening",
+      oir: "listened to what is said, with timestamps", buscar_parecidos: "compared it with titles of similar videos",
+      medir_lo_prometido: "used SAM to check if the title's promise shows up in the first 3 seconds",
+    },
+    modelos: {
+      "meta-models/muse-spark-open-1026": "Muse Spark Open, an open-weights model", "muse-spark-1.3": "Muse Spark 1.3",
+    },
+    rechazos: {
+      largo: "a text was too long", castiga: "it suggested something Meta penalizes",
+      cifra: "it had a number that didn't come from any check", fuera: "it pointed to a second outside the opening",
+      intocable: "it touched something that can't change (logo, title or notices)", jerga: "it used technical words or internal numbers",
+      sin_cambio: "it didn't suggest any change", otra: "it broke a rule",
+    },
+    confianza: { alta: "high", media: "medium: check it yourself before cutting", baja: "low: treat it as a hint" },
+    decisiones: {
+      cortar: "Noted: you'll make the change. When the new version is ready, run it through Retina again.",
+      regrabar: "Noted: you'll reshoot. When the new version is ready, run it through Retina again.",
+      publicar: "Noted: it goes out as is.",
+    },
+    fondos: { cristales: "Crystals", oceano: "Ocean", aurora: "Aurora", montanas: "Mountains", seda: "Silk",
+              espacio: "Space", valle: "Valley", laguna: "Lagoon", flores: "Flowers", cielo: "Sky" },
+    idioma_boton: "Español", idioma_destino: "es", idioma_titulo: "View the panel in Spanish",
+    fondo: "Background", elige_fondo: "Choose a background", legible: "Easier to read",
+    galeria: "All cases", subir: "Review another video",
+    vacio_titulo: "Open your video's review", vacio_p1: "Retina saves a ",
+    vacio_p2: " file in the folder of every video it reviews. Open it here to see if the opening will lose viewers, why, and what to cut.",
+    elegir: "Choose file", ver_ejemplo: "See the example", nota_vacio: "The file never leaves your computer: the panel only reads it.",
+    tu_video: "Your video", parecidos: "Similar videos", lo_que_paso: "What happened",
+    tu_video_pred: "Your video (Retina's prediction)", lo_que_paso_real: "What actually happened",
+    por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied",
+    no_copio: "Couldn't copy: select the text instead",
+    ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
+    que_vas: "What will you do?", cortar: "Cut as Retina suggests", regrabar: "Reshoot", publicar: "Publish as is",
+    segun_meta: "What Meta recommends",
+    nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
+    como_reviso: "How Retina reviewed it", ver_detalle: "See details", otra: "Open another review",
+    de_cada_100: "out of 100",
+    siguen: (s) => `people who start your video will still be watching at ${s} seconds`,
+    a_los: (s) => `at ${s} seconds`, al_terminar: (t) => `at the end of the opening (${t})`,
+    en_parecidos: (n) => `In similar videos, ${n}`, parecidos_n: (n) => `Similar: ${n}`,
+    menos: (n) => `${n} fewer`, de_verdad: (n) => ` · Actual: ${n}`,
+    t_linea_seg: (n) => `The first ${n} seconds`, t_linea_mm: (t) => `The opening: 0:00 to ${t}`,
+    linea_texto: (t) => `Your video's opening, from 0:00 to ${t}.`, partes: (l) => ` Parts to check: ${l}.`,
+    tramo: (a, b) => `${a} to ${b}`, castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
+    grafica_aria: (d) => `Out of every 100 people who start, how many are still watching at each moment of a ${d} video, according to Retina and to similar videos.`,
+    cumple: "Meets it", no_cumple: "Doesn't meet it", sin_dato: "No data", fuente_meta: "Meta source",
+    confianza_txt: (c) => `How sure Retina is about this explanation: ${c}.`,
+    sin_api: "This review was done without the Meta API.",
+    traza_pre: (q) => `To write this, Retina${q ? ` (${q})` : ""}: `,
+    compara: (c, d) => `The alert compares your video's opening (the first quarter) with ${c}. Data through ${d}.`,
+    parecidos_def: "similar videos",
+    no_promete: "Retina doesn't promise the exact second people leave after the opening: Facebook's curve isn't that precise.",
+    no_revise: (n) => `Not checked: ${n}`,
+    escribio: (q, s) => `Explanation written by ${q}${s ? ` (via ${s})` : ""}.`,
+    rescate: "Muse Spark Open didn't finish this review, so Muse Spark 1.3 completed it.",
+    correccion: (n, p) => `Before showing it to you, the validator sent the card back ${n === 1 ? "once" : `${n} times`} and Retina fixed it on its own (${p}).`,
+    alt_ia: (c) => `AI-made illustration: ${c}`,
+    paso_aria: (on, i) => `${on ? "Unmark" : "Mark"} step ${i} as done`,
+    progreso: (h, n) => `${h} of ${n} done`,
+    no_es_revision: "This file isn't a Retina review (it's missing the opening or the curve).",
+    aviso_ejemplo: "Made-up example: not a real video. It shows what a Retina review looks like.",
+    sin_cambio_bajo: "No need to change the opening.",
+    sin_sugerencia: "No suggestion passed our rules. Check the opening yourself.",
+    ya_funciona: "Already working: ", quitalo: "Remove it before publishing", anzuelo_otro: "has something Meta penalizes",
+    anzuelo_texto: (t, que, frase) => `${t ? `At ${t}, your` : "Your"} video ${que}${frase ? `: “${frase}”` : ""}. Meta shows videos with this to fewer people.`,
+    sin_api_porque: "This review was done without the Meta API: we can see the risk, but not the reason.",
+    para_editor: "What to do: ",
+    fallo: (m) => `I couldn't open this review. ${m} Choose the file again or tell whoever ran Retina.`,
+    no_se_leyo: "The file couldn't be read.", no_encontre: "I couldn't find that review.",
+    doble_clic: "Opened with a double-click, the browser won't load the example: run “python -m retina.demo” or choose the file.",
+    caso_invalido: "The case address isn't valid: it must be a resultado.json from the casos folder.",
+  },
 };
-const NIVELES = {
-  alto: { semaforo: "Alerta", titular: "Tu video puede perder gente en los primeros segundos",
-          sub: "Más de lo que suele perder un video como este." },
-  medio: { semaforo: "Se puede mejorar", titular: "El inicio de tu video se puede mejorar",
-           sub: "Pierde un poco más de lo normal para un video como este." },
-  bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
-          sub: "Igual revisa el detalle antes de publicar." },
-};
-const HERRAMIENTAS = {  // lo que revisó el agente, en palabras de quien edita
-  ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
-  oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
-  medir_lo_prometido: "revisó con SAM si lo que promete el título aparece en los primeros 3 segundos",
-};
-const MODELOS = {  // quién escribió la tarjeta, en palabras de quien edita
-  "meta-models/muse-spark-open-1026": "Muse Spark Open, de pesos abiertos", "muse-spark-1.3": "Muse Spark 1.3",
-};
-const RECHAZOS = [  // por qué el validador le regresó la tarjeta al agente, en palabras de quien edita
-  [/ mide \d+ caracteres/, "un texto era demasiado largo"],
-  [/^(Pide comentarios|«Mira hasta|Esconde el dato|Exagera|Promete curas|Contenido no original|Sorteos|Pide sacar|Imagen o voz)/,
-    "sugería algo que Meta castiga"],
-  [/cifras que no vienen/, "traía una cifra que no salió de ninguna revisión"],
-  [/fuera del arranque/, "señalaba un segundo fuera del inicio"],
-  [/intocable/, "tocaba algo que no se cambia (logo, título o avisos)"],
-  [/jerga o cifras internas/, "usaba palabras técnicas o cifras internas"],
-  [/no trae un cambio/, "no proponía ningún cambio"],
+const de = (obj, k) => (typeof k === "string" && Object.hasOwn(obj, k) ? obj[k] : undefined);  // sin claves heredadas («constructor»…)
+let idioma = (() => {
+  const pedido = new URLSearchParams(location.search).get("lang");
+  if (pedido === "en" || pedido === "es") {
+    try { localStorage.setItem("retina-idioma", pedido); } catch (_) { /* sin almacenamiento */ }
+    return pedido;
+  }
+  try { const g = localStorage.getItem("retina-idioma"); if (g === "en" || g === "es") return g; } catch (_) { /* sin almacenamiento */ }
+  return "es";
+})();
+const tx = () => TEXTOS[idioma];
+const t = (clave, ...args) => { const v = tx()[clave] ?? TEXTOS.es[clave]; return typeof v === "function" ? v(...args) : v; };
+const falla = (clave) => Object.assign(new Error(t(clave)), { clave });  // un error que se puede volver a escribir en otro idioma
+const DEMO = () => (idioma === "en" ? "../casos/demo-en/resultado.json" : "../casos/demo/resultado.json");
+const RECHAZOS = [  // los problemas los escribe el validador en español; aquí solo se reconocen
+  [/ mide \d+ caracteres/, "largo"],
+  [/^(Pide comentarios|«Mira hasta|Esconde el dato|Exagera|Promete curas|Contenido no original|Sorteos|Pide sacar|Imagen o voz)/, "castiga"],
+  [/cifras que no vienen/, "cifra"],
+  [/fuera del arranque/, "fuera"],
+  [/intocable/, "intocable"],
+  [/jerga o cifras internas/, "jerga"],
+  [/no trae un cambio/, "sin_cambio"],
 ];
-let actual = null, carpeta = null;  // carpeta: de dónde vino el caso (solo si vino de casos/ por http)
+// carpeta: de dónde vino el caso (solo si vino de casos/ por http); porOmision: es el ejemplo del idioma (cambia con él)
+let actual = null, carpeta = null, porOmision = false, ultimaDecision = null, ultimoFallo = null;
 
 function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
 
@@ -393,12 +576,11 @@ function cifras(r) {
   $("cifras").replaceChildren(...momentos.map((s, k) => {
     const tuyo = Math.round(100 * en(p.curva_predicha, dur, s)), otros = Math.round(100 * en(p.curva_parecidos, dur, s));
     const caja = nodo("div", `cifra vidrio${k ? "" : " grande"}`), n = nodo("div", "n", String(tuyo));
-    if (!k) n.append(nodo("small", "", "de cada 100"));
-    const que = k ? (s === fin ? `al terminar el inicio (${mmss(fin)})` : `a los ${s} segundos`)
-      : `personas que empiecen tu video seguirán viendo a los ${s} segundos`;
-    const vs = nodo("div", "vs", k ? `Parecidos: ${otros}` : `En videos parecidos, ${otros}`);
-    if (!k && tuyo < otros) vs.append(" · ", nodo("b", "", `${otros - tuyo} menos`));
-    if (conReal(r)) vs.append(` · De verdad: ${Math.round(100 * en(r.realidad.curva, dur, s))}`);
+    if (!k) n.append(nodo("small", "", t("de_cada_100")));
+    const que = k ? (s === fin ? t("al_terminar", mmss(fin)) : t("a_los", s)) : t("siguen", s);
+    const vs = nodo("div", "vs", k ? t("parecidos_n", otros) : t("en_parecidos", otros));
+    if (!k && tuyo < otros) vs.append(" · ", nodo("b", "", t("menos", otros - tuyo)));
+    if (conReal(r)) vs.append(t("de_verdad", Math.round(100 * en(r.realidad.curva, dur, s))));
     caja.append(n, nodo("div", "que", que), vs);
     return caja;
   }));
@@ -406,7 +588,7 @@ function cifras(r) {
 
 function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos): curvas, partes a revisar y anzuelo
   const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, e = r.explicacion, caja = $("linea"), svg = $("curvas");
-  $("t-linea").textContent = fin < 60 ? `Los primeros ${Math.round(fin)} segundos` : `El inicio: de 0:00 a ${mmss(fin)}`;
+  $("t-linea").textContent = fin < 60 ? t("t_linea_seg", Math.round(fin)) : t("t_linea_mm", mmss(fin));
   $("escala").replaceChildren(...[0, .25, .5, .75, 1].map((f) => nodo("span", "", mmss(f * fin))));
   const curvas = [[p.curva_parecidos, "parecidos", "7 6", 2], [p.curva_predicha, "tuyo", "", 3]];
   if (conReal(r)) curvas.push([r.realidad.curva, "real", "", 3]);
@@ -418,12 +600,12 @@ function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos)
     "vector-effect": "non-scaling-stroke", "stroke-linecap": "round", ...(guion ? { "stroke-dasharray": guion } : {}) })));
   caja.querySelectorAll(".zona, .punto").forEach((x) => x.remove());
   const pct = (s) => `${Math.max(0, Math.min(100, (s / fin) * 100))}%`;
-  let texto = `El inicio de tu video, de 0:00 a ${mmss(fin)}.`;
+  let texto = t("linea_texto", mmss(fin));
   if (e && e.que_cambiar && r.arranque.nivel !== "bajo") {
-    // Las partes débiles son los tramos «del segundo A al B» que cita la explicación; si no cita ninguno,
-    // se marca un pedazo desde donde empieza el cambio.
+    // Las partes débiles son los tramos «del segundo A al B» («from second A to B») que cita la explicación;
+    // si no cita ninguno, se marca un pedazo desde donde empieza el cambio.
     const num = (x) => parseFloat(x.replace(",", "."));
-    const zonas = [...(e.por_que || "").matchAll(/del segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/gi)]
+    const zonas = [...(e.por_que || "").matchAll(/(?:del segundo|from second) (\d+(?:[.,]\d+)?) (?:al|to) (?:segundo |second )?(\d+(?:[.,]\d+)?)/gi)]
       .map((z) => [num(z[1]), num(z[2])]).filter(([i, f]) => f > i && i < fin);
     if (!zonas.length) zonas.push([e.momento_s, Math.min(fin, e.momento_s + fin / 5)]);
     for (const [i, f] of zonas) {
@@ -431,11 +613,11 @@ function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos)
       m.style.left = pct(i); m.style.width = `calc(${pct(Math.min(f, fin))} - ${pct(i)})`;
       caja.append(m);
     }
-    texto += ` Partes a revisar: ${zonas.map(([i, f]) => `${mmss(i)} a ${mmss(Math.min(f, fin))}`).join(", ")}.`;
+    texto += t("partes", zonas.map(([i, f]) => t("tramo", mmss(i), mmss(Math.min(f, fin)))).join(", "));
   }
   if (e && e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno" && e.anzuelo_momento_s >= 0 && e.anzuelo_momento_s <= fin) {
     const pnt = nodo("div", "punto"); pnt.style.left = pct(e.anzuelo_momento_s); caja.append(pnt);
-    texto += ` Lo que Meta castiga aparece en ${mmss(e.anzuelo_momento_s)}.`;
+    texto += t("castiga_en", mmss(e.anzuelo_momento_s));
   }
   caja.setAttribute("aria-label", texto);
   conTiempos($("texto-linea"), texto);
@@ -458,7 +640,7 @@ function grafica(r) {
   // «Predicción contra realidad»: solo si el caso ya se publicó y trae su curva real (realidad.curva, 41 puntos).
   if (conReal(r)) g.append(el("path", { d: ruta(r.realidad.curva), class: "real", fill: "none", "stroke-width": 2.5 }));
   $("leyenda-real").classList.toggle("oculto", !conReal(r));
-  g.setAttribute("aria-label", `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${mmss(dur)}, según Retina y según videos parecidos.`);
+  g.setAttribute("aria-label", t("grafica_aria", mmss(dur)));
 }
 
 const seguro = (u) => { try { const x = new URL(u); return x.protocol === "https:" ? x.href : null; } catch (_) { return null; } };
@@ -467,14 +649,14 @@ function segunMeta(r) {  // revision_meta: buenas prácticas de Meta por ventana
   const lista = Array.isArray(r.revision_meta) ? r.revision_meta : [];
   $("bloque-meta").classList.toggle("oculto", !lista.length);
   $("meta").replaceChildren(...lista.map((x) => {
-    const [clase, signo, dice] = x.cumple === true ? ["ok", "✓", "Cumple"] : x.cumple === false ? ["no", "✗", "No cumple"] : ["nd", "–", "Sin dato"];
+    const [clase, signo, dice] = x.cumple === true ? ["ok", "✓", t("cumple")] : x.cumple === false ? ["no", "✗", t("no_cumple")] : ["nd", "–", t("sin_dato")];
     const marca = nodo("span", clase, signo); marca.setAttribute("aria-label", dice); marca.setAttribute("role", "img");
     const texto = nodo("span");
     // Sin pastillas de tiempo: la evidencia trae proporciones como «9:16» que no son tiempos.
     texto.append(nodo("b", "", x.regla || ""), document.createElement("br"), nodo("span", "", reloj(x.evidencia || "")));
     const u = seguro(x.fuente);
     if (u) {
-      const a = nodo("a", "", "Fuente de Meta"); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
+      const a = nodo("a", "", t("fuente_meta")); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
       texto.append(" · ", a);
     }
     const li = nodo("li"); li.append(marca, nodo("span", "ventana", x.ventana || ""), texto);
@@ -497,32 +679,31 @@ function ilustraciones(e) {
 
 function revisado(r) {
   const l = r.licencia || {}, e = r.explicacion, ul = $("detalle-lista");
-  const conf = e ? ({ alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" }[e.confianza] || e.confianza) : "";
-  $("confianza").textContent = e ? `Qué tan segura está Retina de la explicación: ${conf}.` : "Esta revisión se hizo sin la API de Meta.";
-  const lx = (e && e.licencia) || {}, traza = lx.traza || [];
-  const quien = MODELOS[lx.modelo] || lx.modelo;
-  const usadas = [...new Set(traza.map((t) => t.herramienta || t.nombre || t).filter((h) => HERRAMIENTAS[h]))];
+  const conf = e ? (de(tx().confianza, e.confianza) || e.confianza) : "";
+  $("confianza").textContent = e ? t("confianza_txt", conf) : t("sin_api");
+  const lx = (e && e.licencia) || {}, traza = lx.traza || [], H = tx().herramientas;
+  const quien = de(tx().modelos, lx.modelo) || lx.modelo;
+  const usadas = [...new Set(traza.map((x) => x.herramienta || x.nombre || x).filter((h) => de(H, h)))];
   $("traza").classList.toggle("oculto", !usadas.length);
-  $("traza").replaceChildren(`Para escribir esto, Retina${quien ? ` (${quien})` : ""}: `, ...usadas.map((h) => nodo("span", "", HERRAMIENTAS[h])));
+  $("traza").replaceChildren(t("traza_pre", quien), ...usadas.map((h) => nodo("span", "", H[h])));
   ul.replaceChildren();
-  item(ul, `La alerta compara el inicio de tu video (el primer cuarto) con ${l.comparado_con || "videos parecidos"}. Datos al ${l.datos_hasta || "—"}.`);
-  item(ul, "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.");
-  for (const n of l.no_pude_revisar || []) item(ul, `No revisé: ${n}`);
-  if (lx.modelo) item(ul, `Escribió la explicación: ${quien}${lx.servido_por ? ` (${lx.servido_por})` : ""}.`);
-  if (lx.rescate) item(ul, "Muse Spark Open no cerró esta revisión y la terminó Muse Spark 1.3.");
-  const regresos = traza.filter((t) => t.herramienta === "entregar_tarjeta" && t.resultado && t.resultado.aceptada === false);
-  const textos = regresos.flatMap((t) => Array.isArray(t.resultado.problemas) ? t.resultado.problemas : []).map(String);
-  const porque = [...new Set(textos.map((p) => (RECHAZOS.find(([re]) => re.test(p)) || [, "no pasaba una regla"])[1]))];
+  item(ul, t("compara", l.comparado_con || t("parecidos_def"), l.datos_hasta || "—"));
+  item(ul, t("no_promete"));
+  for (const n of l.no_pude_revisar || []) item(ul, t("no_revise", n));
+  if (lx.modelo) item(ul, t("escribio", quien, lx.servido_por));
+  if (lx.rescate) item(ul, t("rescate"));
+  const regresos = traza.filter((x) => x.herramienta === "entregar_tarjeta" && x.resultado && x.resultado.aceptada === false);
+  const textos = regresos.flatMap((x) => Array.isArray(x.resultado.problemas) ? x.resultado.problemas : []).map(String);
+  const porque = [...new Set(textos.map((p) => tx().rechazos[(RECHAZOS.find(([re]) => re.test(p)) || [, "otra"])[1]]))];
   $("correccion").classList.toggle("oculto", !regresos.length);
-  $("correccion").textContent = regresos.length ? `Antes de mostrártela, el validador le regresó la tarjeta ` +
-    `${regresos.length === 1 ? "una vez" : `${regresos.length} veces`} y Retina la corrigió sola (${porque.join("; ")}).` : "";
+  $("correccion").textContent = regresos.length ? t("correccion", regresos.length, porque.join("; ")) : "";
   const cuadros = (e && e.storyboard) || [], dibujos = ilustraciones(e);
   $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
-  $("ver-storyboard").textContent = dibujos.some(Boolean) ? "Ver cómo quedaría (dibujado con Muse Image)" : "Ver cómo quedaría (3 cuadros)";
+  $("ver-storyboard").textContent = t(dibujos.some(Boolean) ? "ver_storyboard_ia" : "ver_storyboard");
   $("storyboard").replaceChildren(...cuadros.map((c, i) => {
     const d = nodo("div");
     if (dibujos[i]) {
-      const img = nodo("img"); img.src = dibujos[i]; img.loading = "lazy"; img.alt = `Ilustración hecha con IA: ${c}`;
+      const img = nodo("img"); img.src = dibujos[i]; img.loading = "lazy"; img.alt = t("alt_ia", c);
       d.append(img);
     }
     d.append(nodo("span", "", `${i + 1}. ${c}`));
@@ -534,10 +715,10 @@ function pasos(e) {
   const lista = (e && e.que_cambiar && e.pasos) || [];
   $("pasos").replaceChildren(...lista.map((x, i) => {
     const li = nodo("li", "paso"), b = nodo("button", "hecho", "✓");
-    b.type = "button"; b.setAttribute("aria-label", `Marcar el paso ${i + 1} como hecho`); b.setAttribute("aria-pressed", "false");
+    b.type = "button"; b.setAttribute("aria-label", t("paso_aria", false, i + 1)); b.setAttribute("aria-pressed", "false");
     b.onclick = () => {
       const on = li.classList.toggle("listo");
-      b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", `${on ? "Desmarcar" : "Marcar"} el paso ${i + 1} como hecho`);
+      b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", t("paso_aria", on, i + 1));
       progreso();
     };
     li.append(nodo("span", "num", String(i + 1)), conTiempos(nodo("p"), reloj(x)), b);
@@ -549,35 +730,36 @@ function pasos(e) {
 
 function progreso() {
   const n = $("pasos").children.length;
-  $("progreso").textContent = n ? `${$("pasos").querySelectorAll(".listo").length} de ${n} hechos` : "";
+  $("progreso").textContent = n ? t("progreso", $("pasos").querySelectorAll(".listo").length, n) : "";
 }
 
 function mostrar(r) {
   if (!r || !r.arranque || !r.prediccion || !Array.isArray(r.prediccion.curva_predicha) || !r.video || !(r.video.duracion_s > 0)) {
-    throw new Error("Este archivo no es una revisión de Retina (le falta el arranque o la curva).");
+    throw falla("no_es_revision");
   }
-  actual = r;
-  const e = r.explicacion, nivel = NIVELES[r.arranque.nivel] ? r.arranque.nivel : "medio", n = NIVELES[nivel];
+  actual = r; ultimaDecision = null;
+  const e = r.explicacion, N = tx().niveles, nivel = de(N, r.arranque.nivel) ? r.arranque.nivel : "medio", n = N[nivel];
   $("resultado").className = `pantalla nivel-${nivel}`;
   $("semaforo").textContent = n.semaforo; $("titular").textContent = n.titular; $("sub").textContent = n.sub;
   $("titulo-video").textContent = r.video.titulo || "";
+  // El ejemplo del repo es inventado (también su traza): se dice siempre, arriba y a la vista.
+  $("aviso-ejemplo").classList.toggle("oculto", r.ejemplo_inventado !== true);
+  $("aviso-ejemplo").textContent = r.ejemplo_inventado === true ? t("aviso_ejemplo") : "";
   cifras(r); linea(r);
   if (e) {
     conTiempos($("porque"), reloj(e.por_que));
-    conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar)
-      : (nivel === "bajo" ? "No hace falta cambiar el inicio." : "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano."));
+    conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar) : t(nivel === "bajo" ? "sin_cambio_bajo" : "sin_sugerencia"));
     $("funciona").classList.toggle("oculto", !e.lo_que_funciona);
-    $("funciona").replaceChildren(nodo("b", "", "Ya funciona: "), conTiempos(nodo("span"), reloj(e.lo_que_funciona || "")));
+    $("funciona").replaceChildren(nodo("b", "", t("ya_funciona")), conTiempos(nodo("span"), reloj(e.lo_que_funciona || "")));
     const hay = e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno";
     $("anzuelo").classList.toggle("oculto", !hay);
     if (hay) {
-      const cuando = e.anzuelo_momento_s >= 0 ? `En ${mmss(e.anzuelo_momento_s)}` : "En el video";
-      $("anzuelo").replaceChildren(nodo("h2", "", "Quítalo antes de publicar"), conTiempos(nodo("p", "porque"),
-        `${cuando} tu video ${ANZUELOS[e.anzuelo_detectado] || "trae algo que Meta castiga"}${e.anzuelo_frase ? `: «${e.anzuelo_frase}»` : ""}. ` +
-        "Meta reparte menos los videos con esto."));
+      const cuando = e.anzuelo_momento_s >= 0 ? mmss(e.anzuelo_momento_s) : "";
+      $("anzuelo").replaceChildren(nodo("h2", "", t("quitalo")), conTiempos(nodo("p", "porque"),
+        t("anzuelo_texto", cuando, de(tx().anzuelos, e.anzuelo_detectado) || t("anzuelo_otro"), e.anzuelo_frase)));
     }
   } else {
-    $("porque").textContent = "Esta revisión se hizo sin la API de Meta: vemos el riesgo, pero no el porqué.";
+    $("porque").textContent = t("sin_api_porque");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
   pasos(e); segunMeta(r); grafica(r); revisado(r);
@@ -587,23 +769,25 @@ function mostrar(r) {
 }
 
 function textoParaEditor() {
-  const e = actual.explicacion, t = actual.video.titulo ? ` · ${actual.video.titulo}` : "";
-  return [`Retina${t}`, `Qué hacer: ${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`)].join("\n");
+  const e = actual.explicacion, titulo = actual.video.titulo ? ` · ${actual.video.titulo}` : "";
+  return [`Retina${titulo}`, `${t("para_editor")}${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`)].join("\n");
 }
 
 $("copiar").onclick = async () => {
-  try { await navigator.clipboard.writeText(textoParaEditor()); $("copiar").textContent = "Copiado"; }
-  catch (_) { $("copiar").textContent = "No se pudo copiar: selecciona el texto"; }
+  try { await navigator.clipboard.writeText(textoParaEditor()); $("copiar").textContent = t("copiado"); }
+  catch (_) { $("copiar").textContent = t("no_copio"); }
 };
 
-function fallo(mensaje) {
-  $("error").textContent = `No pude abrir esta revisión. ${mensaje} Vuelve a elegir el archivo o avisa a quien corrió Retina.`;
+function fallo(motivo) {  // motivo: una clave de TEXTOS o un texto ya escrito (p. ej. el error que da el navegador)
+  ultimoFallo = motivo;
+  $("error").textContent = t("fallo", typeof de(tx(), motivo) === "string" ? t(motivo) : motivo);
   $("error").classList.remove("oculto");
   estado("vacio");
 }
 
-function decidir(que, texto) {
-  $("decision").textContent = texto;
+function decidir(que) {
+  ultimaDecision = que;
+  $("decision").textContent = tx().decisiones[que];
   try {  // registro local de decisiones para medir la adopción; si el navegador no deja, no pasa nada
     const k = "retina-decisiones", d = JSON.parse(localStorage.getItem(k) || "[]");
     d.push({ codigo: actual && actual.video.codigo, nivel: actual && actual.arranque.nivel, que, cuando: new Date().toISOString() });
@@ -613,29 +797,30 @@ function decidir(que, texto) {
 
 async function leer(archivo) {
   carpeta = null;  // un archivo elegido a mano no trae su carpeta: el storyboard se ve solo en texto
-  try { mostrar(JSON.parse(await archivo.text())); }
-  catch (err) { fallo(err.message || "El archivo no se pudo leer."); }
+  try { mostrar(JSON.parse(await archivo.text())); porOmision = false; }
+  catch (err) { fallo(err.clave || err.message || "no_se_leyo"); }
 }
 
-async function abrir(ruta) {
+async function abrir(ruta, ejemplo = false) {  // ejemplo: es el caso de muestra del idioma (DEMO)
   const r = await fetch(ruta);
-  if (!r.ok) throw new Error("No encontré esa revisión.");
+  if (!r.ok) throw falla("no_encontre");
   carpeta = new URL(".", r.url);
   mostrar(await r.json());
+  porOmision = ejemplo;
 }
 
 $("ver-storyboard").onclick = () => {
   const abierto = $("storyboard").classList.toggle("oculto") === false;
   $("ver-storyboard").setAttribute("aria-expanded", String(abierto));
 };
-$("d-cortar").onclick = () => decidir("cortar", "Anotado: haces el cambio. Cuando tengas la nueva versión, pásala otra vez por Retina.");
-$("d-regrabar").onclick = () => decidir("regrabar", "Anotado: regrabas. Cuando tengas la nueva versión, pásala otra vez por Retina.");
-$("d-publicar").onclick = () => decidir("publicar", "Anotado: se publica así.");
+$("d-cortar").onclick = () => decidir("cortar");
+$("d-regrabar").onclick = () => decidir("regrabar");
+$("d-publicar").onclick = () => decidir("publicar");
 $("otra").onclick = () => { $("archivo").value = ""; estado("vacio"); };
 $("elegir").onclick = (e) => { e.stopPropagation(); $("archivo").click(); };
 $("ejemplo").onclick = (e) => {
   e.stopPropagation();
-  abrir("../casos/demo/resultado.json").catch(() => fallo("Con doble clic el navegador no deja abrir el ejemplo: corre «python -m retina.demo» o elige el archivo."));
+  abrir(DEMO(), true).catch(() => fallo("doble_clic"));
 };
 $("soltar").onclick = () => $("archivo").click();
 $("soltar").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivo").click(); } };
@@ -645,24 +830,52 @@ for (const ev of ["dragleave", "drop"]) $("soltar").addEventListener(ev, (e) => 
 $("soltar").addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) leer(e.dataTransfer.files[0]); });
 $("legible").onclick = () => { const on = document.body.classList.toggle("legible"); $("legible").setAttribute("aria-pressed", String(on)); };
 
-// Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo; con doble clic, se elige el archivo.
+// Textos fijos en el idioma activo: los del HTML (data-t, data-t-aria), el botón de idioma, el enlace de regreso y los fondos.
+function aplicarTextos() {
+  document.documentElement.lang = idioma;
+  document.querySelectorAll("[data-t]").forEach((n) => { n.textContent = t(n.dataset.t); });
+  document.querySelectorAll("[data-t-aria]").forEach((n) => n.setAttribute("aria-label", t(n.dataset.tAria)));
+  const b = $("idioma"); b.textContent = t("idioma_boton"); b.lang = t("idioma_destino"); b.title = t("idioma_titulo");
+  const desde = de({ galeria: ["galeria.html", "galeria"], subir: ["subir.html", "subir"] }, new URLSearchParams(location.search).get("desde"));
+  $("a-galeria").classList.toggle("oculto", !desde);
+  if (desde) { $("a-galeria").href = desde[0]; $("a-galeria").textContent = t(desde[1]); }
+  document.querySelectorAll(".opcion").forEach((o) => { o.lastChild.textContent = nombreFondo(FONDOS.find((f) => f.id === o.dataset.id)); });
+}
+const nombreFondo = (f) => de(tx().fondos, f.id) || f.nombre;
+
+// El botón cambia el idioma en el momento: conserva ?caso= y &desde=, lo recuerda y vuelve a escribir lo que está a la vista.
+$("idioma").onclick = async () => {
+  idioma = idioma === "en" ? "es" : "en";
+  try { localStorage.setItem("retina-idioma", idioma); } catch (_) { /* sin almacenamiento: vale para esta visita */ }
+  const q = new URLSearchParams(location.search);
+  if (idioma === "en") q.set("lang", "en"); else q.delete("lang");
+  history.replaceState(history.state, "", `${location.pathname}${q.toString() ? `?${q}` : ""}${location.hash}`);
+  aplicarTextos();
+  if (document.body.dataset.estado === "resultado" && actual) {
+    const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo")), d = ultimaDecision;
+    try { if (porOmision) await abrir(DEMO(), true); else mostrar(actual); } catch (_) { mostrar(actual); }
+    [...$("pasos").children].forEach((li, i) => { if (hechos[i]) li.querySelector(".hecho").click(); });
+    if (d) { ultimaDecision = d; $("decision").textContent = tx().decisiones[d]; }
+    window.scrollTo(0, y);
+  } else if (!$("error").classList.contains("oculto") && ultimoFallo) fallo(ultimoFallo);
+};
+aplicarTextos();
+
+// Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo del idioma; con doble clic, se elige el archivo.
 (async () => {
   // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
   const pedido = new URLSearchParams(location.search).get("caso");
-  const desde = { galeria: ["galeria.html", "Todos los casos"], subir: ["subir.html", "Revisar otro video"] }[new URLSearchParams(location.search).get("desde")];
-  $("a-galeria").classList.toggle("oculto", !desde);
-  if (desde) { $("a-galeria").href = desde[0]; $("a-galeria").textContent = desde[1]; }
   let propio = null;
   if (pedido) {
     const u = new URL(pedido, location.href);
     if (u.origin === location.origin && /^\/casos\/[\w-]+\/resultado\.json$/.test(u.pathname)) propio = u.pathname;
-    else { fallo("La dirección del caso no es válida: tiene que ser un resultado.json de la carpeta casos."); return; }
+    else { fallo("caso_invalido"); return; }
   }
-  for (const ruta of propio ? [propio] : ["resultado.json", "../casos/demo/resultado.json"]) {
-    try { await abrir(ruta); return; } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
+  for (const ruta of propio ? [propio] : ["resultado.json", DEMO()]) {
+    try { await abrir(ruta, ruta === DEMO()); return; } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
   }
-  if (propio) fallo("No encontré esa revisión.");
-})().catch((err) => fallo(err.message));
+  if (propio) fallo("no_encontre");
+})().catch((err) => fallo(err.clave || err.message || "no_encontre"));
 
 // ---- Vidrio (WebGL): fondo, lente en las orillas, separación de color, esmerilado y ondas ----
 // Un solo lienzo dibuja el fondo y, dentro de cada cuadro .vidrio, el fondo doblado como lo doblaría un cristal grueso.
@@ -850,7 +1063,7 @@ for (const f of FONDOS) {
   const b = nodo("button", "opcion");
   b.type = "button"; b.dataset.id = f.id; b.setAttribute("role", "option");
   const img = document.createElement("img"); img.src = `fondos/mini-${f.imgs[0]}.webp`; img.alt = "";
-  b.append(img, nodo("span", "", f.nombre)); b.onclick = () => ponerFondo(f.id); $("fondos").append(b);
+  b.append(img, nodo("span", "", nombreFondo(f))); b.onclick = () => ponerFondo(f.id); $("fondos").append(b);
 }
 $("abrir-fondos").onclick = () => {
   const abierto = $("fondos").hidden; $("fondos").hidden = !abierto; $("abrir-fondos").setAttribute("aria-expanded", String(abierto));
