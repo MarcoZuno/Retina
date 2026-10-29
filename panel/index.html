@@ -88,6 +88,7 @@ header { display: flex; align-items: center; gap: 12px; padding: 16px 22px; }
 .opcion span { display: block; padding: 6px 2px 0; color: var(--suave); }
 .opcion[aria-selected="true"] img { outline: 2px solid #fff; outline-offset: 2px; }
 .pastilla { border: 0; color: var(--texto); font: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px; border-radius: 999px; cursor: pointer; min-height: 44px; }
+a.pastilla { display: inline-flex; align-items: center; text-decoration: none; }
 .opcion:focus-visible, .pastilla:focus-visible, .boton:focus-visible, .hecho:focus-visible, summary:focus-visible, .soltar:focus-visible, a:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
 main { flex: 1; display: grid; place-items: start center; padding: 8px 22px 48px; }
 .pantalla { display: none; width: 100%; }
@@ -205,6 +206,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
   <header>
     <div class="marca vidrio"><span class="ojo" aria-hidden="true"></span>Retina</div>
     <span class="espacio"></span>
+    <a class="pastilla vidrio oculto" id="a-galeria" href="galeria.html">Todos los casos</a>
     <div class="menu-fondo">
       <button class="pastilla vidrio" id="abrir-fondos" type="button" aria-expanded="false" aria-controls="fondos">Fondo</button>
       <div class="fondos vidrio" id="fondos" role="listbox" aria-label="Elige el fondo" hidden></div>
@@ -647,6 +649,7 @@ $("legible").onclick = () => { const on = document.body.classList.toggle("legibl
 (async () => {
   // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
   const pedido = new URLSearchParams(location.search).get("caso");
+  $("a-galeria").classList.toggle("oculto", new URLSearchParams(location.search).get("desde") !== "galeria");
   let propio = null;
   if (pedido) {
     const u = new URL(pedido, location.href);

@@ -364,6 +364,23 @@ class Demo(unittest.TestCase):
         for ruta in ("/.git/config", "/README.md", "/casos/", "/casos/../.env", "/src/retina/meta_api.py"):
             self.assertFalse(PERMITIDO.match(ruta), ruta)
 
+    def test_la_galeria_y_su_indice_se_sirven(self):
+        from retina.demo import PERMITIDO
+        for ruta in ("/panel/galeria.html", "/casos/indice.json"):
+            self.assertTrue(PERMITIDO.match(ruta), ruta)
+        for ruta in ("/casos/otro.json", "/panel/galeria.js", "/casos/x/indice.json"):
+            self.assertFalse(PERMITIDO.match(ruta), ruta)
+
+    def test_con_una_carpeta_privada_los_casos_salen_de_ahi_y_de_nada_mas(self):
+        from retina.demo import ruta_local
+        privada = Path("D:/privado/casos")
+        self.assertEqual(ruta_local("/casos/ABC1/resultado.json", RAIZ, privada), privada / "ABC1" / "resultado.json")
+        self.assertEqual(ruta_local("/casos/indice.json", RAIZ, privada), privada / "indice.json")
+        self.assertEqual(ruta_local("/panel/index.html", RAIZ, privada), RAIZ / "panel" / "index.html")
+        self.assertEqual(ruta_local("/casos/demo/resultado.json", RAIZ, None), RAIZ / "casos" / "demo" / "resultado.json")
+        for ruta in ("/casos/../.env", "/casos/%2e%2e/x/resultado.json", "/.git/config"):
+            self.assertIsNone(ruta_local(ruta, RAIZ, privada), ruta)
+
     def test_la_demo_sirve_las_ilustraciones_del_storyboard_de_un_caso(self):
         from retina.demo import PERMITIDO
         self.assertTrue(PERMITIDO.match("/casos/demo/agente-cuadro1-ilustracion-ia.webp"))
