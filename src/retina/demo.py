@@ -23,7 +23,7 @@ from pathlib import Path
 from .esquemas import RAIZ
 
 CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
-PERMITIDO = re.compile(r"^/(panel/(index\.html|galeria\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp"
+PERMITIDO = re.compile(r"^/(panel/((?:index|galeria|subir)\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp"
                        r"|casos/[\w-]+/resultado\.json|casos/indice\.json"
                        r"|casos/[\w-]+/[\w-]+-ilustracion-ia\.(?:png|webp))$")  # el storyboard dibujado con Muse Image
 
@@ -54,6 +54,11 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
 
     def do_HEAD(self):  # noqa: N802
         self.do_GET()
+
+    def end_headers(self):
+        if self.path.split("?", 1)[0].endswith((".html", ".json", "/")):  # páginas y casos siempre frescos
+            self.send_header("Cache-Control", "no-cache")
+        super().end_headers()
 
     def translate_path(self, path):
         local = ruta_local(path.split("?", 1)[0], Path(self.directory), self.casos)

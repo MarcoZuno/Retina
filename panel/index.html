@@ -649,7 +649,9 @@ $("legible").onclick = () => { const on = document.body.classList.toggle("legibl
 (async () => {
   // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
   const pedido = new URLSearchParams(location.search).get("caso");
-  $("a-galeria").classList.toggle("oculto", new URLSearchParams(location.search).get("desde") !== "galeria");
+  const desde = { galeria: ["galeria.html", "Todos los casos"], subir: ["subir.html", "Revisar otro video"] }[new URLSearchParams(location.search).get("desde")];
+  $("a-galeria").classList.toggle("oculto", !desde);
+  if (desde) { $("a-galeria").href = desde[0]; $("a-galeria").textContent = desde[1]; }
   let propio = null;
   if (pedido) {
     const u = new URL(pedido, location.href);

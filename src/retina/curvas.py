@@ -82,7 +82,9 @@ class _Indice:
             for k in ((h["cubeta"],), (h["cubeta"], h["talento"])):
                 s, n = self.totales.get(k, (np.zeros(N_PUNTOS), 0))
                 self.totales[k] = (s + h["curva"], n + 1)
-        self.en_entrenamiento = {h["codigo"] for h in entrenamiento}
+        self.por_codigo: dict = {}
+        for h in entrenamiento:
+            self.por_codigo.setdefault(h["codigo"], []).append(h)
         self.media = np.mean([h["curva"] for h in entrenamiento], axis=0)
         self.n = len(entrenamiento)
 
@@ -96,8 +98,10 @@ class _Indice:
 
     def total(self, k: tuple, v: dict) -> tuple[np.ndarray | None, int]:
         s, n = self.totales.get(k, (np.zeros(N_PUNTOS), 0))
-        if v["codigo"] in self.en_entrenamiento and (len(k) == 1 or v["talento"] == k[1]):
-            s, n = s - v["curva"], n - 1
+        # Nunca el propio video: se saca su fila de entrenamiento (un video subido para revisar no trae curva).
+        for h in self.por_codigo.get(v["codigo"], []):
+            if k in ((h["cubeta"],), (h["cubeta"], h["talento"])):
+                s, n = s - h["curva"], n - 1
         return (s / n if n else None), n
 
 

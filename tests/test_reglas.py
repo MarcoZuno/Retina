@@ -293,6 +293,25 @@ class ReglaDeParecidos(unittest.TestCase):
                 self.assertEqual(a[1], b[1]); self.assertEqual(a[2], b[2])
                 np.testing.assert_allclose(a[0], b[0], atol=1e-9)
 
+    def test_un_video_subido_que_ya_esta_en_el_entrenamiento_no_se_cuenta_a_si_mismo(self):
+        # Un video ya publicado que se sube para revisarlo llega sin curva, pero su fila sí está entre los
+        # que aprendió el modelo: hay que sacar esa fila de sus parecidos, no tronar (pasó el 28-oct).
+        azar = np.random.default_rng(11)
+        inicio, filas = datetime(2025, 1, 1), []
+        for i in range(300):
+            dur = float(azar.choice([45, 90]))
+            filas.append({"codigo": f"P{i}", "fecha": inicio + timedelta(hours=int(azar.integers(0, 24 * 300))),
+                          "dur": dur, "cubeta": cubeta(dur), "talento": str(azar.choice(["ANA", "LUIS"])),
+                          "curva": np.sort(azar.random(41))[::-1]})
+        filas.sort(key=lambda x: x["fecha"])
+        for h in filas[::37]:
+            subido = {k: h[k] for k in ("codigo", "fecha", "dur", "cubeta", "talento")}  # sin «curva»
+            subido["fecha"] = h["fecha"] + timedelta(days=400)  # ya fuera de la ventana de 90 días
+            with self.subTest(codigo=h["codigo"]):
+                a, b = grupo_parecido(subido, filas, filas), _grupo_lento(subido, filas, filas)
+                self.assertEqual(a[1:], b[1:])
+                np.testing.assert_allclose(a[0], b[0], atol=1e-9)
+
 
 class Tope(unittest.TestCase):
     def test_el_env_no_sube_el_tope_autorizado(self):
@@ -366,7 +385,7 @@ class Demo(unittest.TestCase):
 
     def test_la_galeria_y_su_indice_se_sirven(self):
         from retina.demo import PERMITIDO
-        for ruta in ("/panel/galeria.html", "/casos/indice.json"):
+        for ruta in ("/panel/galeria.html", "/panel/subir.html", "/casos/indice.json"):
             self.assertTrue(PERMITIDO.match(ruta), ruta)
         for ruta in ("/casos/otro.json", "/panel/galeria.js", "/casos/x/indice.json"):
             self.assertFalse(PERMITIDO.match(ruta), ruta)
@@ -388,6 +407,55 @@ class Demo(unittest.TestCase):
         for ruta in ("/casos/demo/foto.png", "/casos/demo/agente-cuadro1-ilustracion-ia.svg",
                      "/casos/demo/../x-ilustracion-ia.png", "/casos/demo/sub/x-ilustracion-ia.png"):
             self.assertFalse(PERMITIDO.match(ruta), ruta)
+
+
+class SubirUnVideo(unittest.TestCase):
+    """retina.app: sube un video y recibe la tarjeta (prototipo local)."""
+
+    def datos(self, **cambios):
+        from urllib.parse import quote
+        h = {"X-Retina-Titulo": quote("Fresas de prueba llegan a Canadá"), "X-Retina-Talento": quote("ÁNGELA DE PRUEBA"),
+             "X-Retina-Codigo": "XYZ0000001", "X-Retina-Fecha": "2026-01-15 18:00", "X-Retina-Publicado": "1"}
+        h.update(cambios)
+        return h
+
+    def test_los_datos_buenos_se_leen_con_acentos(self):
+        from retina.app import leer_datos
+        d = leer_datos(self.datos())
+        self.assertEqual((d["talento"], d["codigo"], d["fecha"], d["publicado"]),
+                         ("ÁNGELA DE PRUEBA", "XYZ0000001", "2026-01-15 18:00", True))
+
+    def test_los_datos_raros_se_rechazan(self):
+        from retina.app import leer_datos
+        for cambio in ({"X-Retina-Fecha": "ayer"}, {"X-Retina-Codigo": "../x"}, {"X-Retina-Titulo": "a" * 301},
+                       {"X-Retina-Titulo": ""}, {"X-Retina-Talento": "a" * 81}):
+            with self.subTest(cambio=cambio), self.assertRaises(ValueError):
+                leer_datos(self.datos(**cambio))
+
+    def test_solo_acepta_mp4(self):
+        from retina.app import es_mp4
+        self.assertTrue(es_mp4(b"\x00\x00\x00\x18ftypmp42\x00\x00"))
+        self.assertFalse(es_mp4(b"<html><script>alert(1)"))
+
+    def test_solo_acepta_pedidos_de_su_propia_pagina(self):
+        from retina.app import pedido_propio
+        self.assertTrue(pedido_propio({"X-Retina": "1", "Origin": "http://127.0.0.1:8790"}, 8790))
+        self.assertTrue(pedido_propio({"X-Retina": "1"}, 8790))
+        self.assertFalse(pedido_propio({"Origin": "http://127.0.0.1:8790"}, 8790))  # sin la cabecera propia
+        self.assertFalse(pedido_propio({"X-Retina": "1", "Origin": "https://otro-sitio.com"}, 8790))
+
+    def test_el_avance_sale_de_lo_que_ya_se_escribio(self):
+        import tempfile
+        from retina.app import estado
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            self.assertEqual(estado(d), {"estado": "en_fila"})
+            (d / "estado.json").write_text('{"estado": "procesando"}', encoding="utf-8")
+            self.assertEqual(estado(d), {"estado": "procesando", "paso": "cortando"})
+            (d / "manifiesto.json").write_text("{}", encoding="utf-8")
+            self.assertEqual(estado(d)["paso"], "escuchando")
+            (d / "estado.json").write_text('{"estado": "error", "mensaje": "El candado está encendido"}', encoding="utf-8")
+            self.assertEqual(estado(d), {"estado": "error", "mensaje": "El candado está encendido"})
 
 
 class StoryboardEnElPanel(unittest.TestCase):

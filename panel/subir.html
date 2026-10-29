@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'">
+<title>Retina · revisar un video</title>
+<style>
+:root { --texto: #FFFFFF; --suave: rgba(255,255,255,.80); --tenue: rgba(255,255,255,.58); --verde: #7CF0B5; --rojo: #FF8A8C; --azul: #9FD3FF; }
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body { color: var(--texto); font: 16px/1.5 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+       background: #050B1C center / cover fixed no-repeat; -webkit-font-smoothing: antialiased; }
+body::before { content: ""; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(5,11,28,.35), rgba(5,11,28,.72)); z-index: 0; }
+.capa { position: relative; z-index: 1; max-width: 760px; margin: 0 auto; padding: 18px 22px 60px; }
+.vidrio { border-radius: 24px; background: rgba(10,20,46,.42); -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: 0 24px 60px -18px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.16); }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 26px; }
+.marca { display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border-radius: 999px; font-weight: 650; }
+.marca i { width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff, #9FD3FF 45%, #3F7BFF); box-shadow: 0 0 14px #9FD3FF; }
+.enlace { color: var(--texto); text-decoration: none; font-size: 14px; font-weight: 600; padding: 8px 16px; border-radius: 999px;
+  background: rgba(255,255,255,.10); box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+h1 { font-size: 36px; line-height: 1.1; margin: 0 0 8px; }
+.sub { color: var(--suave); margin: 0 0 22px; font-size: 17px; }
+form, .avance { padding: 24px; }
+.soltar { display: block; border: 1.5px dashed rgba(255,255,255,.45); border-radius: 18px; padding: 26px; text-align: center; cursor: pointer; margin-bottom: 18px; }
+.soltar.encima { background: rgba(159,211,255,.12); border-color: var(--azul); }
+.soltar b { display: block; font-size: 18px; margin-bottom: 4px; }
+.soltar span { color: var(--tenue); font-size: 14px; }
+input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.campos .ancho { grid-column: 1 / -1; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--suave); }
+input[type=text], input[type=datetime-local], select { font: inherit; color: var(--texto); background: rgba(255,255,255,.08); border: 0; border-radius: 12px;
+  padding: 11px 13px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); min-height: 44px; }
+select option { color: #0E1A33; }
+input:focus-visible, select:focus-visible, button:focus-visible, .soltar:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+.check { flex-direction: row; align-items: flex-start; gap: 10px; margin-top: 16px; color: var(--texto); }
+.check input { width: 20px; height: 20px; margin-top: 2px; }
+.nota { color: var(--tenue); font-size: 13px; margin: 6px 0 0; }
+.boton { font: inherit; font-weight: 650; color: #0E1A33; background: #fff; border: 0; border-radius: 999px; padding: 12px 22px; cursor: pointer; margin-top: 20px; min-height: 48px; }
+.boton:disabled { opacity: .5; cursor: default; }
+.error { color: var(--rojo); margin: 14px 0 0; font-weight: 600; }
+.barra { height: 8px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; margin: 12px 0 18px; }
+.barra i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #9FD3FF, #7CF0B5); transition: width .3s; }
+.pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.pasos li { display: flex; align-items: center; gap: 12px; color: var(--tenue); }
+.pasos li i { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.2); flex: none; }
+.pasos li.hecho { color: var(--suave); } .pasos li.hecho i { background: var(--verde); }
+.pasos li.ahora { color: var(--texto); font-weight: 650; } .pasos li.ahora i { background: var(--azul); box-shadow: 0 0 12px var(--azul); animation: late 1.2s infinite; }
+@keyframes late { 50% { opacity: .35; } }
+.oculto { display: none !important; }
+@media (max-width: 640px) { .campos { grid-template-columns: 1fr; } h1 { font-size: 28px; } .capa { padding: 14px 16px 40px; } }
+@media (prefers-reduced-motion: reduce) { .pasos li.ahora i { animation: none; } }
+</style>
+</head>
+<body>
+<div class="capa">
+  <header>
+    <span class="marca vidrio"><i></i>Retina</span>
+    <a class="enlace" href="index.html">Abrir el panel</a>
+  </header>
+  <h1>Revisar un video</h1>
+  <p class="sub">Sube el video y Retina te dice si el inicio va a perder gente, por qué y qué cambiar. Tarda unos 3 minutos.</p>
+
+  <form class="vidrio" id="forma" novalidate>
+    <label class="soltar" id="soltar" tabindex="0" for="archivo">
+      <b id="soltar-titulo">Elige o arrastra el video (MP4)</b>
+      <span id="soltar-sub">Si el nombre del archivo trae fecha, código y talento, los lleno solos.</span>
+    </label>
+    <input type="file" id="archivo" accept="video/mp4,.mp4">
+    <div class="campos">
+      <label class="ancho">Título del video (como sale en Facebook)<input type="text" id="titulo" maxlength="300" autocomplete="off"></label>
+      <label>Código de producción<input type="text" id="codigo" maxlength="22" placeholder="XYZ0000001" autocomplete="off"></label>
+      <label>Talento<select id="talento"><option value="">Sin talento a cuadro</option></select></label>
+      <label class="ancho">Fecha y hora de publicación<input type="datetime-local" id="fecha"></label>
+    </div>
+    <label class="check"><input type="checkbox" id="publicado"><span>Este video ya está publicado en Facebook.
+      <span class="nota" style="display:block">Por ahora Retina solo manda a Meta videos ya publicados (lo decide la empresa).</span></span></label>
+    <button class="boton" id="revisar" type="submit">Revisar este video</button>
+    <p class="error oculto" id="error" role="alert"></p>
+  </form>
+
+  <div class="avance vidrio oculto" id="avance" aria-live="polite">
+    <b id="avance-titulo">Subiendo el video…</b>
+    <div class="barra"><i id="barra"></i></div>
+    <ol class="pasos" id="pasos"></ol>
+  </div>
+</div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const PASOS = [["subiendo", "Subir el video"], ["cortando", "Cortar el video en partes"], ["escuchando", "Escuchar lo que se dice"],
+  ["mirando", "Mirar lo que pasa en pantalla"], ["escribiendo", "Escribir la tarjeta (Muse Spark Open)"], ["terminando", "Revisar lo que recomienda Meta"]];
+const FONDOS = { cristales: "cinta", oceano: "oceano", aurora: "aurora", montanas: "montanas", seda: "seda", espacio: "espacio" };
+let fondo = "oceano";
+try { fondo = FONDOS[localStorage.getItem("retina-fondo")] || "oceano"; } catch (_) { /* sin almacenamiento */ }
+document.body.style.backgroundImage = `url("fondos/fondo-${fondo}.webp")`;
+
+let talentos = [], video = null;
+const sinAcentos = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+
+function error(texto) { $("error").textContent = texto; $("error").classList.toggle("oculto", !texto); }
+
+// «2026-01-15 XYZ0000001 TALENTO DE PRUEBA  Título del video REEL.mp4» → fecha, código, talento y título.
+function llenarDesdeNombre(nombre) {
+  const m = nombre.replace(/\.mp4$/i, "").match(/^(\d{4}-\d{2}-\d{2})\s+([A-Za-z]{2,10}\d{2,12})\s+(.*)$/);
+  if (!m) return;
+  if (!$("fecha").value) $("fecha").value = `${m[1]}T12:00`;
+  if (!$("codigo").value) $("codigo").value = m[2].toUpperCase();
+  let resto = m[3].trim();
+  const t = talentos.filter((x) => sinAcentos(resto).startsWith(sinAcentos(x))).sort((a, b) => b.length - a.length)[0];
+  if (t) { $("talento").value = t; resto = resto.slice(t.length).trim(); }
+  // Fuera las etiquetas internas del nombre: «PROMO Nombre …», «… VIERNES - REEL».
+  resto = resto.replace(/^PROMO\s+\S+\s+/i, "")
+    .replace(/\s+(?:(?:LUNES|MARTES|MI[EÉ]RCOLES|JUEVES|VIERNES|S[AÁ]BADO|DOMINGO)\s*-?\s*)?REEL$/i, "");
+  if (!$("titulo").value) $("titulo").value = resto.replace(/\s{2,}/g, " ").trim();
+}
+
+function elegir(archivo) {
+  if (!archivo) return;
+  if (!/\.mp4$/i.test(archivo.name) && archivo.type !== "video/mp4") { error("Solo se pueden revisar videos MP4."); return; }
+  video = archivo; error("");
+  $("soltar-titulo").textContent = archivo.name;
+  $("soltar-sub").textContent = `${(archivo.size / 1048576).toFixed(0)} MB · toca para cambiarlo`;
+  llenarDesdeNombre(archivo.name);
+}
+
+function pintarPasos(actual) {
+  const i = PASOS.findIndex(([k]) => k === actual);
+  $("pasos").replaceChildren(...PASOS.map(([k, texto], j) => {
+    const li = document.createElement("li");
+    li.className = j < i ? "hecho" : j === i ? "ahora" : "";
+    li.append(document.createElement("i"), document.createTextNode(texto));
+    return li;
+  }));
+  $("barra").style.width = `${Math.max(4, Math.round(100 * i / PASOS.length))}%`;
+}
+
+async function seguir(id) {
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 3000));
+    let e;
+    try { const r = await fetch(`/api/estado/${id}`, { cache: "no-store" }); e = await r.json(); } catch (_) { continue; }
+    if (e.estado === "listo") {
+      $("barra").style.width = "100%";
+      location.href = `index.html?caso=${encodeURIComponent(`/casos/${id}/resultado.json`)}&desde=subir`;
+      return;
+    }
+    if (e.estado === "error") { $("avance").classList.add("oculto"); $("forma").classList.remove("oculto"); error(String(e.mensaje || "La revisión no terminó.")); return; }
+    $("avance-titulo").textContent = e.estado === "en_fila" ? "En fila: hay otro video revisándose…" : "Revisando…";
+    pintarPasos(e.paso || "cortando");
+  }
+}
+
+$("forma").onsubmit = (ev) => {
+  ev.preventDefault();
+  if (!video) return error("Primero elige el video.");
+  if (!$("titulo").value.trim()) return error("Escribe el título del video.");
+  if (!/^[A-Za-z]{2,10}\d{2,12}$/.test($("codigo").value.trim())) return error("El código tiene que verse como XYZ0000001.");
+  if (!$("fecha").value) return error("Pon la fecha y hora de publicación.");
+  if (!$("publicado").checked) return error("Por ahora solo se revisan videos ya publicados: marca la casilla si ya está en Facebook.");
+  error("");
+  const x = new XMLHttpRequest();
+  x.open("POST", "/api/revisar");
+  x.setRequestHeader("Content-Type", "video/mp4");
+  x.setRequestHeader("X-Retina", "1");
+  x.setRequestHeader("X-Retina-Titulo", encodeURIComponent($("titulo").value.trim()));
+  x.setRequestHeader("X-Retina-Talento", encodeURIComponent($("talento").value));
+  x.setRequestHeader("X-Retina-Codigo", $("codigo").value.trim().toUpperCase());
+  x.setRequestHeader("X-Retina-Fecha", $("fecha").value.replace("T", " ").slice(0, 16));
+  x.setRequestHeader("X-Retina-Publicado", "1");
+  x.upload.onprogress = (e) => { if (e.lengthComputable) $("barra").style.width = `${Math.round(100 * e.loaded / e.total / PASOS.length)}%`; };
+  x.onload = () => {
+    let r = {};
+    try { r = JSON.parse(x.responseText); } catch (_) { /* respuesta sin JSON */ }
+    if (x.status === 202 && r.id) { $("avance-titulo").textContent = "Revisando…"; pintarPasos("cortando"); seguir(r.id); }
+    else { $("avance").classList.add("oculto"); $("forma").classList.remove("oculto"); error(r.error || "No se pudo subir el video."); }
+  };
+  x.onerror = () => { $("avance").classList.add("oculto"); $("forma").classList.remove("oculto"); error("Se cortó la conexión con Retina."); };
+  $("forma").classList.add("oculto"); $("avance").classList.remove("oculto"); pintarPasos("subiendo");
+  x.send(video);
+};
+
+$("archivo").onchange = (e) => elegir(e.target.files[0]);
+$("soltar").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivo").click(); } };
+for (const ev of ["dragenter", "dragover"]) $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.add("encima"); });
+for (const ev of ["dragleave", "drop"]) $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.remove("encima"); });
+$("soltar").addEventListener("drop", (e) => elegir(e.dataTransfer.files[0]));
+
+(async () => {
+  try {
+    const r = await fetch("/api/talentos");
+    if (!r.ok) throw new Error();
+    talentos = ((await r.json()).talentos || []).map(String);
+    for (const t of talentos) { const o = document.createElement("option"); o.value = o.textContent = t; $("talento").append(o); }
+  } catch (_) {
+    $("revisar").disabled = true;
+    error("Esta página necesita que Retina esté corriendo para recibir videos («python -m retina.app»). La demo solo muestra casos ya revisados.");
+  }
+})();
+</script>
+</body>
+</html>

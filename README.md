@@ -123,6 +123,14 @@ python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json \
 python -m retina.agente ../datos/casos/demo --modelo MODELO.pkl --voz VOZ.jsonl
 ```
 
+**From the browser (local prototype).** `python -m retina.app --casos CASES_DIR --modelo PREDECIR.pkl
+--arranque ARRANQUE.json --voz VOZ.jsonl` opens a page where you drop an MP4 and fill in four fields (it
+fills them from a file name like `2026-01-15 XYZ0000001 TALENT Title.mp4`). The same pipeline runs in the
+background, one video at a time, and the card opens when it is ready (about 3 minutes). It listens only on
+127.0.0.1, accepts uploads only from its own page, only MP4, and keeps the published-only lock.
+`python -m retina.demo --casos CASES_DIR --galeria` lists every reviewed case in that folder (it needs an
+`indice.json`).
+
 The panel reads only `resultado.json`; its contract is in
 [`docs/resultado-json.md`](docs/resultado-json.md), with a made-up example in
 [`casos/demo/resultado.json`](casos/demo/resultado.json).
