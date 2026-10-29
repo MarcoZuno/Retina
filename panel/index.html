@@ -293,6 +293,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <h2>Cómo lo revisó Retina</h2>
           <p class="porque" id="confianza"></p>
           <p class="traza oculto" id="traza"></p>
+          <p class="traza oculto" id="correccion"></p>
           <details>
             <summary>Ver detalle</summary>
             <div class="detalle">
@@ -342,6 +343,16 @@ const HERRAMIENTAS = {  // lo que revisó el agente, en palabras de quien edita
 const MODELOS = {  // quién escribió la tarjeta, en palabras de quien edita
   "meta-models/muse-spark-open-1026": "Muse Spark Open, de pesos abiertos", "muse-spark-1.3": "Muse Spark 1.3",
 };
+const RECHAZOS = [  // por qué el validador le regresó la tarjeta al agente, en palabras de quien edita
+  [/ mide \d+ caracteres/, "un texto era demasiado largo"],
+  [/^(Pide comentarios|«Mira hasta|Esconde el dato|Exagera|Promete curas|Contenido no original|Sorteos|Pide sacar|Imagen o voz)/,
+    "sugería algo que Meta castiga"],
+  [/cifras que no vienen/, "traía una cifra que no salió de ninguna revisión"],
+  [/fuera del arranque/, "señalaba un segundo fuera del inicio"],
+  [/intocable/, "tocaba algo que no se cambia (logo, título o avisos)"],
+  [/jerga o cifras internas/, "usaba palabras técnicas o cifras internas"],
+  [/no trae un cambio/, "no proponía ningún cambio"],
+];
 let actual = null, carpeta = null;  // carpeta: de dónde vino el caso (solo si vino de casos/ por http)
 
 function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
@@ -497,6 +508,12 @@ function revisado(r) {
   for (const n of l.no_pude_revisar || []) item(ul, `No revisé: ${n}`);
   if (lx.modelo) item(ul, `Escribió la explicación: ${quien}${lx.servido_por ? ` (${lx.servido_por})` : ""}.`);
   if (lx.rescate) item(ul, "Muse Spark Open no cerró esta revisión y la terminó Muse Spark 1.3.");
+  const regresos = traza.filter((t) => t.herramienta === "entregar_tarjeta" && t.resultado && t.resultado.aceptada === false);
+  const textos = regresos.flatMap((t) => Array.isArray(t.resultado.problemas) ? t.resultado.problemas : []).map(String);
+  const porque = [...new Set(textos.map((p) => (RECHAZOS.find(([re]) => re.test(p)) || [, "no pasaba una regla"])[1]))];
+  $("correccion").classList.toggle("oculto", !regresos.length);
+  $("correccion").textContent = regresos.length ? `Antes de mostrártela, el validador le regresó la tarjeta ` +
+    `${regresos.length === 1 ? "una vez" : `${regresos.length} veces`} y Retina la corrigió sola (${porque.join("; ")}).` : "";
   const cuadros = (e && e.storyboard) || [], dibujos = ilustraciones(e);
   $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
   $("ver-storyboard").textContent = dibujos.some(Boolean) ? "Ver cómo quedaría (dibujado con Muse Image)" : "Ver cómo quedaría (3 cuadros)";

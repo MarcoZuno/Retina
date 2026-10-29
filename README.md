@@ -4,10 +4,12 @@
 
 Retina watches a video draft before it goes to Facebook and tells you whether
 its opening (the hook and the first quarter) will lose more people than
-similar videos did. Then an agent built on Muse Spark looks at the video,
-listens to it, compares it with similar openings that held their audience,
-explains why, and proposes one concrete edit. After publishing, it compares
-the real retention curve with the predicted one.
+similar videos did. Then an agent running on **Muse Spark Open**, Meta's
+open-weight model, looks at the video, listens to it, compares it with similar
+openings that held their audience, explains why, and proposes one concrete
+edit, with steps an editor can follow. **Muse Image** draws what the new
+opening would look like. After publishing, it compares the real retention
+curve with the predicted one.
 
 Why the opening and not "the exact second": Facebook reports the retention
 curve in whole percentage points. Past the first quarter of a video, the drop
@@ -43,7 +45,7 @@ draft MP4 ─► segmentar ─► 40 stretches aligned to the 41-point curve + W
                ├─► embeber      (V-JEPA 2, open weights, our GPU)  one vector per stretch
                └─► describir    (Muse Spark 1.3, Files API, strict JSON)  what is on screen
                         └─► predecir + arranque (own regressions) ─► curve and opening risk vs. similar videos
-                                 └─► agente (Spark + tools + validator) ─► card ─► storyboard (Muse Image) ─► panel
+                                 └─► agente (Spark Open + tools + validator; Spark 1.3 rescues) ─► card ─► storyboard (Muse Image) ─► panel
 ```
 
 The agent follows the pattern in Meta's cookbook: **code computes, the model
@@ -71,11 +73,11 @@ If a service is not in this table, it does not exist.
 | `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | ✅ day 2 |
 | `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression | 0 | ✅ day 1 |
 | `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | ✅ day 2 |
-| `explicar` | opening + descriptors + speech → why + one edit (one shot, validated) | Muse Spark 1.3 | ≈ USD 0.015 | ✅ day 3 |
-| `agente` | case folder → card, with tools and the validator in the loop | Muse Spark 1.3 | ≈ USD 0.02 | ✅ day 3 |
+| `explicar` | opening + descriptors + speech → why + one edit (one shot, validated; the agent's fallback) | Muse Spark Open or 1.3 (`RETINA_MOTOR`) | ≈ USD 0.03 | ✅ day 3 |
+| `agente` | case folder → card, with tools and the validator in the loop | **Muse Spark Open** (open weights, Baseten); Muse Spark 1.3 rescues | ≈ USD 0.04 | ✅ day 3 |
 | `sam` | first 3 s + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.006 | ✅ day 3 |
 | `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ day 2 |
-| `storyboard` | suggestion + 3 reference images → 3 PNG (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ code |
+| `storyboard` | suggestion → 3 illustrations of the new opening, shown in the panel (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ day 3 |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | day 7 |
 | `escuchar` | post id → real curve + labeled comments | Graph API + Spark | ≈ USD 0.02 | day 7 |
 | `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ day 1 |
@@ -96,8 +98,9 @@ Only the Python standard library is needed for the demo.
 It opens the review card in your browser, served only on your machine (127.0.0.1), with the example
 case in `casos/demo/`. The card answers three questions in plain words: **will the start of my video lose
 people, where, and what exactly do I change** (numbered steps with clock times an editor can follow),
-plus a check of the first 3 and 10 seconds against Meta's public recommendations, each with its source.
-`--caso PATH` opens any other `resultado.json` inside the repo.
+plus a check of the first 3 and 10 seconds against Meta's public recommendations, each with its source,
+and a 3-frame storyboard of the new opening drawn with **Muse Image**. It also says which model wrote
+the card. `--caso PATH` opens any other `resultado.json` inside the repo.
 
 The panel is a "liquid glass" interface drawn with WebGL over backgrounds generated with
 **Muse Image** (`panel/fondos/`); it falls back to plain CSS when WebGL is not available or the file is
@@ -110,6 +113,8 @@ opened with a double click. It only paints text from the JSON (never HTML) and o
 pip install -r requirements.txt
 # Put MODEL_API_KEY in a .env OUTSIDE the repo (default: un .env fuera del repo),
 # or point RETINA_ENV to it. See .env.example.
+# The agent runs on Muse Spark Open by default: add BASETEN_API_KEY too. Without it,
+# Spark 1.3 takes every case. RETINA_MOTOR=api uses only Spark 1.3.
 cd src
 python -m retina.gate1 ping                      # one real call to Spark
 # Whole pipeline on a published video (the models are trained on private data):
@@ -128,6 +133,44 @@ on by default (`RETINA_SOLO_PUBLICADOS=1`): only already-published videos go to 
 `RETINA_SOLO_PUBLICADOS=0` in your `.env`.
 
 Tests (no API key, no private data): `python -m unittest discover -s tests`.
+
+## Open weights: the agent runs on Muse Spark Open
+
+The main step of Retina, the agent that investigates the opening and writes the
+card the editor sees, runs on **Muse Spark Open** (`meta-models/muse-spark-open-1026`,
+served by Baseten's Model API), and it is the default. It gets the same instructions
+([`skills/agente.md`](skills/agente.md)), the same five tools and the same
+validator as Muse Spark 1.3, through Chat Completions with tool calling
+([`src/retina/agente.py`](src/retina/agente.py), `ConSparkOpen`). If its loop
+does not close a case, Muse Spark 1.3 takes over that case
+(`RETINA_MOTOR=abierto+api`).
+
+Measured on the same 50 held-out videos as the Spark 1.3 agent
+([`eval/casos_agente.py`](eval/casos_agente.py)):
+
+| Same 50 held-out videos | Agent on Muse Spark 1.3 | Agent on **Muse Spark Open** |
+|---|---|---|
+| Cases closed by the agent itself | 50 | **50** (Spark 1.3 rescued 0) |
+| Cards the validator sent back, then the agent fixed on its own | 16 | 42 |
+| Average turns | 6.2 | 5.6 |
+| Times it asked SAM 3.1 to check the promise | 6 | 14 |
+| Risky openings left without a suggestion | 0 | 0 |
+| Cards with steps for the editor | 38 | 37 |
+| Engagement bait already in the video | (reference) | Same number caught; each model caught one the other missed |
+| Cost per video (agent only) | USD 0.029 | USD 0.038 |
+
+Spark Open writes longer texts and reaches for phrases our rules block more
+often, so the validator sends its first card back more often (mostly a text over
+220 characters or an engagement-bait phrase). It fixes them inside the loop: the
+editor only sees cards that passed.
+
+How we got there, honestly: written in one shot, without tools, Spark Open is
+clearly weaker than Spark 1.3 (28 of 50 cards passed the validator on the first
+try, against 46; [`eval/casos_spark_open.py`](eval/casos_spark_open.py)), and
+raising its reasoning effort did not help there (22 of 50). What closed the gap
+was letting it work as an agent: with tools to look again and a validator that
+returns its objections inside the loop, it reached Spark 1.3's coverage. In the
+agent it runs with `reasoning_effort: high`, which Baseten honors.
 
 ## Results
 

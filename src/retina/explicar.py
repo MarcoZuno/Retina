@@ -232,10 +232,11 @@ def pedir_abierto(datos: dict, aviso: str) -> dict:
                f"bloques de código, con exactamente estas claves: {campos}. Las listas son listas de textos.")
     mensajes = [{"role": "system", "content": c["input"][0]["content"][0]["text"] + formato},
                 {"role": "user", "content": c["input"][1]["content"][0]["text"]}]
-    # Piensa con el mismo esfuerzo que Spark 1.3. Como él, a veces gasta la salida pensando y no escribe
-    # el JSON: se repite con más espacio.
+    # Razonamiento de fábrica: medido el 28-oct en 50 casos, en alto no pasó más tarjetas a la primera
+    # (22 contra 28). Como Spark 1.3, a veces gasta la salida pensando y no escribe el JSON: se repite
+    # con más espacio.
     for tope in (8000, 14000):
-        texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=tope, esfuerzo="high")
+        texto = baseten.chat("explicar", mensajes, esquema(), max_tokens=tope)
         i, f = texto.find("{"), texto.rfind("}")
         if i >= 0 and f > i:
             try:
@@ -258,9 +259,10 @@ def pedir(datos: dict, aviso: str, motor: str = "api") -> dict:
 
 
 # «abierto+api»: Spark Open (pesos abiertos) escribe la tarjeta y Spark 1.3 solo rescata la que el
-# validador le rechazó dos veces. Medido el 28-oct en 50 casos: Spark Open escribe 39 y Spark 1.3 rescata 11.
+# validador le rechazó dos veces. En una vuelta, medido el 28-oct en 50 casos, Spark Open escribe de 35 a 39
+# (varía entre corridas); como agente, con herramientas, cierra casi todos (eval/casos_agente.py).
 MOTORES = {"api": ("api",), "abierto": ("abierto",), "abierto+api": ("abierto", "api")}
-MOTOR_POR_OMISION = "api"
+MOTOR_POR_OMISION = "abierto+api"  # el agente en Spark Open cerró 50 de 50 casos (28-oct)
 
 
 def motor_por_omision() -> str:

@@ -160,7 +160,7 @@ class SparkOpenConRescate(unittest.TestCase):
         self.assertTrue(explicar.toca_intocable("Quita la pregunta ¿Estás a favor? del final"))
         self.assertFalse(explicar.toca_intocable("Pon el dato en pantalla desde el segundo 0"))
 
-    def test_spark_open_piensa_con_el_mismo_esfuerzo_que_spark_13(self):
+    def pedidos_a_baseten(self, llamar) -> list[dict]:
         from unittest import mock
         from retina import baseten
         pedidos = []
@@ -172,11 +172,22 @@ class SparkOpenConRescate(unittest.TestCase):
             def create(self, **kw):
                 pedidos.append(kw)
                 uso = mock.Mock(prompt_tokens=10, completion_tokens=5, prompt_tokens_details=None)
-                return mock.Mock(usage=uso, choices=[mock.Mock(message=mock.Mock(content=json.dumps(tarjeta())))])
+                mensaje = mock.Mock(content=json.dumps(tarjeta()), tool_calls=None)
+                return mock.Mock(usage=uso, choices=[mock.Mock(message=mensaje)])
         with mock.patch("openai.OpenAI", Cliente), mock.patch.object(baseten, "_llave", return_value="x"), \
                 mock.patch.object(meta_api, "_registrar"):
-            explicar.pedir_abierto(DATOS, "")
-        self.assertEqual(pedidos[0].get("reasoning_effort"), "high")
+            llamar()
+        return pedidos
+
+    def test_la_tarjeta_de_una_vuelta_usa_el_razonamiento_de_fabrica(self):
+        # Medido el 28-oct en 50 casos: con razonamiento alto no pasó más tarjetas a la primera (22 contra 28).
+        pedidos = self.pedidos_a_baseten(lambda: explicar.pedir_abierto(DATOS, ""))
+        self.assertNotIn("reasoning_effort", pedidos[0])
+
+    def test_el_agente_en_spark_open_piensa_en_alto_y_recibe_las_herramientas(self):
+        pedidos = self.pedidos_a_baseten(lambda: agente.ConSparkOpen("Revisa el arranque.").turno())
+        self.assertEqual(pedidos[0]["reasoning_effort"], "high")
+        self.assertEqual(len(pedidos[0]["tools"]), len(agente.HERRAMIENTAS))
 
 
 class AgenteEnSparkOpen(unittest.TestCase):
@@ -229,6 +240,10 @@ class AgenteEnSparkOpen(unittest.TestCase):
 
     def test_spark_open_recibe_las_mismas_herramientas_en_formato_de_chat(self):
         self.assertEqual({h["function"]["name"] for h in agente.HERRAMIENTAS_CHAT}, agente.NOMBRES)
+
+    def test_por_omision_el_agente_corre_en_spark_open_con_rescate(self):
+        # Medido el 28-oct en 50 casos: el agente en Spark Open cerró los 50 sin rescate.
+        self.assertEqual(explicar.MOTOR_POR_OMISION, "abierto+api")
 
     def test_el_motor_por_omision_sale_del_env_al_usarse(self):
         from unittest import mock
