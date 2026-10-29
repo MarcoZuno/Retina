@@ -17,3 +17,18 @@ datos/
 __pycache__/
 *.pyc
 .venv/
+
+# Casos reales, modelos entrenados y registros: nunca al repo público (auditoría del 28-oct)
+casos/*
+!casos/README.md
+!casos/demo/
+!casos/demo-en/
+modelos/
+*.pkl
+*.npy
+*.csv
+*.log
+*.jsonl
+!costos.jsonl
+error.txt
+estado.json
