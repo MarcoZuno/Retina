@@ -126,8 +126,42 @@ h1 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif
 .veredicto h1 { font-size: 34px; margin: 12px 0 6px; }
 .veredicto p { margin: 0; color: var(--suave); }
 .titulo-video { font-size: 14px; color: var(--tenue) !important; margin-top: 10px !important; }
-.cifras { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 14px; }
-.cifras.dos { grid-template-columns: 1.3fr 1fr; }
+.cifras { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.cifras .personas { grid-column: 1 / -1; }
+.fila-gente { display: flex; gap: 22px; align-items: center; }
+.gente { display: grid; grid-template-columns: repeat(10, 12px); gap: 5px; flex: none; }
+.gente i, .leyenda-gente i { display: block; width: 12px; height: 12px; border-radius: 50%; }
+.gente .sigue, .leyenda-gente .sigue { background: var(--texto); }
+.gente .va, .leyenda-gente .va { background: rgba(255,255,255,.16); }
+.gente .de-mas, .leyenda-gente .de-mas { background: var(--rojo); box-shadow: 0 0 8px var(--rojo); }
+.gente .gana, .leyenda-gente .gana { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+body[data-tema="claro"] .gente .va, body[data-tema="claro"] .leyenda-gente .va { background: rgba(14,26,51,.14); }
+.texto-gente p { margin: 0 0 6px; }
+.texto-gente .frase { font-size: 19px; line-height: 1.35; }
+.texto-gente .frase .intro { color: var(--suave); }
+.texto-gente .frase .num { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+.texto-gente .comparo { color: var(--suave); font-size: 16px; }
+.texto-gente .dif { display: inline-block; font-weight: 650; padding: 4px 12px; border-radius: 999px; font-size: 15px; }
+.texto-gente .dif.menos { background: var(--rojo-vidrio); color: var(--rojo-letra); }
+.texto-gente .dif.mas { background: var(--verde-vidrio); color: var(--verde-letra); }
+.texto-gente .dif.igual { background: rgba(255,255,255,.10); color: var(--suave); }
+.texto-gente .ejemplo-gente, .texto-gente .real-gente { color: var(--tenue); font-size: 14px; margin-top: 6px; }
+.texto-gente .real-gente { color: var(--azul); }
+.leyenda-gente { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 14px; font-size: 13px; color: var(--tenue); }
+.leyenda-gente span { display: inline-flex; align-items: center; gap: 6px; }
+.leyenda-gente i { width: 10px; height: 10px; }
+.nota-gente { margin: 10px 0 0; font-size: 13px; color: var(--tenue); }
+.momento .que { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--texto); }
+.barra { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 10px; margin: 7px 0; font-size: 13px; color: var(--suave); }
+.barra .pista { height: 10px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
+.barra .pista i { display: block; height: 100%; border-radius: 99px; }
+.barra.tuyo .pista i { background: var(--texto); } .barra.otros .pista i { background: var(--parecidos); }
+.barra.real .pista i { background: var(--azul); }
+body[data-tema="claro"] .barra .pista { background: rgba(14,26,51,.10); }
+.barra .valor { white-space: nowrap; font-variant-numeric: tabular-nums; font-weight: 650; color: var(--texto); min-width: 2ch; text-align: right; }
+.dif-momento { margin: 10px 0 0; font-size: 14px; font-weight: 600; }
+.dif-momento.menos { color: var(--rojo-letra); } .dif-momento.mas { color: var(--verde-letra); } .dif-momento.igual { color: var(--suave); }
+body[data-tema="claro"] .dif-momento.menos { color: var(--rojo); } body[data-tema="claro"] .dif-momento.mas { color: var(--verde); }
 .cifra { padding: 18px 20px; }
 .cifra .n { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-weight: 600; font-size: 46px; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
 .cifra.grande .n { font-size: 64px; }
@@ -190,7 +224,9 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 .otra { justify-self: center; }
 
 @media (max-width: 900px) {
-  .cifras, .cifras.dos { grid-template-columns: 1fr 1fr; } .cifra.grande { grid-column: span 2; }
+  .cifras { grid-template-columns: 1fr; }
+  .fila-gente { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .barra { grid-template-columns: 1fr auto; } .barra .pista { grid-column: 1 / -1; grid-row: 2; }
   .veredicto h1 { font-size: 26px; } #vacio h1 { font-size: 30px; }
   header, main { padding-left: 14px; padding-right: 14px; }
   header { flex-wrap: wrap; justify-content: flex-end; row-gap: 10px; } .pastilla { white-space: nowrap; }  /* con el botón de idioma no caben en una fila */
@@ -254,7 +290,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 
         <div class="linea-bloque vidrio">
           <h2 class="cabeza"><span id="t-linea"></span>
-            <span class="leyenda"><span><i></i><span data-t="tu_video">Tu video</span></span><span><i class="p"></i><span data-t="parecidos">Videos parecidos</span></span><span id="leyenda-real-linea" class="oculto"><i class="r"></i><span data-t="lo_que_paso">Lo que pasó</span></span></span></h2>
+            <span class="leyenda"><span><i></i><span data-t="tu_video">Tu video</span></span><span><i class="p"></i><span data-t="parecidos">Videos como el tuyo</span></span><span id="leyenda-real-linea" class="oculto"><i class="r"></i><span data-t="lo_que_paso">Lo que pasó</span></span></span></h2>
           <div class="linea" id="linea" role="img">
             <svg id="curvas" viewBox="0 0 1000 104" preserveAspectRatio="none" aria-hidden="true"></svg>
           </div>
@@ -305,7 +341,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <details>
             <summary data-t="ver_detalle">Ver detalle</summary>
             <div class="detalle">
-              <div class="leyenda"><span><i></i><span data-t="tu_video_pred">Tu video (lo que predice Retina)</span></span><span><i class="p"></i><span data-t="parecidos">Videos parecidos</span></span><span id="leyenda-real" class="oculto"><i class="r"></i><span data-t="lo_que_paso_real">Lo que pasó de verdad</span></span></div>
+              <div class="leyenda"><span><i></i><span data-t="tu_video_pred">Tu video (lo que predice Retina)</span></span><span><i class="p"></i><span data-t="parecidos">Videos como el tuyo</span></span><span id="leyenda-real" class="oculto"><i class="r"></i><span data-t="lo_que_paso_real">Lo que pasó de verdad</span></span></div>
               <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
               <ul id="detalle-lista"></ul>
             </div>
@@ -379,7 +415,7 @@ const TEXTOS = {
     vacio_titulo: "Abre la revisión de tu video", vacio_p1: "Retina deja un archivo ",
     vacio_p2: " en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.",
     elegir: "Elegir archivo", ver_ejemplo: "Ver el ejemplo", nota_vacio: "El archivo no sale de tu computadora: el panel solo lo lee.",
-    tu_video: "Tu video", parecidos: "Videos parecidos", lo_que_paso: "Lo que pasó",
+    tu_video: "Tu video", parecidos: "Videos como el tuyo", lo_que_paso: "Lo que pasó",
     tu_video_pred: "Tu video (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
     por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado",
     no_copio: "No se pudo copiar: selecciona el texto",
@@ -388,11 +424,24 @@ const TEXTOS = {
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
     como_reviso: "Cómo lo revisó Retina", ver_detalle: "Ver detalle", otra: "Abrir otra revisión",
-    de_cada_100: "de cada 100",
-    siguen: (s) => `personas que empiecen tu video seguirán viendo a los ${s} segundos`,
-    a_los: (s) => `a los ${s} segundos`, al_terminar: (t) => `al terminar el inicio (${t})`,
-    en_parecidos: (n) => `En videos parecidos, ${n}`, parecidos_n: (n) => `Parecidos: ${n}`,
-    menos: (n) => `${n} menos`, de_verdad: (n) => ` · De verdad: ${n}`,
+    gente_intro: "De cada 100 personas que empiecen tu video,",
+    gente_siguen: (s) => `seguirán viéndolo a los ${s} segundos.`,
+    gente_otros: (n) => `En videos como el tuyo, siguen ${n}.`,
+    gente_menos: (n) => `Perderías a ${n} ${n === 1 ? "persona" : "personas"} más de cada 100.`,
+    gente_mas: (n) => `Se quedarían ${n} ${n === 1 ? "persona" : "personas"} más que en videos como el tuyo.`,
+    gente_igual: "Casi igual que en videos como el tuyo.",
+    gente_ejemplo_menos: (n, s) => `Por ejemplo, si lo empiezan 10,000 personas, a los ${s} segundos serían ${n} menos.`,
+    gente_ejemplo_mas: (n, s) => `Por ejemplo, si lo empiezan 10,000 personas, a los ${s} segundos serían ${n} más.`,
+    gente_real: (n) => `Ya está publicado: de verdad siguieron ${n} de cada 100.`,
+    ley_siguen: "siguen viendo", ley_normal: "se van (como en videos como el tuyo)",
+    ley_de_mas: "se irían de más", ley_gana: "se quedarían de más",
+    momento_a: (s) => `A los ${s} segundos, de cada 100 personas siguen viendo:`,
+    momento_fin: (t) => `Al terminar el inicio (${t}), de cada 100 personas siguen viendo:`,
+    barra_tuyo: "Tu video", barra_otros: "Videos como el tuyo", barra_real: "De verdad",
+    momento_igual: "Casi igual que videos como el tuyo.",
+    momento_menos: (n) => `Tu video pierde ${n} ${n === 1 ? "persona" : "personas"} más.`,
+    momento_mas: (n) => `Tu video retiene ${n} ${n === 1 ? "persona" : "personas"} más.`,
+    como_tuyo_es: (x) => `«Videos como el tuyo» son ${x}.`,
     t_linea_seg: (n) => `Los primeros ${n} segundos`, t_linea_mm: (t) => `El inicio: de 0:00 a ${t}`,
     linea_texto: (t) => `El inicio de tu video, de 0:00 a ${t}.`, partes: (l) => ` Partes a revisar: ${l}.`,
     tramo: (a, b) => `${a} a ${b}`, castiga_en: (t) => ` Lo que Meta castiga aparece en ${t}.`,
@@ -402,7 +451,7 @@ const TEXTOS = {
     sin_api: "Esta revisión se hizo sin la API de Meta.",
     traza_pre: (q) => `Para escribir esto, Retina${q ? ` (${q})` : ""}: `,
     compara: (c, d) => `La alerta compara el inicio de tu video (el primer cuarto) con ${c}. Datos al ${d}.`,
-    parecidos_def: "videos parecidos",
+    parecidos_def: "videos como el tuyo",
     no_promete: "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.",
     no_revise: (n) => `No revisé: ${n}`,
     escribio: (q, s) => `Escribió la explicación: ${q}${s ? ` (${s})` : ""}.`,
@@ -468,7 +517,7 @@ const TEXTOS = {
     vacio_titulo: "Open your video's review", vacio_p1: "Retina saves a ",
     vacio_p2: " file in the folder of every video it reviews. Open it here to see if the opening will lose viewers, why, and what to cut.",
     elegir: "Choose file", ver_ejemplo: "See the example", nota_vacio: "The file never leaves your computer: the panel only reads it.",
-    tu_video: "Your video", parecidos: "Similar videos", lo_que_paso: "What happened",
+    tu_video: "Your video", parecidos: "Videos like yours", lo_que_paso: "What happened",
     tu_video_pred: "Your video (Retina's prediction)", lo_que_paso_real: "What actually happened",
     por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied",
     no_copio: "Couldn't copy: select the text instead",
@@ -477,11 +526,24 @@ const TEXTOS = {
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
     como_reviso: "How Retina reviewed it", ver_detalle: "See details", otra: "Open another review",
-    de_cada_100: "out of 100",
-    siguen: (s) => `people who start your video will still be watching at ${s} seconds`,
-    a_los: (s) => `at ${s} seconds`, al_terminar: (t) => `at the end of the opening (${t})`,
-    en_parecidos: (n) => `In similar videos, ${n}`, parecidos_n: (n) => `Similar: ${n}`,
-    menos: (n) => `${n} fewer`, de_verdad: (n) => ` · Actual: ${n}`,
+    gente_intro: "Out of every 100 people who start your video,",
+    gente_siguen: (s) => `will still be watching at ${s} seconds.`,
+    gente_otros: (n) => `In videos like yours, ${n} are still watching.`,
+    gente_menos: (n) => `You'd lose ${n} more ${n === 1 ? "person" : "people"} out of every 100.`,
+    gente_mas: (n) => `${n} more ${n === 1 ? "person" : "people"} would stay than in videos like yours.`,
+    gente_igual: "About the same as videos like yours.",
+    gente_ejemplo_menos: (n, s) => `For example, if 10,000 people start it, ${n} fewer would still be watching at ${s} seconds.`,
+    gente_ejemplo_mas: (n, s) => `For example, if 10,000 people start it, ${n} more would still be watching at ${s} seconds.`,
+    gente_real: (n) => `Already published: ${n} out of 100 actually stayed.`,
+    ley_siguen: "still watching", ley_normal: "leave (as in videos like yours)",
+    ley_de_mas: "extra people lost", ley_gana: "extra people kept",
+    momento_a: (s) => `At ${s} seconds, out of every 100 people, still watching:`,
+    momento_fin: (t) => `At the end of the opening (${t}), out of every 100 people, still watching:`,
+    barra_tuyo: "Your video", barra_otros: "Videos like yours", barra_real: "Actual",
+    momento_igual: "About the same as videos like yours.",
+    momento_menos: (n) => `Your video loses ${n} more ${n === 1 ? "person" : "people"}.`,
+    momento_mas: (n) => `Your video keeps ${n} more ${n === 1 ? "person" : "people"}.`,
+    como_tuyo_es: (x) => `“Videos like yours” means ${x}.`,
     t_linea_seg: (n) => `The first ${n} seconds`, t_linea_mm: (t) => `The opening: 0:00 to ${t}`,
     linea_texto: (t) => `Your video's opening, from 0:00 to ${t}.`, partes: (l) => ` Parts to check: ${l}.`,
     tramo: (a, b) => `${a} to ${b}`, castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
@@ -491,7 +553,7 @@ const TEXTOS = {
     sin_api: "This review was done without the Meta API.",
     traza_pre: (q) => `To write this, Retina${q ? ` (${q})` : ""}: `,
     compara: (c, d) => `The alert compares your video's opening (the first quarter) with ${c}. Data through ${d}.`,
-    parecidos_def: "similar videos",
+    parecidos_def: "videos like yours",
     no_promete: "Retina doesn't promise the exact second people leave after the opening: Facebook's curve isn't that precise.",
     no_revise: (n) => `Not checked: ${n}`,
     escribio: (q, s) => `Explanation written by ${q}${s ? ` (via ${s})` : ""}.`,
@@ -570,20 +632,55 @@ function en(curva, dur, s) {  // la curva tiene 41 puntos repartidos en toda la 
 const conReal = (r) => r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41;
 
 function cifras(r) {
-  const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, grande = dur >= 30 ? 15 : 3;
-  const momentos = [grande, ...(grande !== 3 ? [3] : []), fin];
-  $("cifras").className = `cifras${momentos.length === 2 ? " dos" : ""}`;
-  $("cifras").replaceChildren(...momentos.map((s, k) => {
-    const tuyo = Math.round(100 * en(p.curva_predicha, dur, s)), otros = Math.round(100 * en(p.curva_parecidos, dur, s));
-    const caja = nodo("div", `cifra vidrio${k ? "" : " grande"}`), n = nodo("div", "n", String(tuyo));
-    if (!k) n.append(nodo("small", "", t("de_cada_100")));
-    const que = k ? (s === fin ? t("al_terminar", mmss(fin)) : t("a_los", s)) : t("siguen", s);
-    const vs = nodo("div", "vs", k ? t("parecidos_n", otros) : t("en_parecidos", otros));
-    if (!k && tuyo < otros) vs.append(" · ", nodo("b", "", t("menos", otros - tuyo)));
-    if (conReal(r)) vs.append(t("de_verdad", Math.round(100 * en(r.realidad.curva, dur, s))));
-    caja.append(n, nodo("div", "que", que), vs);
+  // Lo principal en una frase, con 100 personas dibujadas; los otros dos momentos, con barras.
+  const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, s = dur >= 30 ? 15 : 3;
+  const en100 = (c, x) => Math.round(100 * en(c, dur, x));
+  const tuyo = en100(p.curva_predicha, s), otros = en100(p.curva_parecidos, s), dif = tuyo - otros;
+  const miles = (n) => (n * 100).toLocaleString(idioma === "en" ? "en-US" : "es-MX");
+
+  const gente = nodo("div", "gente"); gente.setAttribute("aria-hidden", "true");
+  const [siguen, extra, claseExtra] = dif < 0 ? [tuyo, -dif, "de-mas"] : [otros, dif, "gana"];
+  for (let i = 0; i < 100; i++) gente.append(nodo("i", i < siguen ? "sigue" : i < siguen + extra ? claseExtra : "va"));
+  const leyenda = nodo("div", "leyenda-gente");
+  const punto = (clase, texto) => { const x = nodo("span"); x.append(nodo("i", clase), texto); return x; };
+  leyenda.append(punto("sigue", t("ley_siguen")), ...(extra ? [punto(claseExtra, t(dif < 0 ? "ley_de_mas" : "ley_gana"))] : []),
+                 punto("va", t("ley_normal")));
+
+  const texto = nodo("div", "texto-gente");
+  const frase = nodo("p", "frase");
+  frase.append(nodo("span", "intro", t("gente_intro")), " ", nodo("b", "num", String(tuyo)), " ", t("gente_siguen", s));
+  const comparo = nodo("p", "comparo", t("gente_otros", otros));
+  const veredicto = Math.abs(dif) <= 1 ? nodo("p", "dif igual", t("gente_igual"))
+    : nodo("p", `dif ${dif < 0 ? "menos" : "mas"}`, t(dif < 0 ? "gente_menos" : "gente_mas", Math.abs(dif)));
+  texto.append(frase, comparo, veredicto);
+  if (Math.abs(dif) > 1) texto.append(nodo("p", "ejemplo-gente", t(dif < 0 ? "gente_ejemplo_menos" : "gente_ejemplo_mas", miles(Math.abs(dif)), s)));
+  if (conReal(r)) texto.append(nodo("p", "real-gente", t("gente_real", en100(r.realidad.curva, s))));
+  const principal = nodo("div", "cifra vidrio grande personas");
+  const fila = nodo("div", "fila-gente"); fila.append(gente, texto);
+  principal.append(fila, leyenda);
+  const l = r.licencia || {};
+  if (l.comparado_con) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", l.comparado_con)));
+
+  const momento = (x, titulo) => {
+    const caja = nodo("div", "cifra vidrio momento");
+    caja.append(nodo("div", "que", titulo));
+    const barras = [[t("barra_tuyo"), en100(p.curva_predicha, x), "tuyo"], [t("barra_otros"), en100(p.curva_parecidos, x), "otros"]];
+    if (conReal(r)) barras.push([t("barra_real"), en100(r.realidad.curva, x), "real"]);
+    for (const [nombre, v, clase] of barras) {
+      const b = nodo("div", `barra ${clase}`), relleno = nodo("i");
+      relleno.style.width = `${Math.max(0, Math.min(100, v))}%`;
+      const pista = nodo("span", "pista"); pista.append(relleno);
+      b.append(nodo("span", "nombre", nombre), pista, nodo("span", "valor", String(v)));
+      caja.append(b);
+    }
+    const d = barras[0][1] - barras[1][1];
+    caja.append(nodo("p", `dif-momento ${Math.abs(d) <= 1 ? "igual" : d < 0 ? "menos" : "mas"}`,
+      Math.abs(d) <= 1 ? t("momento_igual") : t(d < 0 ? "momento_menos" : "momento_mas", Math.abs(d))));
     return caja;
-  }));
+  };
+  const otrosMomentos = [...(s !== 3 ? [momento(3, t("momento_a", 3))] : []), momento(fin, t("momento_fin", mmss(fin)))];
+  $("cifras").className = "cifras";
+  $("cifras").replaceChildren(principal, ...otrosMomentos);
 }
 
 function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos): curvas, partes a revisar y anzuelo
