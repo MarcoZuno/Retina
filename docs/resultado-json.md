@@ -10,7 +10,10 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 
 `explicacion` la escribe el agente (`--con-api --voz`) o, sin `--voz`, `explicar` de una
 vuelta. Los dos dan los mismos campos; `explicacion.licencia.fuente` dice cuál fue
-(`agente` o `explicar (respaldo)`) y `licencia.traza` lista las herramientas que usó.
+(`agente` o `explicar (respaldo)`) y `licencia.traza` lista las herramientas que usó, con el motor de
+cada paso. `licencia.modelo` y `licencia.servido_por` dicen quién escribió la tarjeta: Muse Spark Open
+(pesos abiertos, Baseten) o Muse Spark 1.3 (API de Meta). `licencia.rescate` es `true` cuando Spark Open
+no cerró el caso y lo terminó Spark 1.3 (`RETINA_MOTOR=abierto+api`).
 
 | Campo | Qué es | Cómo se muestra |
 |---|---|---|
@@ -22,7 +25,8 @@ vuelta. Los dos dan los mismos campos; `explicacion.licencia.fuente` dice cuál 
 | `explicacion.anzuelo_detectado` | `ninguno` o el id de la regla (ver `reglas/anzuelos-v1.json`) si el video ya trae algo que Meta castiga. | Tarjeta roja. |
 | `explicacion.pasos` | De 1 a 4 pasos, en orden, para hacer el cambio en el editor; cada uno una acción con su segundo. Vacío si no hay cambio. | Lista numerada debajo de «Qué hacer», con los segundos como 0:05. |
 | `explicacion.anzuelo_frase`, `explicacion.anzuelo_momento_s` | La frase o lo que se ve, y el segundo donde aparece (-1 si no hay anzuelo). | «En 0:25: Comparte esta información…». Si hay anzuelo, `que_cambiar` siempre dice cómo quitarlo. |
-| `explicacion.storyboard` | Tres cuadros en texto. Las imágenes salen aparte con `retina.storyboard --aprobar`. | Botón «Ver storyboard». |
+| `explicacion.storyboard` | Tres cuadros en texto. Las imágenes salen aparte con `retina.storyboard --aprobar`. | Botón «Ver cómo quedaría», debajo de «Qué hacer». |
+| `explicacion.storyboard_imagenes` | Opcional. Nombres de las ilustraciones de Muse Image en la misma carpeta del caso (`…-ilustracion-ia.png` o `.webp`); las anota `retina.storyboard`. | Encima de cada cuadro. Solo si el caso se abrió desde `casos/` en el mismo sitio; con un archivo elegido a mano, solo el texto. |
 | `explicacion.confianza` | `baja`, `media` o `alta`. | Junto a la explicación. |
 | `licencia.comparado_con`, `licencia.datos_hasta`, `licencia.no_pude_revisar` | Contra qué se comparó y lo que no se revisó. | Línea de confianza al pie. |
 

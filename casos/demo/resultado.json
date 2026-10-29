@@ -180,7 +180,12 @@
    "fuente": "agente"
   },
   "anzuelo_frase": "",
-  "anzuelo_momento_s": -1
+  "anzuelo_momento_s": -1,
+  "storyboard_imagenes": [
+   "storyboard-cuadro1-ilustracion-ia.webp",
+   "storyboard-cuadro2-ilustracion-ia.webp",
+   "storyboard-cuadro3-ilustracion-ia.webp"
+  ]
  },
  "tiempos_s": {
   "segmentar": 12.0,

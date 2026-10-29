@@ -181,6 +181,8 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 .detalle svg { width: 100%; height: auto; display: block; }
 .storyboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
 .storyboard div { background: rgba(255,255,255,.08); border-radius: 12px; padding: 10px; font-size: 14px; }
+#ver-storyboard { margin-top: 14px; }
+.storyboard img { display: block; width: 100%; aspect-ratio: 9 / 16; object-fit: cover; border-radius: 9px; margin-bottom: 8px; }
 .otra { justify-self: center; }
 
 @media (max-width: 900px) {
@@ -188,7 +190,9 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
   .veredicto h1 { font-size: 26px; } #vacio h1 { font-size: 30px; }
   header, main { padding-left: 14px; padding-right: 14px; }
   .meta li { grid-template-columns: 26px 1fr; } .meta .ventana { grid-column: 2; }
-  .storyboard { grid-template-columns: 1fr; }
+  .storyboard { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 72%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .storyboard::-webkit-scrollbar { display: none; }
+  .storyboard div { scroll-snap-align: start; }
 }
 @media (max-width: 480px) { .bloque, .veredicto { padding: 18px 16px; } .paso { grid-template-columns: 30px 1fr auto; gap: 10px; padding: 12px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .vidrio, .vidrio:hover { transform: none !important; } }
@@ -265,6 +269,8 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
             <button class="boton vidrio" id="copiar" type="button">Copiar para el editor</button>
           </div>
           <p class="funciona oculto" id="funciona"></p>
+          <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
+          <div id="storyboard" class="storyboard oculto"></div>
         </div>
 
         <div class="bloque vidrio">
@@ -293,8 +299,6 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
               <div class="leyenda"><span><i></i>Tu video (lo que predice Retina)</span><span><i class="p"></i>Videos parecidos</span><span id="leyenda-real" class="oculto"><i class="r"></i>Lo que pasó de verdad</span></div>
               <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
               <ul id="detalle-lista"></ul>
-              <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
-              <div id="storyboard" class="storyboard oculto"></div>
             </div>
           </details>
         </div>
@@ -335,7 +339,10 @@ const HERRAMIENTAS = {  // lo que revisó el agente, en palabras de quien edita
   oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
   medir_lo_prometido: "revisó con SAM si lo que promete el título aparece en los primeros 3 segundos",
 };
-let actual = null;
+const MODELOS = {  // quién escribió la tarjeta, en palabras de quien edita
+  "meta-models/muse-spark-open-1026": "Muse Spark Open, de pesos abiertos", "muse-spark-1.3": "Muse Spark 1.3",
+};
+let actual = null, carpeta = null;  // carpeta: de dónde vino el caso (solo si vino de casos/ por http)
 
 function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
 
@@ -464,22 +471,44 @@ function segunMeta(r) {  // revision_meta: buenas prácticas de Meta por ventana
 
 function item(padre, texto) { padre.append(nodo("li", "", texto)); }
 
+// Las ilustraciones del storyboard (Muse Image) solo se cargan si el caso vino de casos/ en este mismo sitio
+// y cada nombre es un archivo suelto «…-ilustracion-ia.png|webp» de esa misma carpeta.
+function ilustraciones(e) {
+  if (!carpeta || !e || !Array.isArray(e.storyboard_imagenes)) return [];
+  return e.storyboard_imagenes.map((n) => {
+    if (typeof n !== "string" || !/^[\w-]+-ilustracion-ia\.(png|webp)$/.test(n)) return null;
+    const u = new URL(n, carpeta);
+    return u.origin === location.origin && /^\/casos\/[\w-]+\/[\w-]+-ilustracion-ia\.(png|webp)$/.test(u.pathname) ? u.href : null;
+  });
+}
+
 function revisado(r) {
   const l = r.licencia || {}, e = r.explicacion, ul = $("detalle-lista");
   const conf = e ? ({ alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" }[e.confianza] || e.confianza) : "";
   $("confianza").textContent = e ? `Qué tan segura está Retina de la explicación: ${conf}.` : "Esta revisión se hizo sin la API de Meta.";
-  const traza = (e && e.licencia && e.licencia.traza) || [];
+  const lx = (e && e.licencia) || {}, traza = lx.traza || [];
+  const quien = MODELOS[lx.modelo] || lx.modelo;
   const usadas = [...new Set(traza.map((t) => t.herramienta || t.nombre || t).filter((h) => HERRAMIENTAS[h]))];
   $("traza").classList.toggle("oculto", !usadas.length);
-  $("traza").replaceChildren("Para escribir esto, Retina: ", ...usadas.map((h) => nodo("span", "", HERRAMIENTAS[h])));
+  $("traza").replaceChildren(`Para escribir esto, Retina${quien ? ` (${quien})` : ""}: `, ...usadas.map((h) => nodo("span", "", HERRAMIENTAS[h])));
   ul.replaceChildren();
   item(ul, `La alerta compara el inicio de tu video (el primer cuarto) con ${l.comparado_con || "videos parecidos"}. Datos al ${l.datos_hasta || "—"}.`);
   item(ul, "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.");
   for (const n of l.no_pude_revisar || []) item(ul, `No revisé: ${n}`);
-  if (e && e.licencia && e.licencia.modelo) item(ul, `Escribió la explicación: ${e.licencia.modelo}${e.licencia.servido_por ? ` (${e.licencia.servido_por})` : ""}.`);
-  const cuadros = (e && e.storyboard) || [];
+  if (lx.modelo) item(ul, `Escribió la explicación: ${quien}${lx.servido_por ? ` (${lx.servido_por})` : ""}.`);
+  if (lx.rescate) item(ul, "Muse Spark Open no cerró esta revisión y la terminó Muse Spark 1.3.");
+  const cuadros = (e && e.storyboard) || [], dibujos = ilustraciones(e);
   $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
-  $("storyboard").replaceChildren(...cuadros.map((c, i) => nodo("div", "", `${i + 1}. ${c}`)));
+  $("ver-storyboard").textContent = dibujos.some(Boolean) ? "Ver cómo quedaría (dibujado con Muse Image)" : "Ver cómo quedaría (3 cuadros)";
+  $("storyboard").replaceChildren(...cuadros.map((c, i) => {
+    const d = nodo("div");
+    if (dibujos[i]) {
+      const img = nodo("img"); img.src = dibujos[i]; img.loading = "lazy"; img.alt = `Ilustración hecha con IA: ${c}`;
+      d.append(img);
+    }
+    d.append(nodo("span", "", `${i + 1}. ${c}`));
+    return d;
+  }));
 }
 
 function pasos(e) {
@@ -564,6 +593,7 @@ function decidir(que, texto) {
 }
 
 async function leer(archivo) {
+  carpeta = null;  // un archivo elegido a mano no trae su carpeta: el storyboard se ve solo en texto
   try { mostrar(JSON.parse(await archivo.text())); }
   catch (err) { fallo(err.message || "El archivo no se pudo leer."); }
 }
@@ -571,6 +601,7 @@ async function leer(archivo) {
 async function abrir(ruta) {
   const r = await fetch(ruta);
   if (!r.ok) throw new Error("No encontré esa revisión.");
+  carpeta = new URL(".", r.url);
   mostrar(await r.json());
 }
 

@@ -7,6 +7,9 @@ cuadros. Cada PNG lleva en su nombre que es ilustración hecha con IA.
 
 Uso:
     python -m retina.storyboard CARPETA/explicar.json [--estilo REF.png ...] [--aprobar]
+
+Si la carpeta trae resultado.json y su tarjeta es la misma, las ilustraciones quedan anotadas
+en él (explicacion.storyboard_imagenes) y el panel las muestra.
 """
 from __future__ import annotations
 
@@ -27,8 +30,23 @@ def _guardar(datos: dict, destino: Path) -> None:
     destino.write_bytes(base64.b64decode(datos["data"][0]["b64_json"]))
 
 
+def anotar(carpeta: Path, cuadros: list[str], rutas: list[Path]) -> None:
+    """Anota las ilustraciones en el resultado.json del caso para que el panel las muestre, solo si
+    son del mismo storyboard que trae su tarjeta (no de otra explicación de la misma carpeta)."""
+    ruta = carpeta / "resultado.json"
+    if not ruta.exists():
+        return
+    r = json.loads(ruta.read_text(encoding="utf-8"))
+    e = r.get("explicacion") or {}
+    if e.get("storyboard", [])[:3] != cuadros:
+        return
+    e["storyboard_imagenes"] = [p.name for p in rutas]
+    ruta.write_text(json.dumps(r, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 def generar(explicacion: Path, estilo: list[Path], aprobar: bool) -> list[Path]:
     e = json.loads(explicacion.read_text(encoding="utf-8"))
+    e = e.get("explicacion") or e  # también acepta el resultado.json del caso
     cuadros = e.get("storyboard", [])[:3]
     if not cuadros:
         print("La explicación no trae storyboard (o no pasó el filtro de integridad).")
@@ -55,9 +73,11 @@ def generar(explicacion: Path, estilo: list[Path], aprobar: bool) -> list[Path]:
         if r.status_code != 200:
             raise meta_api._error(r)
         meta_api._registrar("storyboard", MODELO, time.time() - t0, meta_api.PRECIO_IMAGEN[MODELO])
-        destino = explicacion.with_name(f"{explicacion.stem}-cuadro{i}-ilustracion-ia.png")
+        nombre = "storyboard" if explicacion.name == "resultado.json" else explicacion.stem
+        destino = explicacion.with_name(f"{nombre}-cuadro{i}-ilustracion-ia.png")
         _guardar(r.json(), destino)
         salidas.append(destino)
+    anotar(explicacion.parent, cuadros, salidas)
     return salidas
 
 

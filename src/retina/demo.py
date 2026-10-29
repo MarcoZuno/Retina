@@ -18,7 +18,8 @@ import webbrowser
 from .esquemas import RAIZ
 
 CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
-PERMITIDO = re.compile(r"^/(panel/(index\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp|casos/[\w-]+/resultado\.json)$")
+PERMITIDO = re.compile(r"^/(panel/(index\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp|casos/[\w-]+/resultado\.json"
+                       r"|casos/[\w-]+/[\w-]+-ilustracion-ia\.(?:png|webp))$")  # el storyboard dibujado con Muse Image
 
 
 class SoloElPanel(http.server.SimpleHTTPRequestHandler):
