@@ -330,14 +330,17 @@ def main() -> None:
     ap.add_argument("--puerto", type=int, default=8790)
     ap.add_argument("--sin-navegador", action="store_true")
     a = ap.parse_args()
-    for ruta in (a.modelo, a.arranque, a.voz):
+    if not a.modelo.is_file():
+        print(f"Aviso: no encuentro {a.modelo}. Retina revisará los videos sin número (solo con los modelos de Meta).")
+        a.modelo = None
+    for ruta in (a.arranque, a.voz):
         if ruta is not None and not ruta.is_file():
             raise SystemExit(f"No encuentro {ruta}.")
     a.casos.mkdir(parents=True, exist_ok=True)
     from . import meta_api
     from .publico import cargar_modelo
     meta_api._cargar_env()  # FFMPEG y RETINA_* del .env: el orquestador los necesita antes de la primera llamada
-    talentos = sorted({f["talento"] for f in cargar_modelo(a.modelo).filas if f.get("talento")})
+    talentos = sorted({f["talento"] for f in cargar_modelo(a.modelo).filas if f.get("talento")}) if a.modelo else []
     clase = type("Manejador", (ConSubida,), {
         "casos": a.casos.resolve(), "talentos": talentos, "fila": ThreadPoolExecutor(max_workers=1),
         "modelos": {k: (r.resolve() if r else None) for k, r in (("modelo", a.modelo), ("arranque", a.arranque), ("voz", a.voz))}})

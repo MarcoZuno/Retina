@@ -463,3 +463,20 @@ tarjetas verdes, saber qué está bien, qué está flojo y qué más se puede me
 
 **Costo:** unos USD 0.20 (revisiones de prueba en limpio, una descripción nueva en inglés, SAM y un storyboard; parte del registro de las pruebas en limpio se perdió al rehacer la copia).
 
+### Día 4 (29-oct, noche) · La auditoría del plan, aplicada
+
+- Dos auditores independientes leyeron el plan hasta el 4-nov (como jurado y buscando cómo refutar los
+  resultados). Lo que encontraron y se arregló hoy:
+  - el candado viene apagado por omisión;
+  - cada quien lleva su propio registro de gasto (el del equipo pasó a `docs/costos-equipo.jsonl`);
+  - el archivo público ya no trae conteos;
+  - las columnas de ingresos ni se cargan en memoria;
+  - el README ya no promete un agente ni «videos parecidos» en la versión pública;
+  - en las pruebas, solo nombres inventados.
+- Modo sin cerebro: si el repo no trae `modelos/retina-publico.json`, Retina revisa igual el video, sin número.
+- Semáforo con videos de fuera (`eval/semaforo_publico.py`): regla sellada con commit antes de correr y su huella
+  en la bitácora. Distingue, pero en una prueba marcó demasiados videos en «alto»: el modo público no lo muestra.
+- Ingresos, nombres reales y conteos revisados en todo lo que entra al commit.
+
+**Costo:** unos USD 0.05 (una revisión sin cerebro, en limpio).
+

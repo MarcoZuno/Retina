@@ -548,9 +548,11 @@ const TEXTOS = {
       bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
               sub: "Igual revisa el detalle antes de publicar." },
       sin_nivel: { semaforo: "Revisión", titular: "Esto es lo que vimos al inicio de tu video",
-                   sub: "En este modo Retina no calcula un nivel de riesgo: todo sale de ver tu video." },
+                   sub: "Retina solo da semáforo donde está medido. Lo de abajo sale de ver y oír tu video." },
     },
     sin_formula_gente: "En este modo el número es el promedio de videos de su duración; Retina no lo ajusta a tu video.",
+    formato_poco: "Retina vio pocos videos de menos de 30 segundos: toma el número con más cuidado.",
+    sin_numero: "Esta copia de Retina no trae el cerebro público, así que no da un número: todo lo de abajo sale de lo que vieron y oyeron los modelos de Meta en tu video.",
     herramientas: {  // lo que revisó el agente, en palabras de quien edita
       ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
       oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
@@ -702,9 +704,11 @@ const TEXTOS = {
       bajo: { semaforo: "No clear problem", titular: "We don't see a clear problem in the opening",
               sub: "Still, check the details before publishing." },
       sin_nivel: { semaforo: "Review", titular: "Here is what we saw at the start of your video",
-                   sub: "In this mode Retina doesn't compute a risk level: everything comes from watching your video." },
+                   sub: "Retina only shows a traffic light where it has been measured. What follows comes from watching and listening to your video." },
     },
     sin_formula_gente: "In this mode the number is the average for videos of this length; Retina doesn't adjust it to your video.",
+    formato_poco: "Retina has seen few videos under 30 seconds: treat the number with extra care.",
+    sin_numero: "This copy of Retina doesn't include the public brain, so it gives no number: everything below comes from what Meta's models saw and heard in your video.",
     herramientas: {
       ver_arranque: "watched the opening and read the title", ver_tramos: "took a closer look at parts of the opening",
       oir: "listened to what is said, with timestamps", buscar_parecidos: "compared it with titles of similar videos",
@@ -927,6 +931,7 @@ function cifras(r) {
   principal.append(fila, leyenda);
   const l = r.licencia || {};
   if (comparadoCon(l)) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
+  if (l.formato_poco_conocido) principal.append(nodo("p", "nota-gente", t("formato_poco")));
   if (l.conoce_al_creador === false && !sinFormula)  // en el plan B la frase de arriba ya lo explica
     principal.append(nodo("p", "nota-gente", t(l.cerebro === "cualquier_video" ? "creador_nuevo" : "creador_nuevo_sin_voz")));
 
@@ -1047,6 +1052,7 @@ function ilustraciones(e) {
 // «Lo que no revisé» llega en español desde el orquestador; en inglés se traducen sus piezas fijas.
 const NO_REVISE_EN = [
   ["La música: no se analiza la letra ni la licencia.", "Music: lyrics and licensing are not analyzed."],
+  ["El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).", "The number: this copy of Retina doesn't include the public brain (modelos/retina-publico.json)."],
   ["Lo que pasa en pantalla tramo a tramo con V-JEPA 2", "What happens on screen, segment by segment, with V-JEPA 2"],
   ["Por qué y qué cambiar en el arranque", "Why, and what to change in the opening"],
   ["Las recomendaciones de Meta para el inicio", "Meta's recommendations for the opening"],
@@ -1138,9 +1144,9 @@ function progreso() {
 }
 
 function mostrar(r) {
-  if (!r || !r.arranque || !r.prediccion || !Array.isArray(r.prediccion.curva_predicha) || !r.video || !(r.video.duracion_s > 0)) {
-    throw falla("no_es_revision");
-  }
+  if (!r || !r.arranque || !r.video || !(r.video.duracion_s > 0)) throw falla("no_es_revision");
+  // Sin cerebro público la revisión no trae número: la tarjeta sale solo de lo que vieron los modelos de Meta.
+  const conNumero = !!(r.prediccion && Array.isArray(r.prediccion.curva_predicha));
   actual = r; ultimaDecision = null;
   const e = r.explicacion, N = tx().niveles, nivel = de(N, r.arranque.nivel) ? r.arranque.nivel : "medio", n = N[nivel];
   $("resultado").className = `pantalla nivel-${nivel}`;
@@ -1149,7 +1155,10 @@ function mostrar(r) {
   // El ejemplo del repo es inventado (también su traza): se dice siempre, arriba y a la vista.
   $("aviso-ejemplo").classList.toggle("oculto", r.ejemplo_inventado !== true);
   $("aviso-ejemplo").textContent = r.ejemplo_inventado === true ? t("aviso_ejemplo") : "";
-  cifras(r); linea(r);
+  document.querySelector(".linea-bloque").classList.toggle("oculto", !conNumero);
+  $("grafica").classList.toggle("oculto", !conNumero);
+  if (conNumero) { cifras(r); linea(r); }
+  else { $("cifras").className = "cifras"; $("cifras").replaceChildren(nodo("div", "cifra vidrio grande", t("sin_numero"))); }
   if (e) {
     conTiempos($("porque"), reloj(e.por_que));
     conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar) : t(nivel === "bajo" ? "sin_cambio_bajo" : "sin_sugerencia"));
@@ -1166,7 +1175,7 @@ function mostrar(r) {
     $("porque").textContent = t("sin_api_porque");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  pasos(e); balance(e); segunMeta(r); grafica(r); revisado(r);
+  pasos(e); balance(e); segunMeta(r); if (conNumero) grafica(r); revisado(r);
   $("decision").textContent = "";
   $("error").classList.add("oculto");
   estado("resultado");
@@ -1485,7 +1494,7 @@ function pintarComparacion({ a, b, ra, rb, c, fallaComparar }) {
 
   // Los números casi no cambian entre versiones: se dicen, con el porqué, para que nadie los lea como ganador.
   const s = Math.min(ra.video.duracion_s, rb.video.duracion_s) >= 30 ? 15 : 3;
-  const cuantos = (r) => Math.round(100 * en(r.prediccion.curva_predicha, r.video.duracion_s, s));
+  const cuantos = (r) => r.prediccion ? Math.round(100 * en(r.prediccion.curva_predicha, r.video.duracion_s, s)) : "—";
   $("c-numeros").textContent = t("numeros_ab", s, cuantos(ra), cuantos(rb));
 
   const dif = c && Array.isArray(c.diferencias) ? c.diferencias : [];

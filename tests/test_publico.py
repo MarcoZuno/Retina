@@ -105,6 +105,12 @@ class ArchivoPublico(unittest.TestCase):
         nivel = self.modelo.arranque().predecir(v, np.array(con["curva_parecidos"]))["nivel"]
         self.assertIn(nivel, ("alto", "medio", "bajo"))
 
+    def test_el_modo_publico_no_da_semaforo_y_avisa_en_videos_cortos(self):
+        self.assertFalse(self.modelo.semaforo)  # no pasó su regla sellada (eval/semaforo_publico.py)
+        corto = {"fecha": datetime(2025, 12, 1, 18), "dur": 20.0, "cubeta": cubeta(20.0), "codigo": "", "talento": "",
+                 "archivo": "receta", "titulo": "receta", "reel": 1.0}
+        self.assertTrue(self.modelo.predecir(corto)["formato_poco_conocido"])
+
     def test_un_json_que_no_es_el_cerebro_publico_no_se_abre(self):
         with self.assertRaises(ValueError):
             ModeloPublico({"version": "otra-cosa"})

@@ -1,6 +1,6 @@
 ---
 estacion: explicar
-version: explicar-v7
+version: explicar-v8
 fecha: 2026-10-29
 duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort high
@@ -93,7 +93,7 @@ Lo que se dice en el video se cita tal como se dijo, en su idioma. Sin ese dato,
 
 ## Sin nivel de riesgo
 
-Si «nivel_de_riesgo» es «sin_nivel», Retina corrió solo con modelos de Meta y no calculó un nivel. No
-hables de riesgo ni compares con otros videos: di lo que ves y oyes en el arranque y, si algo se puede
+Si «nivel_de_riesgo» es «sin_nivel», Retina no da un nivel de riesgo para este video (solo lo da donde
+está medido, o corrió solo con modelos de Meta). No hables de riesgo ni compares con otros videos: di lo que ves y oyes en el arranque y, si algo se puede
 mejorar, propón el cambio con sus pasos. Si no hay nada claro, «que_cambiar» va vacío.
 

@@ -88,6 +88,10 @@ def sin_nivel(pred: dict) -> dict:
             "uso_voz": False, "entrenado_con": 0, "comparado_con_su_tipo": False, "sin_formula": True}
 
 
+SIN_NIVEL_NI_NUMERO = {"nivel": "sin_nivel", "exceso_arranque_pp": 0.0, "bloques": [], "uso_voz": False,
+                       "entrenado_con": None, "comparado_con_su_tipo": False, "sin_formula": True}
+
+
 def es_vertical(salida: Path) -> float:
     """Un reel es vertical; basta el primer cuadro (segmentar conserva la proporción)."""
     cuadro = next(iter(sorted((salida / "cuadros").glob("c*.jpg"))), None)
@@ -110,7 +114,10 @@ def tramos_de_voz(salida: Path) -> list[list] | None:
     return [[t["startMs"] / 1000, t["transcript"]] for t in turnos if t.get("transcript")] or None
 
 
-def licencia(pred: dict, no_pude: list) -> dict:
+def licencia(pred: dict | None, no_pude: list) -> dict:
+    if pred is None:  # sin cerebro: no hay número ni contra qué comparar
+        return {"comparado_con": None, "regla": None, "n_parecidos": None, "datos_hasta": None, "vio_el_video": False,
+                "conoce_al_creador": False, "cerebro": "ninguno", "sin_formula": True, "no_pude_revisar": no_pude}
     return {
         "comparado_con": (f"{pred['n_parecidos']:,} videos " if pred.get("n_parecidos") is not None else "videos ") + {
             "cubeta+talento 90 d": "del mismo talento y duración de los últimos 90 días",
@@ -124,6 +131,7 @@ def licencia(pred: dict, no_pude: list) -> dict:
         "datos_hasta": pred["datos_hasta"],
         "vio_el_video": pred["uso_video"],
         "sin_formula": bool(pred.get("sin_formula")),
+        "formato_poco_conocido": bool(pred.get("formato_poco_conocido")),
         "conoce_al_creador": pred.get("conoce_al_creador", True),
         "cerebro": pred.get("cerebro", "casa"),
         "no_pude_revisar": no_pude,
@@ -169,18 +177,27 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     v = {"fecha": datetime.strptime(fecha, "%Y-%m-%d %H:%M"), "dur": man["duracion_s"], "codigo": codigo,
          "talento": talento.upper().strip(), "archivo": titulo, "titulo": titulo, "reel": es_vertical(salida)}
     v["cubeta"] = cubeta(v["dur"])
-    m = cargar_modelo(modelo)  # .json = cerebro público (sin datos de nadie); .pkl = modelo privado de la casa
-    t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
+    # .json = cerebro público (sin datos de nadie); .pkl = modelo privado de la casa; sin archivo = sin número
+    m = cargar_modelo(modelo) if modelo and Path(modelo).is_file() else None
     plan_b = solo_modelos_meta()
-    if plan_b:
-        pred = sin_formula(pred)
+    pred = None
+    if m is not None:
+        t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
+        if plan_b:
+            pred = sin_formula(pred)
+    else:
+        no_pude.append("El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).")
 
-    if plan_b:
+    if m is None:
+        riesgo_arranque = dict(SIN_NIVEL_NI_NUMERO)
+    elif plan_b:
         riesgo_arranque = sin_nivel(pred)
     else:
         from .arranque import Arranque
         arr = Arranque.cargar(arranque) if arranque else m.arranque()  # el público trae su propio riesgo
         riesgo_arranque = arr.predecir(v, np.array(pred["curva_parecidos"]))
+        if not getattr(m, "semaforo", True):  # solo se muestra donde está medido
+            riesgo_arranque = {**riesgo_arranque, "nivel": "sin_nivel"}
 
     resultado = {
         "version": "retina-v1",
@@ -206,7 +223,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         if not (salida / "transcribir.json").exists():
             _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida)
         tramos = tramos_de_voz(salida)
-        if tramos and not m.de_la_casa(v) and not plan_b:
+        if tramos and m is not None and not m.de_la_casa(v) and not plan_b:
             # Video de fuera: con la voz ya se puede usar el cerebro para cualquier video.
             pred = m.predecir(v, emb, audio, tramos)
             resultado["prediccion"], resultado["licencia"] = pred, licencia(pred, no_pude)
@@ -215,7 +232,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             _paso("describir", tiempos, no_pude, "Lo que se ve tramo a tramo",
                   lambda c: describir.describir(c, idioma=idioma), salida)
         if (salida / "describir.json").exists():
-            if voz is not None and m.filas:  # el agente lee resultado.json y busca en la historia de la casa
+            if voz is not None and m is not None and m.filas:  # el agente lee resultado.json y busca en la historia de la casa
                 from .agente import cargar_voz, correr_agente
                 resultado["explicacion"] = _paso("agente", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
                                                  correr_agente, salida, m, cargar_voz(voz), motor)

@@ -74,19 +74,20 @@ def datos_del_arranque(carpeta: Path, arranque: dict) -> dict:
     desc = json.loads((carpeta / "describir.json").read_text(encoding="utf-8"))
     t = man["tramos"]
     fin_s = t[FIN_ARRANQUE - 1]["fin_s"]
-    gancho, cuarto = arranque["bloques"][:2]
     datos = {
         "duracion_video_s": man["duracion_s"],
         "gancho_s": [0, round(t[BLOQUES[0][1] - 1]["fin_s"], 1)],
         "primer_cuarto_s": [round(t[BLOQUES[1][0]]["inicio_s"], 1), round(fin_s, 1)],
         "nivel_de_riesgo": arranque["nivel"],
-        # Contexto para el modelo, nunca para la tarjeta: el validador no deja citar porcentajes.
-        "caida_de_videos_parecidos_pp": {"gancho": gancho["caida_parecidos_pp"],
-                                         "primer_cuarto": cuarto["caida_parecidos_pp"]},
         "tramos": [{"inicio_s": round(t[d["tramo"]]["inicio_s"], 1), "fin_s": round(t[d["tramo"]]["fin_s"], 1),
                     **{k: d[k] for k in CAMPOS_TRAMO}}
                    for d in desc["tramos"] if d["tramo"] < FIN_ARRANQUE],
     }
+    if len(arranque.get("bloques") or []) >= 2:
+        gancho, cuarto = arranque["bloques"][:2]
+        # Contexto para el modelo, nunca para la tarjeta: el validador no deja citar porcentajes.
+        datos["caida_de_videos_parecidos_pp"] = {"gancho": gancho["caida_parecidos_pp"],
+                                                 "primer_cuarto": cuarto["caida_parecidos_pp"]}
     sam = carpeta / "sam.json"
     if sam.exists():  # lo midió SAM 3.1 sobre los primeros 3 segundos
         x = json.loads(sam.read_text(encoding="utf-8"))
@@ -249,7 +250,7 @@ def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
         "model": MODELO,
         "reasoning": {"effort": esfuerzo},
         "max_output_tokens": 16000,
-        "prompt_cache_key": "retina-explicar-v7",  # gitleaks:allow (etiqueta de caché, no es llave)
+        "prompt_cache_key": "retina-explicar-v8",  # gitleaks:allow (etiqueta de caché, no es llave)
         "store": False,
         "text": {"format": {"type": "json_schema", "name": "explicacion_v5", "strict": True, "schema": esquema()}},
         "input": [
@@ -347,7 +348,7 @@ def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "expl
     from . import baseten
     salida["licencia"] = {"modelo": baseten.MODELO if quien == "abierto" else MODELO,
                           "servido_por": "Baseten" if quien == "abierto" else "Meta Model API",
-                          "instrucciones": "skills/explicar.md (explicar-v7)",
+                          "instrucciones": "skills/explicar.md (explicar-v8)",
                           "reglas": integridad.reglas()["version"], "intentos": intentos,
                           "rescate": quien != MOTORES[motor][0]}
     (carpeta / nombre).write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")

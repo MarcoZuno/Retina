@@ -341,3 +341,10 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   queda por debajo de la tasa base. Si no pasa, el modo público no muestra semáforo: la tarjeta dice lo
   que vio y el número queda como referencia. Una duración con menos de 50 videos de prueba se reporta
   como «no medida» y la tarjeta avisa que Retina no conoce ese formato.
+- **Resultado (29-oct, noche; corrida con el commit acf17d2, el de la regla).** El semáforo sí distingue: en
+  las dos pruebas, los videos en «alto» perdieron de más bastante más seguido que la tasa base, con
+  intervalos que no se tocan, y los «bajo» quedaron por debajo. Pero en la primera prueba (jul-dic 2025)
+  salieron en «alto» demasiados videos, más del 35 % que pone la regla. **Por la regla sellada, el modo
+  público no muestra semáforo.** La tarjeta dice lo que vio, el número queda como referencia (ese sí pasó
+  su medición) y, en videos de menos de 30 segundos, avisa que Retina vio pocos así. No se cambia la regla
+  después de ver el resultado. Cifras en la carpeta privada.
