@@ -63,7 +63,7 @@ NOMBRES = {h["name"] for h in HERRAMIENTAS}
 
 
 def titulo_limpio(archivo: str, codigo: str) -> str:
-    t = re.sub(r"\d{4}-\d{2}-\d{2}", " ", archivo.replace(codigo, " "))
+    t = re.sub(r"\d{4}-\d{2}-\d{2}", " ", archivo.replace(codigo, " ") if codigo else archivo)  # sin código no hay qué quitar
     return re.sub(r"\s+", " ", re.sub(r"\.mp4$", "", t, flags=re.I)).strip()
 
 
@@ -132,7 +132,9 @@ class Caja:
             if faltan:
                 return {"aceptada": False, "problemas": [f"faltan campos: {', '.join(faltan)}"]}
             problemas = explicar.revisar(args, {**self.datos, "vistos": self.vistos})
-            if t := self.titulos_ajenos(" ".join([args["por_que"], args["que_cambiar"], args["lo_que_funciona"]])):
+            texto = [args["por_que"], args["que_cambiar"], args["lo_que_funciona"],
+                     *(t for campo in explicar.LISTAS for t in explicar.lista(args, campo))]
+            if t := self.titulos_ajenos(" ".join(texto)):
                 problemas.append(f"la tarjeta repite el título de otro video ({t[0][:40]}…): descríbelo sin citarlo")
             return {"aceptada": not problemas, "problemas": problemas}
         salida = getattr(self, nombre)(**args)
@@ -160,7 +162,7 @@ class ConSpark13:
         r = meta_api.responder("agente", {
             "model": MODELO, "instructions": instrucciones(), "input": self.conv, "tools": HERRAMIENTAS,
             "parallel_tool_calls": False, "store": False, "reasoning": {"effort": "medium"},
-            "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v2"})  # gitleaks:allow
+            "max_output_tokens": 16000, "prompt_cache_key": "retina-agente-v3"})  # gitleaks:allow
         salida = r.get("output", [])
         self.conv += [x for x in salida if x.get("type") != "reasoning"]  # sin store no se reenvía el razonamiento
         return ([{"id": x["call_id"], "nombre": x["name"], "argumentos": x.get("arguments") or "{}"}
@@ -270,7 +272,7 @@ def correr_agente(carpeta: Path, modelo: Modelo, voz: dict, motor: str = "", nom
         modelo_, servido, fuente = tarjeta["licencia"]["modelo"], tarjeta["licencia"]["servido_por"], "explicar (respaldo)"
     else:
         modelo_, servido, fuente = CONVERSADORES[quien].modelo, CONVERSADORES[quien].servido_por, "agente"
-    tarjeta["licencia"] = {"modelo": modelo_, "servido_por": servido, "instrucciones": "skills/agente.md (agente-v2)",
+    tarjeta["licencia"] = {"modelo": modelo_, "servido_por": servido, "instrucciones": "skills/agente.md (agente-v3)",
                            "fuente": fuente, "motor": motor, "rescate": bool(quien) and quien != MOTORES[motor][0],
                            "turnos": len({(t["motor"], t["turno"]) for t in traza}), "traza": traza,
                            "falla": "; ".join(fallas) or None}
@@ -294,7 +296,8 @@ def main() -> None:
                     help="api: Spark 1.3 · abierto: Muse Spark Open en Baseten · abierto+api: Spark Open con rescate de Spark 1.3.")
     a = ap.parse_args()
     t = correr_agente(a.carpeta, Modelo.cargar(a.modelo), cargar_voz(a.voz), a.motor)
-    print(json.dumps({k: t.get(k) for k in ("por_que", "que_cambiar", "momento_s", "confianza")}, ensure_ascii=False, indent=1))
+    print(json.dumps({k: t.get(k) for k in ("por_que", "lo_bueno", "lo_flojo", "que_cambiar", "mejoras_opcionales",
+                                            "momento_s", "confianza")}, ensure_ascii=False, indent=1))
     print(f"{t['licencia']['fuente']} · {t['licencia']['modelo']} · {t['licencia']['turnos']} turnos · " +
           " → ".join(x.get("herramienta", "texto") for x in t["licencia"]["traza"]))
 

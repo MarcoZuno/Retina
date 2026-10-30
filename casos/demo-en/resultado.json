@@ -149,11 +149,23 @@
  "explicacion": {
   "por_que": "From second 0.0 to 7.2 the host says hello and gives her name before saying what the video is about, and the on-screen text doesn't mention the bread until second 9.6.",
   "lo_que_funciona": "The first trick, from second 14.4 to 21.6, is shown in a close-up and makes sense without sound.",
+  "lo_bueno": [
+   "From second 14.4 to 21.6 the first trick is shown in a close-up and makes sense without sound.",
+   "At second 9.6 the on-screen text already says the video is about bread."
+  ],
+  "lo_flojo": [
+   "From second 0 to 7.2 the host says hello and her name before saying what the video is about.",
+   "Until second 9.6 the on-screen text does not mention the bread."
+  ],
   "que_cambiar": "Open with the shot of stale bread next to soft bread and the text “3 tricks to keep your bread from going stale”; the greeting goes after the first trick.",
   "pasos": [
    "Cut the shot of stale bread next to soft bread (second 14.4) and move it to the start of the video.",
    "Put the text “3 tricks to keep your bread from going stale” over it.",
    "Move the host's greeting to after the first trick."
+  ],
+  "mejoras_opcionales": [
+   "Shorten the greeting from second 0 to 7.2 to a single sentence.",
+   "Keep the bread text on screen from second 14.4 to 21.6, while the trick is shown."
   ],
   "tipo_de_cambio": "adelantar_dato",
   "momento_s": 0.0,
@@ -170,7 +182,7 @@
   "licencia": {
    "modelo": "meta-models/muse-spark-open-1026",
    "servido_por": "Baseten",
-   "instrucciones": "skills/agente.md (agente-v2)",
+   "instrucciones": "skills/agente.md (agente-v3)",
    "fuente": "agente",
    "motor": "abierto+api",
    "rescate": false,

@@ -376,3 +376,90 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
   (`docs/decisiones.md`). **Costo:** USD 0.80.
 - Aviso visible de «ejemplo inventado» en el panel, README corregido (lo que no es de Meta, tabla de
   modelos, 50 casos que no son prueba limpia), dependencias fijadas, cabeceras de seguridad en la demo.
+
+### Día 4 (29-oct) · Subir el video en el mismo panel
+
+- `retina.app` abre el panel de siempre (Liquid Glass) con una pantalla para subir el MP4, el avance
+  paso a paso y la tarjeta al final, en español e inglés. Sin `retina.app` (la demo sin llave), el
+  panel sigue abriendo solo revisiones ya hechas.
+- El código de producción es opcional: un video de otra cuenta se puede revisar. Arreglo: sin código,
+  el título ya no se partía letra por letra al buscar sus palabras.
+- Fuera del repo: `panel/subir.html` y la galería de casos reales (`panel/galeria.html`,
+  `--galeria`, `casos/indice.json`). La galería queda en la carpeta privada del equipo.
+- El candado de «solo publicados» lo decide el `.env` de quien corre Retina; la página manda si el
+  video ya está publicado y el servidor decide.
+
+### Día 4 (29-oct, tarde) · Comparar dos versiones y tarjetas con más detalle
+
+Retro de la primera prueba con una editora: quiere comparar dos versiones del mismo video y, en las
+tarjetas verdes, saber qué está bien, qué está flojo y qué más se puede mejorar.
+- Tarjeta: `lo_bueno` (1 a 3), `lo_flojo` (0 a 3) y `mejoras_opcionales` (0 a 3) en todos los niveles,
+  con el mismo validador (jerga, cifras, anzuelos, intocables). Instrucciones explicar-v6 y agente-v3.
+- `retina.comparar` + `skills/comparar.md`: Spark Open (rescate de Spark 1.3) compara cómo arranca cada
+  versión con lo que Retina ya vio; juzga en los dos órdenes y solo hay ganadora si coinciden. La app
+  compara al terminar la versión B (`X-Retina-Comparar-Con`) y el panel muestra veredicto, tabla y
+  diferencias. Los números de retención no deciden: casi no cambian entre cortes del mismo video.
+- Medido en la prueba: el mismo video revisado dos veces puede salir descrito distinto; juzgar en los
+  dos órdenes quita el sesgo de posición, no ese ruido. Por eso una ganadora necesita al menos una
+  diferencia que se sostenga en los dos órdenes.
+
+### Día 4 (29-oct, noche) · Retina para cualquier video
+
+- Pregunta de Jossafat: Retina es para el público en general; con un video de cualquier creador debe
+  funcionar, y lo de Badabun debe sumar, no limitar. Hasta hoy el nivel usaba el talento, el tipo de
+  producción y el nombre del archivo de la casa; con un video de fuera quedaba casi en el promedio de su
+  duración.
+- `eval/cualquier_video.py`: se esconden grupos completos de talentos (entrenamiento e historia) y sus
+  videos entran como uno de fuera. Regla escrita antes de medir (`docs/decisiones.md`). En jul-sep el
+  cerebro para cualquier video gana en todo, pero con intervalos sueltos no pasa la regla; la
+  comparación pareja se escribió antes de correrla y se confirmó en ene-jun 2026: pasa.
+- `predecir.py`: `fijos_universales` y `rasgos_universales` (duración, reel, hora y día, título, voz
+  del arranque y sus primeras 25 palabras), `Modelo.de_la_casa` y el cerebro `universal` dentro del
+  modelo, entrenado con toda la historia. La prueba usa estas mismas funciones (da los mismos números).
+- `voz.en_bloques`: la voz de Voice Transcribe viene frase por frase; las transcripciones con que se
+  entrenó vienen en bloques de ~28 s. Se juntan igual para que los rasgos midan lo mismo.
+- `retina.py`: el reel se reconoce por el primer cuadro (vertical) y, con un video de fuera, la curva se
+  recalcula en cuanto llega su voz. `licencia` trae `conoce_al_creador` y `cerebro`; el panel avisa
+  «Retina todavía no conoce a este creador» en español e inglés.
+- Pruebas: 104 (6 nuevas: quién usa cada cerebro, sin voz, nombre de archivo de la casa, bloques de
+  voz, reel).
+
+**Costo:** USD 0 (sin llamadas a la API).
+
+### Día 4 (29-oct, noche) · El cerebro público: Retina sin los datos de Badabun
+
+- Riesgo: que el repo fuera una herramienta interna. Era cierto: para revisar un video, la app
+  pedía el modelo con la historia de curvas, el riesgo y las transcripciones, todo privado.
+- `retina.publico`: arma `modelos/retina-publico.json` (0.8 MB), lo aprendido de la retención sin ningún
+  video: pesos del cerebro para cualquier video, el riesgo del arranque sin talento ni tipo de producción y
+  cinco curvas promedio por duración. No aprende de videos no elegibles (o sin dato de elegibilidad), de temas
+  fuera de alcance ni graves (`reglas/alcance-v1.json`, título y primeras palabras dichas) ni de nombres
+  de talentos (lista de talentos y firmas al final de los títulos). JSON, no pickle.
+- `retina.app` y `retina.retina` corren solo con ese archivo: `--arranque` y `--voz` ya son opcionales;
+  sin las transcripciones de la casa, la tarjeta es de una vuelta. La lista de talentos sale vacía.
+- Medido con talentos escondidos (regla escrita antes): le gana a la curva fija por duración y empata con
+  la v0 de la casa con los campos vacíos.
+- Prueba en limpio: copia del repo en otra carpeta, sin acceso a nada privado, solo con la llave. Un video
+  entró como de fuera y salió la tarjeta completa (cerebro para cualquier video, riesgo, Spark Open).
+- Pruebas: 114 (10 nuevas en `tests/test_publico.py`: qué queda fuera, nombres, que el archivo no traiga
+  textos de ningún video, que abra sin pickle).
+- El archivo sigue fuera del repo (`.gitignore`) hasta tener autorización para publicar lo aprendido.
+
+**Costo:** unos USD 0.02 (una tarjeta en la prueba en limpio).
+
+### Día 4 (29-oct, noche) · Una app para cualquiera, en su idioma
+
+- `python -m retina.app` ya arranca sin argumentos: cerebro público y revisiones en `mis-revisiones/`
+  (fuera del repo). Sin talentos en el modelo, el formulario solo pide video, título y cuándo saldría.
+- Idioma de punta a punta: el panel manda `X-Retina-Idioma`; `describir`, `explicar` (v7), `comparar` (v2)
+  y la revisión de Meta escriben en inglés o español. La frase de «contra qué se comparó» y lo que no se
+  revisó se arman en el panel, en su idioma.
+- `sam.objeto_del_titulo` + `medir_promesa`: SAM corre también sin agente (Spark elige el objeto de la lista
+  cerrada). Probado: «tortilla», «dog», «house», y «ninguno» cuando el título no promete nada visible.
+- `POST /api/storyboard/<id>`: Muse Image dibuja el storyboard cuando la persona aprieta el botón; una sola
+  vez por tarjeta, uno a la vez, solo desde la propia página.
+- Plan B (`RETINA_SOLO_MODELOS_META=1`): sin pesos ajustados ni nivel; estado «Revisión» en el panel.
+- Pruebas: 120. Prueba en limpio en inglés (con y sin plan B) y storyboard desde la app.
+
+**Costo:** unos USD 0.20 (revisiones de prueba en limpio, una descripción nueva en inglés, SAM y un storyboard; parte del registro de las pruebas en limpio se perdió al rehacer la copia).
+

@@ -1,7 +1,8 @@
 """Envoltorio de la Meta Model API.
 
-Toda llamada pasa por aquí: registra modelo, tokens, segundos y USD en
-costos.jsonl, respeta el tope del proyecto y reintenta los 429 con espera
+Toda llamada pasa por aquí: registra modelo, tokens, segundos y USD en el
+registro de costos (por omisión mis-revisiones/costos.jsonl, de quien corre Retina;
+RETINA_COSTOS lo cambia), respeta el tope y reintenta los 429 con espera
 exponencial. La llave sale del entorno o de un .env fuera del repo; nunca se
 imprime ni se escribe en los registros.
 """
@@ -18,7 +19,6 @@ from pathlib import Path
 import requests
 
 RAIZ = Path(__file__).resolve().parents[2]
-COSTOS = Path(os.environ.get("RETINA_COSTOS", RAIZ / "costos.jsonl"))
 TOPE_MAXIMO_USD = 50.0  # subirlo es cambiar esto 
 TIEMPO = (10, 300)  # conectar, leer (s): una llamada colgada no detiene la corrida 50 min
 
@@ -65,10 +65,16 @@ def base() -> str:
     return os.environ.get("META_API_BASE", "https://api.meta.ai/v1")
 
 
+def costos() -> Path:
+    """El registro de gasto de quien corre Retina. Cada quien lleva el suyo: quien baja el repo empieza en cero."""
+    _cargar_env()
+    return Path(os.environ.get("RETINA_COSTOS") or RAIZ / "mis-revisiones" / "costos.jsonl")
+
+
 @contextmanager
 def _candado():
     """Candado de archivo para que dos corridas a la vez no se pasen juntas del tope."""
-    ruta = COSTOS.with_suffix(".candado")
+    ruta = costos().with_suffix(".candado")
     ruta.parent.mkdir(parents=True, exist_ok=True)
     for _ in range(600):
         try:
@@ -88,10 +94,10 @@ def _candado():
 
 
 def gastado_usd() -> float:
-    if not COSTOS.exists():
+    if not costos().exists():
         return 0.0
     total = 0.0
-    for linea in COSTOS.read_text(encoding="utf-8").splitlines():
+    for linea in costos().read_text(encoding="utf-8").splitlines():
         if linea.strip():
             total += json.loads(linea).get("usd", 0.0)
     return total
@@ -128,8 +134,8 @@ def _registrar(servicio: str, modelo: str, segundos: float, usd: float, **extra)
         "usd": round(usd, 6),
         **extra,
     }
-    COSTOS.parent.mkdir(parents=True, exist_ok=True)
-    with _candado(), COSTOS.open("a", encoding="utf-8") as f:
+    costos().parent.mkdir(parents=True, exist_ok=True)
+    with _candado(), costos().open("a", encoding="utf-8") as f:
         f.write(json.dumps(fila, ensure_ascii=False) + "\n")
 
 

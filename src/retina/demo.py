@@ -5,11 +5,10 @@ panel. Por omisión muestra el ejemplo de casos/demo/; con --caso, cualquier
 resultado.json que esté dentro del repo.
 
 Con --casos CARPETA, los casos salen de una carpeta fuera del repo (por ejemplo, casos
-reales que no se publican) y, si trae indice.json, --galeria abre la lista de todos.
+reales que no se publican).
 
 Uso (desde la raíz del repo):
     python -m retina.demo [--caso casos/demo/resultado.json] [--puerto 8765] [--sin-navegador]
-    python -m retina.demo --casos CARPETA --galeria
 """
 from __future__ import annotations
 
@@ -23,8 +22,8 @@ from pathlib import Path
 from .esquemas import RAIZ
 
 CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
-PERMITIDO = re.compile(r"^/(panel/((?:index|galeria|subir)\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp"
-                       r"|casos/[\w-]+/resultado\.json|casos/indice\.json"
+PERMITIDO = re.compile(r"^/(panel/(index\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp"
+                       r"|casos/[\w-]+/(?:resultado|comparacion)\.json"  # comparacion.json: versión A contra B
                        r"|casos/[\w-]+/[\w-]+-ilustracion-ia\.(?:png|webp))$")  # el storyboard dibujado con Muse Image
 
 
@@ -39,7 +38,7 @@ def ruta_local(ruta: str, raiz: Path, casos: Path | None) -> Path | None:
 
 
 class SoloElPanel(http.server.SimpleHTTPRequestHandler):
-    """Sirve solo el panel (con sus fondos y la galería) y los casos; nada más del repo (ni .git ni .env)."""
+    """Sirve solo el panel (con sus fondos) y los casos; nada más del repo (ni .git ni .env)."""
 
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".webp": "image/webp"}
     casos: Path | None = None
@@ -78,24 +77,18 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--caso", default="casos/demo/resultado.json", help="Ruta dentro del repo a un resultado.json.")
-    ap.add_argument("--casos", type=Path, help="Carpeta de casos fuera del repo (cada uno en su carpeta, más indice.json).")
-    ap.add_argument("--galeria", action="store_true", help="Abre la lista de todos los casos (necesita indice.json).")
+    ap.add_argument("--casos", type=Path, help="Carpeta de casos fuera del repo (cada uno en su carpeta).")
     ap.add_argument("--puerto", type=int, default=8765)
     ap.add_argument("--sin-navegador", action="store_true")
     a = ap.parse_args()
     casos = a.casos.resolve() if a.casos else None
     if casos is not None and not casos.is_dir():
         raise SystemExit(f"No encuentro la carpeta de casos {a.casos}.")
-    if a.galeria:
-        if not ((casos or RAIZ / "casos") / "indice.json").is_file():
-            raise SystemExit("La galería necesita un indice.json en la carpeta de casos.")
-        destino = "/panel/galeria.html"
-    else:
-        caso = (RAIZ / a.caso).resolve()
-        relativo = "/" + caso.relative_to(RAIZ.resolve()).as_posix() if RAIZ.resolve() in caso.parents else ""
-        if not caso.is_file() or not CASO.match(relativo):
-            raise SystemExit(f"No encuentro {a.caso}: tiene que ser casos/<carpeta>/resultado.json dentro del repo.")
-        destino = f"/panel/?caso={relativo}"
+    caso = (RAIZ / a.caso).resolve()
+    relativo = "/" + caso.relative_to(RAIZ.resolve()).as_posix() if RAIZ.resolve() in caso.parents else ""
+    if not caso.is_file() or not CASO.match(relativo):
+        raise SystemExit(f"No encuentro {a.caso}: tiene que ser casos/<carpeta>/resultado.json dentro del repo.")
+    destino = f"/panel/?caso={relativo}"
     manejador = functools.partial(type("Manejador", (SoloElPanel,), {"casos": casos}), directory=str(RAIZ))
     servidor = http.server.ThreadingHTTPServer(("127.0.0.1", a.puerto), manejador)
     url = f"http://127.0.0.1:{servidor.server_port}{destino}"

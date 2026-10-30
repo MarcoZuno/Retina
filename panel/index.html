@@ -50,7 +50,7 @@ body.sin-gl #lienzo { display: none; }
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
   opacity: .85; mix-blend-mode: screen; }
 /* En el resultado hay mucho texto: el fondo se apaga un poco y las tarjetas de texto se esmerilan más */
-body[data-estado="resultado"] .bloque, body[data-estado="resultado"] .linea-bloque { background: rgba(10,20,46,.16); }
+body[data-estado="resultado"] .bloque, body[data-estado="resultado"] .linea-bloque, body[data-estado="comparacion"] .bloque { background: rgba(10,20,46,.16); }
 body.sin-gl .vidrio { -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); background: rgba(10,20,46,.35); }
 .vidrio:not(.fondos):not(.pastilla):hover { transform: translateY(-3px) scale(1.006); }
 body.legible .vidrio { background: rgba(6,14,34,.62); }
@@ -64,7 +64,8 @@ body[data-tema="claro"] .vidrio { background: rgba(255,255,255,.14); text-shadow
   box-shadow: 0 34px 70px -16px rgba(30,60,120,.32), 0 8px 22px rgba(30,60,120,.12),
               inset 3px 4px 10px rgba(255,255,255,.35), inset -3px -5px 12px rgba(40,70,130,.14),
               inset 0 1.5px 1px rgba(255,255,255,.95), inset 0 -1.5px 1px rgba(255,255,255,.5), inset 0 0 0 1px rgba(255,255,255,.35); }
-body[data-tema="claro"][data-estado="resultado"] .bloque, body[data-tema="claro"][data-estado="resultado"] .linea-bloque { background: rgba(255,255,255,.30); }
+body[data-tema="claro"][data-estado="resultado"] .bloque, body[data-tema="claro"][data-estado="resultado"] .linea-bloque,
+body[data-tema="claro"][data-estado="comparacion"] .bloque { background: rgba(255,255,255,.30); }
 body[data-tema="claro"].legible .vidrio { background: rgba(255,255,255,.72); }
 body[data-tema="claro"] .paso { background: rgba(255,255,255,.35); }
 body[data-tema="claro"] .boton.vidrio, body[data-tema="claro"] .pastilla { color: var(--texto); }
@@ -112,6 +113,66 @@ h1 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif
   background: linear-gradient(180deg, #fff, #DDEBFF); box-shadow: 0 10px 30px rgba(120,170,255,.35), inset 0 -2px 4px rgba(60,110,200,.25); }
 .boton.vidrio { color: var(--texto); background: var(--tinte); box-shadow: var(--sombra), inset 0 1px 1px rgba(255,255,255,.6); }
 .nota-vacio { margin-top: 18px; font-size: 13px; color: var(--tenue); }
+
+/* Subir un video: solo cuando Retina corre con la API en este equipo (python -m retina.app) */
+body[data-estado="subir"] #subir, body[data-estado="revisando"] #revisando { display: block; }
+#subir, #revisando { max-width: 640px; margin-top: 3vh; }
+#subir .soltar { padding: 34px 28px 30px; text-align: center; }
+#subir h1, #revisando h1 { font-size: 34px; }
+#subir .soltar p { color: var(--suave); margin: 10px auto 0; max-width: 460px; }
+.forma { margin-top: 14px; padding: 22px 24px 24px; }
+#subir .forma:hover, #revisando .vidrio:hover { transform: none; }
+.campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.campos label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; color: var(--suave); }
+.campos .ancho { grid-column: 1 / -1; }
+.campos label[hidden] { display: none; }
+.campos input, .campos select { font: inherit; font-size: 15px; color: var(--texto); background: rgba(6,14,34,.32); border: 0; border-radius: 14px;
+  padding: 11px 14px; min-height: 46px; width: 100%; box-shadow: inset 0 0 0 1px rgba(255,255,255,.24); color-scheme: dark; }
+.campos select option { color: #0E1A33; background: #fff; }
+body[data-tema="claro"] .campos input, body[data-tema="claro"] .campos select { background: rgba(255,255,255,.6); box-shadow: inset 0 0 0 1px rgba(14,26,51,.22); color-scheme: light; }
+.campos input:focus-visible, .campos select:focus-visible, .check input:focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+.check { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 14px; color: var(--suave); cursor: pointer; }
+.check input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: #9FD3FF; }
+.check small { display: block; color: var(--tenue); font-size: 13px; }
+.forma .boton { margin-top: 20px; width: 100%; }
+.avance { margin-top: 14px; padding: 26px 26px 24px; }
+.avance p { color: var(--suave); margin: 6px 0 0; }
+.avance .barra { display: block; height: 8px; border-radius: 99px; background: rgba(255,255,255,.14); overflow: hidden; margin: 18px 0 20px; }
+.avance .barra i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #9FD3FF, #7CF0B5); transition: width .4s; }
+.avance-pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+.avance-pasos li { display: flex; align-items: center; gap: 12px; color: var(--tenue); }
+.avance-pasos li i { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.22); flex: none; }
+.avance-pasos li.listo { color: var(--suave); } .avance-pasos li.listo i { background: var(--verde); }
+.avance-pasos li.ahora { color: var(--texto); font-weight: 650; } .avance-pasos li.ahora i { background: var(--azul); box-shadow: 0 0 12px var(--azul); animation: late 1.2s infinite; }
+@keyframes late { 50% { opacity: .35; } }
+/* Un video o dos versiones */
+.modo { display: flex; gap: 4px; padding: 5px; border-radius: 999px; margin: 0 auto 14px; width: fit-content; }
+.opcion-modo { border: 0; font: inherit; font-size: 14px; font-weight: 650; color: var(--suave); background: none; padding: 9px 16px; border-radius: 999px; cursor: pointer; min-height: 40px; }
+.opcion-modo[aria-checked="true"] { color: #0B1730; background: linear-gradient(180deg, #fff, #DDEBFF); }
+.opcion-modo:focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
+#subir .modo:hover { transform: none; }
+.etiqueta-version { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--azul); }
+.soltar-b { margin-top: 14px; padding: 22px 24px !important; text-align: center; }
+.soltar-b p { color: var(--suave); margin: 4px 0 0; }
+/* Comparación */
+body[data-estado="comparacion"] #comparacion { display: block; }
+#comparacion { max-width: 860px; --nivel: var(--azul); --nivel-vidrio: rgba(159,211,255,.22); --nivel-letra: var(--texto); }
+.tabla-ab { display: grid; grid-template-columns: minmax(150px, 1.1fr) 1fr 1fr; font-size: 14px; }
+.tabla-ab > div { padding: 10px 10px; box-shadow: inset 0 -1px 0 rgba(255,255,255,.10); color: var(--suave); }
+.tabla-ab .cab { font-weight: 700; color: var(--texto); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+.tabla-ab .etiqueta { font-weight: 600; color: var(--texto); }
+.tabla-ab small { display: block; color: var(--tenue); font-size: 12.5px; margin-top: 2px; }
+.tabla-ab .ok { color: var(--verde); font-weight: 700; } .tabla-ab .no { color: var(--rojo); font-weight: 700; } .tabla-ab .nd { color: var(--tenue); }
+.punto-ab { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.dif-ab { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.dif-ab li { padding: 12px 14px; border-radius: var(--radio-chico); background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+.dif-ab b { display: block; margin-bottom: 4px; }
+.dif-ab p { margin: 2px 0; color: var(--suave); }
+.mejor-ab { display: inline-block; margin-top: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 700; background: rgba(159,211,255,.22); }
+.botones.izq { justify-content: flex-start; }
+a.boton { text-decoration: none; display: inline-flex; align-items: center; }
+@media (max-width: 640px) { .campos { grid-template-columns: 1fr; } .tabla-ab { grid-template-columns: 1fr 1fr; } .tabla-ab .etiqueta, .tabla-ab .vacia { grid-column: 1 / -1; padding-bottom: 0; box-shadow: none; } }
+@media (prefers-reduced-motion: reduce) { .avance-pasos li.ahora i { animation: none; } }
 .error { width: 100%; max-width: 640px; margin: 0 auto 14px; padding: 14px 18px; border-radius: var(--radio-chico); background: var(--rojo-vidrio); color: var(--rojo-letra); }
 
 /* Resultado */
@@ -119,6 +180,7 @@ h1 { font-family: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif
 .tarjetas { display: grid; gap: 14px; }
 .nivel-alto { --nivel: var(--rojo); --nivel-vidrio: var(--rojo-vidrio); --nivel-letra: var(--rojo-letra); --nivel-zona: var(--rojo-zona); }
 .nivel-medio { --nivel: var(--ambar); --nivel-vidrio: var(--ambar-vidrio); --nivel-letra: var(--ambar-letra); --nivel-zona: var(--ambar-zona); }
+.nivel-sin_nivel { --nivel: var(--azul); --nivel-vidrio: rgba(159,211,255,.22); --nivel-letra: var(--texto); --nivel-zona: rgba(159,211,255,.28); }
 .nivel-bajo { --nivel: var(--verde); --nivel-vidrio: var(--verde-vidrio); --nivel-letra: var(--verde-letra); --nivel-zona: var(--verde-zona); }
 .veredicto { padding: 24px 26px; }
 .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 650; background: var(--nivel-vidrio); color: var(--nivel-letra); }
@@ -188,6 +250,18 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .pie-pasos { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; flex-wrap: wrap; color: var(--suave); font-size: 14px; }
 .funciona { margin: 14px 0 0; padding: 12px 16px; border-radius: var(--radio-chico); background: var(--verde-vidrio); box-shadow: inset 0 0 0 1px var(--verde-zona); }
 .funciona b { color: var(--verde); }
+/* Lo que está bien y lo que está flojo, y mejoras opcionales: también en las tarjetas verdes */
+.balance { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.balance h3, .mejoras h3 { margin: 0 0 8px; font-size: 15px; font-weight: 650; }
+.bien-t { color: var(--verde); } .flojo-t { color: var(--ambar); }
+.balance-lista, .mejoras-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.balance-lista li, .mejoras-lista li { position: relative; padding-left: 20px; color: var(--suave); }
+.balance-lista li::before, .mejoras-lista li::before { content: ""; position: absolute; left: 2px; top: .55em; width: 9px; height: 9px; border-radius: 50%; }
+.balance-lista.bien li::before { background: var(--verde); } .balance-lista.flojo li::before { background: var(--ambar); }
+.mejoras-lista li::before { background: var(--azul); }
+.balance-lista .vacio { color: var(--tenue); padding-left: 0; } .balance-lista .vacio::before { display: none; }
+.mejoras { margin-top: 18px; padding-top: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+@media (max-width: 640px) { .balance { grid-template-columns: 1fr; } }
 .acciones { display: flex; gap: 10px; flex-wrap: wrap; }
 .decision { margin: 12px 0 0; color: var(--suave); }
 .linea-bloque { padding: 18px 22px 16px; }
@@ -246,7 +320,6 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
   <header>
     <div class="marca vidrio"><span class="ojo" aria-hidden="true"></span>Retina</div>
     <span class="espacio"></span>
-    <a class="pastilla vidrio oculto" id="a-galeria" href="galeria.html">Todos los casos</a>
     <div class="menu-fondo">
       <button class="pastilla vidrio" id="abrir-fondos" type="button" aria-expanded="false" aria-controls="fondos" data-t="fondo">Fondo</button>
       <div class="fondos vidrio" id="fondos" role="listbox" aria-label="Elige el fondo" data-t-aria="elige_fondo" hidden></div>
@@ -272,6 +345,80 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         </div>
         <input type="file" id="archivo" accept=".json,application/json" hidden>
         <p class="nota-vacio" data-t="nota_vacio">El archivo no sale de tu computadora: el panel solo lo lee.</p>
+      </div>
+    </section>
+
+    <!-- 1b · Subir un video (solo si Retina corre con la API en este equipo) -->
+    <section id="subir" class="pantalla" aria-labelledby="t-subir">
+      <div class="modo vidrio" role="radiogroup" aria-label="Qué quieres revisar" data-t-aria="modo_aria">
+        <button type="button" class="opcion-modo" id="modo-uno" role="radio" aria-checked="true" data-t="modo_uno">Un video</button>
+        <button type="button" class="opcion-modo" id="modo-ab" role="radio" aria-checked="false" data-t="modo_ab">Comparar dos versiones</button>
+      </div>
+      <div class="soltar vidrio" id="soltar-video" tabindex="0" role="button" aria-describedby="d-subir">
+        <p class="etiqueta-version oculto" id="etiqueta-a" data-t="version_a">Versión A</p>
+        <div class="gota vidrio" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+        </div>
+        <h1 id="t-subir" data-t="subir_titulo">Revisa tu video antes de publicarlo</h1>
+        <p id="d-subir" data-t="subir_p">Elige o arrastra el video. Retina te dice si el inicio va a perder gente, por qué y qué cambiar.</p>
+        <p id="video-elegido" class="nota-vacio"></p>
+        <input type="file" id="archivo-video" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi" hidden>
+      </div>
+      <div class="soltar soltar-b vidrio oculto" id="soltar-b" tabindex="0" role="button" aria-describedby="d-b">
+        <p class="etiqueta-version" data-t="version_b">Versión B</p>
+        <p id="d-b" data-t="subir_b">Elige o arrastra la otra versión del mismo video.</p>
+        <p id="video-elegido-b" class="nota-vacio"></p>
+        <input type="file" id="archivo-b" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi" hidden>
+      </div>
+      <form class="forma vidrio" id="forma" novalidate>
+        <div class="campos">
+          <label class="ancho"><span data-t="campo_titulo">Título del video (como saldría en Facebook)</span><input type="text" id="v-titulo" maxlength="300" autocomplete="off"></label>
+          <label><span data-t="campo_talento">Quién sale a cuadro</span><select id="v-talento"><option value="" data-t="sin_talento">Nadie o no está en la lista</option></select></label>
+          <label><span data-t="campo_fecha">Día y hora en que se publicaría</span><input type="datetime-local" id="v-fecha"></label>
+          <label class="ancho"><span data-t="campo_codigo">Código de producción (si tiene)</span><input type="text" id="v-codigo" maxlength="22" autocomplete="off"></label>
+        </div>
+        <label class="check"><input type="checkbox" id="v-publicado"><span><span data-t="campo_publicado">Este video ya está publicado</span>
+          <small data-t="campo_publicado_nota">Déjala sin marcar si es un borrador.</small></span></label>
+        <button class="boton" id="revisar" type="submit" data-t="revisar">Revisar este video</button>
+      </form>
+    </section>
+
+    <!-- 1c · Revisando: el avance que va dejando Retina -->
+    <section id="revisando" class="pantalla" aria-labelledby="avance-titulo" aria-live="polite">
+      <div class="avance vidrio">
+        <h1 id="avance-titulo"></h1>
+        <p data-t="avance_p">Tarda unos 3 minutos. No cierres esta página ni la ventana de Retina.</p>
+        <div class="barra"><i id="avance-barra"></i></div>
+        <ol class="avance-pasos" id="avance-lista"></ol>
+      </div>
+    </section>
+
+    <!-- 1d · Comparación de dos versiones del mismo video -->
+    <section id="comparacion" class="pantalla" aria-labelledby="c-titular" aria-live="polite">
+      <div class="tarjetas">
+        <div class="veredicto vidrio">
+          <span class="chip"><i></i><span data-t="comparacion_chip">Comparación de dos versiones</span></span>
+          <h1 id="c-titular"></h1>
+          <p id="c-porque"></p>
+          <p class="titulo-video" id="c-aviso"></p>
+        </div>
+        <div class="bloque vidrio">
+          <h2 data-t="lado_a_lado">Lado a lado</h2>
+          <div class="tabla-ab" id="c-tabla"></div>
+          <p class="nota" id="c-numeros"></p>
+        </div>
+        <div class="bloque vidrio oculto" id="c-bloque-dif">
+          <h2 data-t="lo_que_ve_spark">Lo que ve Spark en cada una</h2>
+          <ul class="dif-ab" id="c-dif"></ul>
+        </div>
+        <div class="bloque vidrio">
+          <h2 data-t="tarjetas_completas">Las tarjetas completas</h2>
+          <div class="botones izq">
+            <a class="boton vidrio" id="c-ver-a" target="_blank" rel="noopener" data-t="ver_tarjeta_a">Ver la tarjeta de la versión A</a>
+            <a class="boton vidrio" id="c-ver-b" target="_blank" rel="noopener" data-t="ver_tarjeta_b">Ver la tarjeta de la versión B</a>
+          </div>
+        </div>
+        <button class="boton vidrio otra" id="c-otra" type="button" data-t="otro_video">Revisar otro video</button>
       </div>
     </section>
 
@@ -305,15 +452,28 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 
         <div class="bloque vidrio anzuelo oculto" id="anzuelo" role="note"></div>
 
+        <div class="bloque vidrio oculto" id="bloque-balance">
+          <h2 data-t="balance_t">Lo que está bien y lo que está flojo</h2>
+          <div class="balance">
+            <div><h3 class="bien-t" data-t="bien_t">Lo que está bien</h3><ul class="balance-lista bien" id="lo-bueno"></ul></div>
+            <div><h3 class="flojo-t" data-t="flojo_t">Lo que está flojo</h3><ul class="balance-lista flojo" id="lo-flojo"></ul></div>
+          </div>
+        </div>
+
         <div class="bloque vidrio" id="seccion-hacer">
           <h2 data-t="que_hacer">Qué hacer</h2>
           <p class="cambio" id="cambio"></p>
           <ol class="pasos" id="pasos"></ol>
+          <div class="mejoras oculto" id="mejoras">
+            <h3 data-t="mejoras_t">Si quieres mejorarlo (opcional)</h3>
+            <ul class="mejoras-lista" id="mejoras-lista"></ul>
+          </div>
           <div class="pie-pasos" id="pie-pasos"><span id="progreso"></span>
             <button class="boton vidrio" id="copiar" type="button" data-t="copiar">Copiar para el editor</button>
           </div>
           <p class="funciona oculto" id="funciona"></p>
           <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
+          <button class="boton vidrio oculto" id="dibujar-storyboard" type="button">Dibujarlo con Muse Image (3 imágenes, unos USD 0.03)</button>
           <div id="storyboard" class="storyboard oculto"></div>
         </div>
 
@@ -387,7 +547,10 @@ const TEXTOS = {
                sub: "Pierde un poco más de lo normal para un video como este." },
       bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
               sub: "Igual revisa el detalle antes de publicar." },
+      sin_nivel: { semaforo: "Revisión", titular: "Esto es lo que vimos al inicio de tu video",
+                   sub: "En este modo Retina no calcula un nivel de riesgo: todo sale de ver tu video." },
     },
+    sin_formula_gente: "En este modo el número es el promedio de videos de su duración; Retina no lo ajusta a tu video.",
     herramientas: {  // lo que revisó el agente, en palabras de quien edita
       ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
       oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
@@ -411,7 +574,40 @@ const TEXTOS = {
     fondos: {},  // en español, los nombres de FONDOS
     idioma_boton: "English", idioma_destino: "en", idioma_titulo: "Ver el panel en inglés",
     fondo: "Fondo", elige_fondo: "Elige el fondo", legible: "Más legible",
-    galeria: "Todos los casos", subir: "Revisar otro video",
+    subir_titulo: "Revisa tu video antes de publicarlo",
+    subir_p: "Elige o arrastra el video (MP4, MOV, WebM, MKV o AVI). Retina te dice si el inicio va a perder gente, por qué y qué cambiar.",
+    video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · toca para cambiarlo`,
+    campo_titulo: "Título del video (como saldría en Facebook)", campo_talento: "Quién sale a cuadro",
+    sin_talento: "Nadie o no está en la lista", campo_fecha: "Día y hora en que se publicaría",
+    campo_codigo: "Código de producción (si tiene)", campo_publicado: "Este video ya está publicado",
+    campo_publicado_nota: "Déjala sin marcar si es un borrador.", revisar: "Revisar este video", otro_video: "Revisar otro video",
+    avance_p: "Tarda unos 3 minutos. No cierres esta página ni la ventana de Retina.",
+    avance_subiendo: "Subiendo el video…", avance_fila: "En fila: hay otro video revisándose…", avance_revisando: "Revisando tu video…",
+    avance: { subiendo: "Subir el video", cortando: "Cortar el video en partes", escuchando: "Escuchar lo que se dice",
+              mirando: "Mirar lo que pasa en pantalla", escribiendo: "Escribir la tarjeta", terminando: "Revisar lo que recomienda Meta" },
+    falta_video: "Primero elige el video.", falta_titulo: "Escribe el título del video.",
+    falta_fecha: "Pon el día y la hora en que se publicaría.", solo_mp4: "Eso no parece un video. Sube un MP4, MOV, WebM, MKV o AVI.",
+    codigo_malo: "El código tiene que verse como XYZ0000001 (letras y luego números). Si no tiene, déjalo vacío.",
+    no_subio: "No se pudo subir el video.", sin_conexion: "Se cortó la conexión con Retina: revisa que su ventana siga abierta.",
+    no_termino: "La revisión no terminó.",
+    modo_aria: "Qué quieres revisar", modo_uno: "Un video", modo_ab: "Comparar dos versiones",
+    version_a: "Versión A", version_b: "Versión B",
+    subir_titulo_ab: "Compara dos versiones del mismo video",
+    subir_p_ab: "Sube las dos versiones. Retina revisa cada una y te dice cuál arranca mejor y por qué.",
+    subir_b: "Elige o arrastra la otra versión del mismo video.", revisar_ab: "Revisar y comparar",
+    falta_a: "Primero elige la versión A.", falta_b: "Falta la versión B.",
+    avance_subiendo_ab: "Subiendo las dos versiones…", avance_comparando: "Comparando las dos versiones…",
+    avance_ab: { subiendo: "Subir las dos versiones", version_a: "Revisar la versión A", version_b: "Revisar la versión B",
+                 comparando: "Comparar las dos con Spark" },
+    comparacion_chip: "Comparación de dos versiones", lado_a_lado: "Lado a lado",
+    lo_que_ve_spark: "Lo que ve Spark en cada una", tarjetas_completas: "Las tarjetas completas",
+    ver_tarjeta_a: "Ver la tarjeta de la versión A", ver_tarjeta_b: "Ver la tarjeta de la versión B",
+    gana_version: (v) => `La ${v.replace(/^V/, "v")} arranca mejor`, empate_ab: "Ninguna arranca claramente mejor",
+    sin_comparar: "Aquí están las dos revisiones", sin_comparar_p: "Spark no pudo comparar las dos versiones; abajo está lo que Retina vio en cada una.",
+    aviso_ab: "Es la opinión de Spark viendo cómo arranca cada versión (la revisó en los dos órdenes), no una predicción de retención medida.",
+    fila_semaforo: "Semáforo", fila_duracion: "Duración", fila_cambio: "Lo principal a cambiar", nada_urgente: "Nada urgente.",
+    numeros_ab: (s, a, b) => `A los ${s} segundos, Retina calcula que de cada 100 personas siguen ${a} con la A y ${b} con la B. Casi no cambia entre versiones porque ese número sale del tipo de video (talento, duración, día y título), no de lo que se ve: para elegir, guíate por la tabla y por lo que ve Spark.`,
+    mejor_en: (v) => `Mejor en la ${v.replace(/^V/, "v")}`, igual_ab: "Igual en las dos",
     vacio_titulo: "Abre la revisión de tu video", vacio_p1: "Retina deja un archivo ",
     vacio_p2: " en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.",
     elegir: "Elegir archivo", ver_ejemplo: "Ver el ejemplo", nota_vacio: "El archivo no sale de tu computadora: el panel solo lo lee.",
@@ -420,6 +616,8 @@ const TEXTOS = {
     por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado",
     no_copio: "No se pudo copiar: selecciona el texto",
     ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
+    dibujar_storyboard: "Dibujarlo con Muse Image (3 imágenes, unos USD 0.03)", dibujando: "Dibujando con Muse Image…",
+    no_se_dibujo: "No se pudo dibujar. Intenta otra vez.",
     que_vas: "¿Qué vas a hacer?", cortar: "Cortar como dice Retina", regrabar: "Regrabar", publicar: "Publicar así",
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
@@ -442,6 +640,18 @@ const TEXTOS = {
     momento_menos: (n) => `Tu video pierde ${n} ${n === 1 ? "persona" : "personas"} más.`,
     momento_mas: (n) => `Tu video retiene ${n} ${n === 1 ? "persona" : "personas"} más.`,
     como_tuyo_es: (x) => `«Videos como el tuyo» son ${x}.`,
+    reglas_meta: { gancho_3s: "Algo que detenga a la gente en los primeros 3 segundos",
+      mensaje_3s: "El mensaje principal aparece pronto (en texto o en voz)",
+      promesa_3s: "Lo que promete el título se ve en los primeros 3 segundos",
+      sin_sonido_10s: "Se entiende sin sonido (texto en pantalla la mayor parte del tiempo)",
+      original: "Contenido propio, no material de otros resubido", vertical: "Video vertical 9:16" },
+    comparado: (regla, n) => `${n ? n + " " : ""}videos ` + ({
+      "cubeta+talento 90 d": "del mismo talento y duración de los últimos 90 días",
+      "cubeta 90 d": "de la misma duración de los últimos 90 días",
+      "cubeta+talento": "del mismo talento y duración", cubeta: "de la misma duración",
+      publica: "de la misma duración en una página grande de Facebook en México" }[regla] || "publicados"),
+    creador_nuevo: "Retina todavía no conoce a este creador. Calculó con lo que trae cualquier video (duración, formato, título y cómo arranca la voz) y lo comparó con videos de una página grande de Facebook en México. Tómalo como referencia: lo que está bien y lo que cambiarías sale de ver tu video.",
+    creador_nuevo_sin_voz: "Retina todavía no conoce a este creador y no pudo escuchar la voz, así que el número es el de videos de su duración en una página grande de Facebook en México. Lo que está bien y lo que cambiarías sale de ver tu video.",
     t_linea_seg: (n) => `Los primeros ${n} segundos`, t_linea_mm: (t) => `El inicio: de 0:00 a ${t}`,
     linea_texto: (t) => `El inicio de tu video, de 0:00 a ${t}.`, partes: (l) => ` Partes a revisar: ${l}.`,
     tramo: (a, b) => `${a} a ${b}`, castiga_en: (t) => ` Lo que Meta castiga aparece en ${t}.`,
@@ -464,6 +674,9 @@ const TEXTOS = {
     aviso_ejemplo: "Ejemplo inventado: no es un video real. Sirve para ver cómo se ve una revisión de Retina.",
     sin_cambio_bajo: "No hace falta cambiar el inicio.",
     sin_sugerencia: "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano.",
+    balance_t: "Lo que está bien y lo que está flojo", bien_t: "Lo que está bien", flojo_t: "Lo que está flojo",
+    nada_bien: "Retina no marcó nada en especial.", nada_flojo: "Nada flojo a la vista en el inicio.",
+    mejoras_t: "Si quieres mejorarlo (opcional)", opcional_editor: "Mejoras opcionales:",
     ya_funciona: "Ya funciona: ", quitalo: "Quítalo antes de publicar", anzuelo_otro: "trae algo que Meta castiga",
     anzuelo_texto: (t, que, frase) => `${t ? `En ${t}` : "En el video"} tu video ${que}${frase ? `: «${frase}»` : ""}. Meta reparte menos los videos con esto.`,
     sin_api_porque: "Esta revisión se hizo sin la API de Meta: vemos el riesgo, pero no el porqué.",
@@ -488,7 +701,10 @@ const TEXTOS = {
                sub: "It loses a bit more than usual for a video like this." },
       bajo: { semaforo: "No clear problem", titular: "We don't see a clear problem in the opening",
               sub: "Still, check the details before publishing." },
+      sin_nivel: { semaforo: "Review", titular: "Here is what we saw at the start of your video",
+                   sub: "In this mode Retina doesn't compute a risk level: everything comes from watching your video." },
     },
+    sin_formula_gente: "In this mode the number is the average for videos of this length; Retina doesn't adjust it to your video.",
     herramientas: {
       ver_arranque: "watched the opening and read the title", ver_tramos: "took a closer look at parts of the opening",
       oir: "listened to what is said, with timestamps", buscar_parecidos: "compared it with titles of similar videos",
@@ -513,7 +729,40 @@ const TEXTOS = {
               espacio: "Space", valle: "Valley", laguna: "Lagoon", flores: "Flowers", cielo: "Sky" },
     idioma_boton: "Español", idioma_destino: "es", idioma_titulo: "View the panel in Spanish",
     fondo: "Background", elige_fondo: "Choose a background", legible: "Easier to read",
-    galeria: "All cases", subir: "Review another video",
+    subir_titulo: "Check your video before you publish it",
+    subir_p: "Choose or drop the video (MP4, MOV, WebM, MKV or AVI). Retina tells you if the start will lose people, why, and what to change.",
+    video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · tap to change it`,
+    campo_titulo: "Video title (as it would appear on Facebook)", campo_talento: "Who is on camera",
+    sin_talento: "Nobody, or not on the list", campo_fecha: "Day and time it would be published",
+    campo_codigo: "Production code (if any)", campo_publicado: "This video is already published",
+    campo_publicado_nota: "Leave it unchecked for a draft.", revisar: "Review this video", otro_video: "Review another video",
+    avance_p: "It takes about 3 minutes. Don't close this page or the Retina window.",
+    avance_subiendo: "Uploading the video…", avance_fila: "Waiting: another video is being reviewed…", avance_revisando: "Reviewing your video…",
+    avance: { subiendo: "Upload the video", cortando: "Cut the video into parts", escuchando: "Listen to what is said",
+              mirando: "Watch what happens on screen", escribiendo: "Write the card", terminando: "Check Meta's recommendations" },
+    falta_video: "Choose the video first.", falta_titulo: "Write the video title.",
+    falta_fecha: "Set the day and time it would be published.", solo_mp4: "That doesn't look like a video. Upload an MP4, MOV, WebM, MKV or AVI.",
+    codigo_malo: "The code has to look like XYZ0000001 (letters, then numbers). If there is none, leave it empty.",
+    no_subio: "The video couldn't be uploaded.", sin_conexion: "The connection to Retina was lost: check that its window is still open.",
+    no_termino: "The review didn't finish.",
+    modo_aria: "What do you want to review", modo_uno: "One video", modo_ab: "Compare two versions",
+    version_a: "Version A", version_b: "Version B",
+    subir_titulo_ab: "Compare two versions of the same video",
+    subir_p_ab: "Upload both versions. Retina reviews each one and tells you which has the stronger start and why.",
+    subir_b: "Choose or drop the other version of the same video.", revisar_ab: "Review and compare",
+    falta_a: "Choose version A first.", falta_b: "Version B is missing.",
+    avance_subiendo_ab: "Uploading both versions…", avance_comparando: "Comparing both versions…",
+    avance_ab: { subiendo: "Upload both versions", version_a: "Review version A", version_b: "Review version B",
+                 comparando: "Compare both with Spark" },
+    comparacion_chip: "Two-version comparison", lado_a_lado: "Side by side",
+    lo_que_ve_spark: "What Spark sees in each one", tarjetas_completas: "The full cards",
+    ver_tarjeta_a: "See version A's card", ver_tarjeta_b: "See version B's card",
+    gana_version: (v) => `${v} has the stronger start`, empate_ab: "Neither start is clearly better",
+    sin_comparar: "Here are both reviews", sin_comparar_p: "Spark couldn't compare both versions; below is what Retina saw in each one.",
+    aviso_ab: "This is Spark's opinion after watching how each version starts (it judged them in both orders), not a measured retention prediction.",
+    fila_semaforo: "Traffic light", fila_duracion: "Length", fila_cambio: "Main thing to change", nada_urgente: "Nothing urgent.",
+    numeros_ab: (s, a, b) => `At ${s} seconds, Retina estimates that out of 100 people ${a} keep watching version A and ${b} version B. It barely changes between versions because that number comes from the kind of video (talent, length, day and title), not from what is on screen: to choose, go by the table and by what Spark sees.`,
+    mejor_en: (v) => `Better in ${v}`, igual_ab: "Same in both",
     vacio_titulo: "Open your video's review", vacio_p1: "Retina saves a ",
     vacio_p2: " file in the folder of every video it reviews. Open it here to see if the opening will lose viewers, why, and what to cut.",
     elegir: "Choose file", ver_ejemplo: "See the example", nota_vacio: "The file never leaves your computer: the panel only reads it.",
@@ -522,6 +771,8 @@ const TEXTOS = {
     por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied",
     no_copio: "Couldn't copy: select the text instead",
     ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
+    dibujar_storyboard: "Draw it with Muse Image (3 images, about USD 0.03)", dibujando: "Drawing with Muse Image…",
+    no_se_dibujo: "It couldn't be drawn. Try again.",
     que_vas: "What will you do?", cortar: "Cut as Retina suggests", regrabar: "Reshoot", publicar: "Publish as is",
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
@@ -544,6 +795,18 @@ const TEXTOS = {
     momento_menos: (n) => `Your video loses ${n} more ${n === 1 ? "person" : "people"}.`,
     momento_mas: (n) => `Your video keeps ${n} more ${n === 1 ? "person" : "people"}.`,
     como_tuyo_es: (x) => `“Videos like yours” means ${x}.`,
+    reglas_meta: { gancho_3s: "Something that stops people in the first 3 seconds",
+      mensaje_3s: "The main message shows up early (as text or voice)",
+      promesa_3s: "What the title promises shows in the first 3 seconds",
+      sin_sonido_10s: "It makes sense without sound (on-screen text most of the time)",
+      original: "Your own content, not someone else's footage re-uploaded", vertical: "Vertical 9:16 video" },
+    comparado: (regla, n) => (n ? `${n} ` : "") + ({
+      "cubeta+talento 90 d": "videos with the same person on camera and length from the last 90 days",
+      "cubeta 90 d": "videos of the same length from the last 90 days",
+      "cubeta+talento": "videos with the same person on camera and length", cubeta: "videos of the same length",
+      publica: "videos of the same length on a large Facebook page in Mexico" }[regla] || "published videos"),
+    creador_nuevo: "Retina doesn't know this creator yet. It used what any video has (length, format, title and how the voice opens) and compared it with videos from a large Facebook page in Mexico. Take the number as a reference: what works and what to change come from watching your video.",
+    creador_nuevo_sin_voz: "Retina doesn't know this creator yet and couldn't hear the voice, so the number is the one for videos of this length on a large Facebook page in Mexico. What works and what to change come from watching your video.",
     t_linea_seg: (n) => `The first ${n} seconds`, t_linea_mm: (t) => `The opening: 0:00 to ${t}`,
     linea_texto: (t) => `Your video's opening, from 0:00 to ${t}.`, partes: (l) => ` Parts to check: ${l}.`,
     tramo: (a, b) => `${a} to ${b}`, castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
@@ -566,6 +829,9 @@ const TEXTOS = {
     aviso_ejemplo: "Made-up example: not a real video. It shows what a Retina review looks like.",
     sin_cambio_bajo: "No need to change the opening.",
     sin_sugerencia: "No suggestion passed our rules. Check the opening yourself.",
+    balance_t: "What works and what is weak", bien_t: "What works", flojo_t: "What is weak",
+    nada_bien: "Retina didn't flag anything in particular.", nada_flojo: "Nothing weak in sight at the start.",
+    mejoras_t: "If you want to make it better (optional)", opcional_editor: "Optional improvements:",
     ya_funciona: "Already working: ", quitalo: "Remove it before publishing", anzuelo_otro: "has something Meta penalizes",
     anzuelo_texto: (t, que, frase) => `${t ? `At ${t}, your` : "Your"} video ${que}${frase ? `: “${frase}”` : ""}. Meta shows videos with this to fewer people.`,
     sin_api_porque: "This review was done without the Meta API: we can see the risk, but not the reason.",
@@ -650,16 +916,19 @@ function cifras(r) {
   const frase = nodo("p", "frase");
   frase.append(nodo("span", "intro", t("gente_intro")), " ", nodo("b", "num", String(tuyo)), " ", t("gente_siguen", s));
   const comparo = nodo("p", "comparo", t("gente_otros", otros));
-  const veredicto = Math.abs(dif) <= 1 ? nodo("p", "dif igual", t("gente_igual"))
+  const sinFormula = !!(r.licencia && r.licencia.sin_formula);
+  const veredicto = sinFormula ? nodo("p", "dif igual", t("sin_formula_gente")) : Math.abs(dif) <= 1 ? nodo("p", "dif igual", t("gente_igual"))
     : nodo("p", `dif ${dif < 0 ? "menos" : "mas"}`, t(dif < 0 ? "gente_menos" : "gente_mas", Math.abs(dif)));
   texto.append(frase, comparo, veredicto);
-  if (Math.abs(dif) > 1) texto.append(nodo("p", "ejemplo-gente", t(dif < 0 ? "gente_ejemplo_menos" : "gente_ejemplo_mas", miles(Math.abs(dif)), s)));
+  if (!sinFormula && Math.abs(dif) > 1) texto.append(nodo("p", "ejemplo-gente", t(dif < 0 ? "gente_ejemplo_menos" : "gente_ejemplo_mas", miles(Math.abs(dif)), s)));
   if (conReal(r)) texto.append(nodo("p", "real-gente", t("gente_real", en100(r.realidad.curva, s))));
   const principal = nodo("div", "cifra vidrio grande personas");
   const fila = nodo("div", "fila-gente"); fila.append(gente, texto);
   principal.append(fila, leyenda);
   const l = r.licencia || {};
-  if (l.comparado_con) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", l.comparado_con)));
+  if (comparadoCon(l)) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
+  if (l.conoce_al_creador === false && !sinFormula)  // en el plan B la frase de arriba ya lo explica
+    principal.append(nodo("p", "nota-gente", t(l.cerebro === "cualquier_video" ? "creador_nuevo" : "creador_nuevo_sin_voz")));
 
   const momento = (x, titulo) => {
     const caja = nodo("div", "cifra vidrio momento");
@@ -674,6 +943,7 @@ function cifras(r) {
       caja.append(b);
     }
     const d = barras[0][1] - barras[1][1];
+    if (sinFormula) return caja;  // sin fórmula las dos barras son iguales por definición: no hay veredicto
     caja.append(nodo("p", `dif-momento ${Math.abs(d) <= 1 ? "igual" : d < 0 ? "menos" : "mas"}`,
       Math.abs(d) <= 1 ? t("momento_igual") : t(d < 0 ? "momento_menos" : "momento_mas", Math.abs(d))));
     return caja;
@@ -750,7 +1020,7 @@ function segunMeta(r) {  // revision_meta: buenas prácticas de Meta por ventana
     const marca = nodo("span", clase, signo); marca.setAttribute("aria-label", dice); marca.setAttribute("role", "img");
     const texto = nodo("span");
     // Sin pastillas de tiempo: la evidencia trae proporciones como «9:16» que no son tiempos.
-    texto.append(nodo("b", "", x.regla || ""), document.createElement("br"), nodo("span", "", reloj(x.evidencia || "")));
+    texto.append(nodo("b", "", de(tx().reglas_meta, x.id) || x.regla || ""), document.createElement("br"), nodo("span", "", reloj(x.evidencia || "")));
     const u = seguro(x.fuente);
     if (u) {
       const a = nodo("a", "", t("fuente_meta")); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
@@ -774,6 +1044,26 @@ function ilustraciones(e) {
   });
 }
 
+// «Lo que no revisé» llega en español desde el orquestador; en inglés se traducen sus piezas fijas.
+const NO_REVISE_EN = [
+  ["La música: no se analiza la letra ni la licencia.", "Music: lyrics and licensing are not analyzed."],
+  ["Lo que pasa en pantalla tramo a tramo con V-JEPA 2", "What happens on screen, segment by segment, with V-JEPA 2"],
+  ["Por qué y qué cambiar en el arranque", "Why, and what to change in the opening"],
+  ["Las recomendaciones de Meta para el inicio", "Meta's recommendations for the opening"],
+  ["Si lo que promete el título se ve al inicio (SAM 3.1)", "Whether what the title promises shows at the start (SAM 3.1)"],
+  ["Lo que se ve tramo a tramo", "What is on screen, segment by segment"],
+  ["La voz y los silencios", "The voice and the silences"],
+  ["se corrió sin la API de Meta", "run without Meta's API"],
+  ["no hubo descripción del video", "there was no description of the video"],
+  ["falló:", "failed:"],
+];
+const enIdioma = (texto) => idioma === "en" ? NO_REVISE_EN.reduce((x, [es, en]) => x.split(es).join(en), String(texto)) : texto;
+
+// La frase de «contra qué se comparó» se arma aquí, en el idioma del panel (el JSON trae la regla y cuántos).
+const comparadoCon = (l) => (l.regla && (l.n_parecidos != null || l.regla === "publica"))
+  ? t("comparado", l.regla, l.n_parecidos != null ? Number(l.n_parecidos).toLocaleString(idioma === "en" ? "en-US" : "es-MX") : "")
+  : l.comparado_con;
+
 function revisado(r) {
   const l = r.licencia || {}, e = r.explicacion, ul = $("detalle-lista");
   const conf = e ? (de(tx().confianza, e.confianza) || e.confianza) : "";
@@ -784,9 +1074,9 @@ function revisado(r) {
   $("traza").classList.toggle("oculto", !usadas.length);
   $("traza").replaceChildren(t("traza_pre", quien), ...usadas.map((h) => nodo("span", "", H[h])));
   ul.replaceChildren();
-  item(ul, t("compara", l.comparado_con || t("parecidos_def"), l.datos_hasta || "—"));
+  item(ul, t("compara", comparadoCon(l) || t("parecidos_def"), l.datos_hasta || "—"));
   item(ul, t("no_promete"));
-  for (const n of l.no_pude_revisar || []) item(ul, t("no_revise", n));
+  for (const n of l.no_pude_revisar || []) item(ul, t("no_revise", enIdioma(n)));
   if (lx.modelo) item(ul, t("escribio", quien, lx.servido_por));
   if (lx.rescate) item(ul, t("rescate"));
   const regresos = traza.filter((x) => x.herramienta === "entregar_tarjeta" && x.resultado && x.resultado.aceptada === false);
@@ -797,6 +1087,11 @@ function revisado(r) {
   const cuadros = (e && e.storyboard) || [], dibujos = ilustraciones(e);
   $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
   $("ver-storyboard").textContent = t(dibujos.some(Boolean) ? "ver_storyboard_ia" : "ver_storyboard");
+  // En la app (no en la demo sin llave), el storyboard se dibuja solo si la persona lo pide: cuesta.
+  const idCaso = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname);
+  $("dibujar-storyboard").classList.toggle("oculto", !(conSubida && idCaso && cuadros.length && !dibujos.some(Boolean)));
+  $("dibujar-storyboard").dataset.id = idCaso ? idCaso[1] : "";
+  $("dibujar-storyboard").textContent = t("dibujar_storyboard");
   $("storyboard").replaceChildren(...cuadros.map((c, i) => {
     const d = nodo("div");
     if (dibujos[i]) {
@@ -821,8 +1116,20 @@ function pasos(e) {
     li.append(nodo("span", "num", String(i + 1)), conTiempos(nodo("p"), reloj(x)), b);
     return li;
   }));
-  $("pie-pasos").classList.toggle("oculto", !(e && e.que_cambiar));
+  $("pie-pasos").classList.toggle("oculto", !(e && (e.que_cambiar || lista_(e, "mejoras_opcionales").length)));
   progreso();
+}
+
+// Lo que está bien, lo que está flojo y mejoras opcionales (tarjetas desde el 29-oct; las viejas no los traen).
+const lista_ = (e, k) => (e && Array.isArray(e[k]) ? e[k].map(String).filter((x) => x.trim()) : []);
+function balance(e) {
+  const bueno = lista_(e, "lo_bueno"), flojo = lista_(e, "lo_flojo"), mejoras = lista_(e, "mejoras_opcionales");
+  $("bloque-balance").classList.toggle("oculto", !bueno.length && !flojo.length);
+  const llenar = (ul, xs, vacio) => ul.replaceChildren(...(xs.length ? xs.map((x) => conTiempos(nodo("li"), reloj(x)))
+    : [nodo("li", "vacio", t(vacio))]));
+  llenar($("lo-bueno"), bueno, "nada_bien"); llenar($("lo-flojo"), flojo, "nada_flojo");
+  $("mejoras").classList.toggle("oculto", !mejoras.length);
+  $("mejoras-lista").replaceChildren(...mejoras.map((x) => conTiempos(nodo("li"), reloj(x))));
 }
 
 function progreso() {
@@ -859,7 +1166,7 @@ function mostrar(r) {
     $("porque").textContent = t("sin_api_porque");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  pasos(e); segunMeta(r); grafica(r); revisado(r);
+  pasos(e); balance(e); segunMeta(r); grafica(r); revisado(r);
   $("decision").textContent = "";
   $("error").classList.add("oculto");
   estado("resultado");
@@ -867,7 +1174,11 @@ function mostrar(r) {
 
 function textoParaEditor() {
   const e = actual.explicacion, titulo = actual.video.titulo ? ` · ${actual.video.titulo}` : "";
-  return [`Retina${titulo}`, `${t("para_editor")}${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`)].join("\n");
+  const lineas = [`Retina${titulo}`];
+  if (e.que_cambiar) lineas.push(`${t("para_editor")}${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`));
+  const mejoras = lista_(e, "mejoras_opcionales");
+  if (mejoras.length) lineas.push(t("opcional_editor"), ...mejoras.map((m) => `- ${reloj(m)}`));
+  return lineas.join("\n");
 }
 
 $("copiar").onclick = async () => {
@@ -879,7 +1190,7 @@ function fallo(motivo) {  // motivo: una clave de TEXTOS o un texto ya escrito (
   ultimoFallo = motivo;
   $("error").textContent = t("fallo", typeof de(tx(), motivo) === "string" ? t(motivo) : motivo);
   $("error").classList.remove("oculto");
-  estado("vacio");
+  estado(conSubida ? "subir" : "vacio");
 }
 
 function decidir(que) {
@@ -906,6 +1217,19 @@ async function abrir(ruta, ejemplo = false) {  // ejemplo: es el caso de muestra
   porOmision = ejemplo;
 }
 
+$("dibujar-storyboard").onclick = async () => {
+  const b = $("dibujar-storyboard"), id = b.dataset.id;
+  if (!id || b.disabled) return;
+  b.disabled = true; b.textContent = t("dibujando");
+  try {
+    const r = await fetch(`/api/storyboard/${id}`, { method: "POST", headers: { "X-Retina": "1" } });
+    if (!r.ok) throw new Error(String(r.status));
+    await abrir(`/casos/${id}/resultado.json`);
+    $("storyboard").classList.remove("oculto"); $("ver-storyboard").setAttribute("aria-expanded", "true");
+  } catch (_) { b.textContent = t("no_se_dibujo"); }
+  finally { b.disabled = false; }
+};
+
 $("ver-storyboard").onclick = () => {
   const abierto = $("storyboard").classList.toggle("oculto") === false;
   $("ver-storyboard").setAttribute("aria-expanded", String(abierto));
@@ -913,7 +1237,11 @@ $("ver-storyboard").onclick = () => {
 $("d-cortar").onclick = () => decidir("cortar");
 $("d-regrabar").onclick = () => decidir("regrabar");
 $("d-publicar").onclick = () => decidir("publicar");
-$("otra").onclick = () => { $("archivo").value = ""; estado("vacio"); };
+$("otra").onclick = () => {
+  $("archivo").value = "";
+  if (!conSubida) return estado("vacio");
+  reiniciarSubida();
+};
 $("elegir").onclick = (e) => { e.stopPropagation(); $("archivo").click(); };
 $("ejemplo").onclick = (e) => {
   e.stopPropagation();
@@ -927,20 +1255,279 @@ for (const ev of ["dragleave", "drop"]) $("soltar").addEventListener(ev, (e) => 
 $("soltar").addEventListener("drop", (e) => { if (e.dataTransfer.files[0]) leer(e.dataTransfer.files[0]); });
 $("legible").onclick = () => { const on = document.body.classList.toggle("legible"); $("legible").setAttribute("aria-pressed", String(on)); };
 
+// ---- Subir un video: solo cuando Retina corre con la API en este equipo (python -m retina.app) ----
+// La demo sin llave (python -m retina.demo) no tiene /api/: ahí el panel solo abre revisiones ya hechas.
+let conSubida = false, video = null, talentos = [];
+const PASOS_AVANCE = ["subiendo", "cortando", "escuchando", "mirando", "escribiendo", "terminando"];
+const sinAcentos = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+
+function avisar(motivo) {  // motivo: una clave de TEXTOS o el texto que manda Retina; vacío lo borra
+  ultimoFallo = null;
+  $("error").textContent = motivo ? (typeof de(tx(), motivo) === "string" ? t(motivo) : motivo) : "";
+  $("error").classList.toggle("oculto", !motivo);
+  if (motivo) estado("subir");
+}
+
+async function prepararSubida() {
+  if (location.protocol === "file:") return false;
+  try {
+    const r = await fetch("/api/talentos", { cache: "no-store" });
+    if (!r.ok) return false;
+    talentos = ((await r.json()).talentos || []).map(String);
+  } catch (_) { return false; }
+  for (const x of talentos) { const o = nodo("option", "", x); o.value = x; $("v-talento").append(o); }
+  // Con el cerebro público no hay talentos ni códigos de producción: esos campos ni se enseñan.
+  if (!talentos.length) for (const id of ["v-talento", "v-codigo"]) $(id).closest("label").hidden = true;
+  const ahora = new Date(); ahora.setMinutes(0, 0, 0); ahora.setHours(ahora.getHours() + 1);
+  $("v-fecha").value = new Date(ahora - ahora.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  $("otra").dataset.t = "otro_video";
+  return true;
+}
+
+// Si el nombre empieza con fecha, código o talento («2026-01-15 XYZ0000001 Nombre Título.mp4»), se llenan solos.
+function llenarDesdeNombre(nombre) {
+  let resto = nombre.replace(/\.mp4$/i, "").replace(/_/g, " ").trim();
+  const f = resto.match(/^(\d{4}-\d{2}-\d{2})\s+/);
+  if (f) { $("v-fecha").value = `${f[1]}T${$("v-fecha").value.slice(11) || "12:00"}`; resto = resto.slice(f[0].length); }
+  const c = resto.match(/^([A-Za-z]{2,10}\d{2,12})\s+/);
+  if (c) { if (!$("v-codigo").value && talentos.length) $("v-codigo").value = c[1].toUpperCase(); resto = resto.slice(c[0].length); }
+  const quien = talentos.filter((x) => sinAcentos(resto).startsWith(`${sinAcentos(x)} `)).sort((a, b) => b.length - a.length)[0];
+  if (quien) { $("v-talento").value = quien; resto = resto.slice(quien.length); }
+  if (!$("v-titulo").value) $("v-titulo").value = resto.replace(/\s{2,}/g, " ").trim().slice(0, 300);
+}
+
+function elegirVideo(archivo) {
+  if (!archivo) return;
+  if (!/^video\//.test(archivo.type) && !/\.(mp4|mov|m4v|webm|mkv|avi)$/i.test(archivo.name)) return avisar("solo_mp4");
+  video = archivo; avisar("");
+  $("video-elegido").textContent = t("video_elegido", archivo.name, (archivo.size / 1048576).toFixed(0));
+  llenarDesdeNombre(archivo.name);
+}
+
+const PASOS_AB = ["subiendo", "version_a", "version_b", "comparando"];
+let modoAB = false, videoB = null, comparacionActual = null;
+
+function pintarAvance(paso, titulo, pasos = PASOS_AVANCE, nombres = tx().avance) {
+  $("avance-titulo").textContent = typeof de(tx(), titulo) === "string" ? t(titulo) : titulo;
+  const i = pasos.indexOf(paso);
+  $("avance-lista").replaceChildren(...pasos.map((k, j) => {
+    const li = nodo("li", j < i ? "listo" : j === i ? "ahora" : "");
+    li.append(document.createElement("i"), document.createTextNode(nombres[k]));
+    return li;
+  }));
+  if (paso !== "subiendo") $("avance-barra").style.width = `${Math.max(4, Math.round(100 * i / pasos.length))}%`;
+}
+
+// Sube un video y resuelve con su id. `extra`: cabeceras de más (la versión B dice con cuál se compara).
+function subirVideo(archivo, extra, alSubir) {
+  return new Promise((ok, mal) => {
+    const x = new XMLHttpRequest();
+    x.open("POST", "/api/revisar");
+    const cabeceras = {
+      "Content-Type": archivo.type || "application/octet-stream", "X-Retina": "1",
+      "X-Retina-Titulo": encodeURIComponent($("v-titulo").value.trim()),
+      "X-Retina-Talento": encodeURIComponent($("v-talento").value),
+      "X-Retina-Codigo": $("v-codigo").value.trim().toUpperCase(),
+      "X-Retina-Fecha": $("v-fecha").value.replace("T", " ").slice(0, 16),
+      "X-Retina-Idioma": idioma,  // la tarjeta se escribe en el idioma del panel
+      "X-Retina-Publicado": $("v-publicado").checked ? "1" : "0",  // el candado lo decide quien corre Retina
+      ...extra,
+    };
+    for (const [k, v] of Object.entries(cabeceras)) x.setRequestHeader(k, v);
+    x.upload.onprogress = (e) => { if (e.lengthComputable) alSubir(e.loaded / e.total); };
+    x.onload = () => {
+      let r = {};
+      try { r = JSON.parse(x.responseText); } catch (_) { /* respuesta sin JSON */ }
+      if (x.status === 202 && r.id) ok(r.id); else mal(new Error(r.error || "no_subio"));
+    };
+    x.onerror = () => mal(new Error("sin_conexion"));
+    x.send(archivo);
+  });
+}
+
+// Pregunta cada 3 s en qué va una revisión hasta que termina; devuelve su estado final.
+async function esperar(id, alPaso) {
+  for (;;) {
+    await new Promise((r) => setTimeout(r, 3000));
+    let e;
+    try { const r = await fetch(`/api/estado/${id}`, { cache: "no-store" }); e = await r.json(); } catch (_) { continue; }
+    if (e.estado === "listo" || e.estado === "error") return e;
+    alPaso(e);
+  }
+}
+
+async function revisarUno() {  // un video: al terminar abre la tarjeta aquí mismo
+  $("avance-barra").style.width = "0%"; pintarAvance("subiendo", "avance_subiendo"); estado("revisando");
+  const id = await subirVideo(video, {}, (f) => { $("avance-barra").style.width = `${Math.round(100 * f / PASOS_AVANCE.length)}%`; });
+  pintarAvance("cortando", "avance_revisando");
+  const e = await esperar(id, (x) => pintarAvance(x.paso || "cortando", x.estado === "en_fila" ? "avance_fila" : "avance_revisando"));
+  if (e.estado === "error") throw new Error(String(e.mensaje || "") || "no_termino");
+  $("avance-barra").style.width = "100%";
+  const ruta = `/casos/${id}/resultado.json`, q = new URLSearchParams(location.search);
+  q.set("caso", ruta);
+  history.replaceState(history.state, "", `${location.pathname}?${q}`);
+  await abrir(ruta);
+}
+
+async function revisarDos() {  // dos versiones: se revisan una tras otra y al final Spark las compara
+  const ab = (paso, texto) => pintarAvance(paso, texto, PASOS_AB, tx().avance_ab);
+  const detalle = (v, x) => (x.estado === "en_fila" ? t("avance_fila") : `${t(v)} · ${tx().avance[x.paso] || t("avance_revisando")}`);
+  $("avance-barra").style.width = "0%"; ab("subiendo", t("avance_subiendo_ab")); estado("revisando");
+  const pista = PASOS_AB.length;
+  const idA = await subirVideo(video, {}, (f) => { $("avance-barra").style.width = `${Math.round(50 * f / pista)}%`; });
+  const idB = await subirVideo(videoB, { "X-Retina-Comparar-Con": idA }, (f) => { $("avance-barra").style.width = `${Math.round((50 + 50 * f) / pista)}%`; });
+  ab("version_a", t("version_a"));
+  const ea = await esperar(idA, (x) => ab("version_a", detalle("version_a", x)));
+  if (ea.estado === "error") throw new Error(`${t("version_a")}: ${String(ea.mensaje || t("no_termino"))}`);
+  ab("version_b", t("version_b"));
+  const eb = await esperar(idB, (x) => (x.paso === "comparando" ? ab("comparando", t("avance_comparando")) : ab("version_b", detalle("version_b", x))));
+  if (eb.estado === "error") throw new Error(`${t("version_b")}: ${String(eb.mensaje || t("no_termino"))}`);
+  $("avance-barra").style.width = "100%";
+  const q = new URLSearchParams(location.search);
+  q.delete("caso"); q.set("a", idA); q.set("b", idB);
+  history.replaceState(history.state, "", `${location.pathname}?${q}`);
+  await abrirComparacion(idA, idB, eb.comparacion_error);
+}
+
+$("forma").onsubmit = (ev) => {
+  ev.preventDefault();
+  const codigo = $("v-codigo").value.trim().toUpperCase();
+  if (!video) return avisar(modoAB ? "falta_a" : "falta_video");
+  if (modoAB && !videoB) return avisar("falta_b");
+  if (!$("v-titulo").value.trim()) return avisar("falta_titulo");
+  if (!$("v-fecha").value) return avisar("falta_fecha");
+  if (codigo && !/^[A-Z]{2,10}\d{2,12}$/.test(codigo)) return avisar("codigo_malo");
+  avisar("");
+  (modoAB ? revisarDos() : revisarUno()).catch((err) => avisar(err.clave || err.message || "no_termino"));
+};
+
+function ponerModo(ab) {
+  modoAB = ab;
+  $("modo-uno").setAttribute("aria-checked", String(!ab)); $("modo-ab").setAttribute("aria-checked", String(ab));
+  $("soltar-b").classList.toggle("oculto", !ab); $("etiqueta-a").classList.toggle("oculto", !ab);
+  $("t-subir").dataset.t = ab ? "subir_titulo_ab" : "subir_titulo";
+  $("d-subir").dataset.t = ab ? "subir_p_ab" : "subir_p";
+  $("revisar").dataset.t = ab ? "revisar_ab" : "revisar";
+  for (const id of ["t-subir", "d-subir", "revisar"]) $(id).textContent = t($(id).dataset.t);
+  avisar("");
+}
+$("modo-uno").onclick = () => ponerModo(false);
+$("modo-ab").onclick = () => ponerModo(true);
+
+function elegirVideoB(archivo) {
+  if (!archivo) return;
+  if (!/^video\//.test(archivo.type) && !/\.(mp4|mov|m4v|webm|mkv|avi)$/i.test(archivo.name)) return avisar("solo_mp4");
+  videoB = archivo; avisar("");
+  $("video-elegido-b").textContent = t("video_elegido", archivo.name, (archivo.size / 1048576).toFixed(0));
+}
+
+function reiniciarSubida() {
+  video = videoB = null; comparacionActual = null;
+  for (const id of ["archivo", "archivo-video", "archivo-b"]) $(id).value = "";
+  $("video-elegido").textContent = ""; $("video-elegido-b").textContent = "";
+  $("v-titulo").value = ""; $("v-codigo").value = ""; $("v-publicado").checked = false;
+  const q = new URLSearchParams(location.search);
+  for (const k of ["caso", "a", "b"]) q.delete(k);
+  history.replaceState(history.state, "", `${location.pathname}${q.toString() ? `?${q}` : ""}`);
+  estado("subir");
+}
+
+// ---- Comparación de dos versiones: tabla lado a lado con lo que Retina vio, y el veredicto de Spark ----
+async function abrirComparacion(a, b, fallaComparar = "") {
+  const leerJson = async (ruta) => {
+    const r = await fetch(ruta, { cache: "no-store" });
+    if (!r.ok) throw falla("no_encontre");
+    return r.json();
+  };
+  const [ra, rb] = await Promise.all([leerJson(`/casos/${a}/resultado.json`), leerJson(`/casos/${b}/resultado.json`)]);
+  let c = null;
+  try { c = await leerJson(`/casos/${b}/comparacion.json`); } catch (_) { /* sin la comparación de Spark queda la tabla */ }
+  comparacionActual = { a, b, ra, rb, c, fallaComparar: fallaComparar || "" };
+  pintarComparacion(comparacionActual);
+}
+
+function pintarComparacion({ a, b, ra, rb, c, fallaComparar }) {
+  const N = tx().niveles, ver = { A: t("version_a"), B: t("version_b") };
+  const gano = c && (c.veredicto === "A" || c.veredicto === "B");
+  $("c-titular").textContent = c ? (gano ? t("gana_version", ver[c.veredicto]) : t("empate_ab")) : t("sin_comparar");
+  conTiempos($("c-porque"), c ? reloj(String(c.por_que || "")) : (fallaComparar || t("sin_comparar_p")));
+  $("c-aviso").textContent = c ? t("aviso_ab") : "";
+
+  const celdas = [nodo("div", "cab vacia", ""), nodo("div", "cab", ver.A), nodo("div", "cab", ver.B)];
+  const fila = (etiqueta, ca, cb) => celdas.push(nodo("div", "etiqueta", etiqueta), ca, cb);
+  const COLOR = { alto: "rojo", medio: "ambar", bajo: "verde" };
+  const semaforo = (r) => {
+    const k = de(N, r.arranque && r.arranque.nivel) ? r.arranque.nivel : "medio", d = nodo("div"), p = nodo("span", "punto-ab");
+    p.style.background = `var(--${COLOR[k]})`;
+    d.append(p, N[k].semaforo);
+    return d;
+  };
+  fila(t("fila_semaforo"), semaforo(ra), semaforo(rb));
+  fila(t("fila_duracion"), nodo("div", "", mmss(ra.video.duracion_s)), nodo("div", "", mmss(rb.video.duracion_s)));
+  const metas = (r) => (Array.isArray(r.revision_meta) ? r.revision_meta : []);
+  const reglas = new Map();
+  for (const r of [ra, rb]) for (const m of metas(r)) if (m && m.id && !reglas.has(m.id)) reglas.set(m.id, String(m.regla || m.id));
+  const marca = (r, id) => {
+    const m = metas(r).find((x) => x.id === id), d = nodo("div");
+    if (!m) { d.append(nodo("span", "nd", "–")); return d; }
+    const [clase, signo] = m.cumple === true ? ["ok", "✓"] : m.cumple === false ? ["no", "✗"] : ["nd", "–"];
+    d.append(nodo("span", clase, signo), conTiempos(nodo("small"), reloj(String(m.evidencia || ""))));
+    return d;
+  };
+  for (const [id, regla] of reglas) fila(regla, marca(ra, id), marca(rb, id));
+  const cambio = (r) => conTiempos(nodo("div"), r.explicacion && r.explicacion.que_cambiar ? reloj(r.explicacion.que_cambiar) : t("nada_urgente"));
+  fila(t("fila_cambio"), cambio(ra), cambio(rb));
+  if (lista_(ra.explicacion, "lo_flojo").length || lista_(rb.explicacion, "lo_flojo").length) {
+    const flojo = (r) => { const xs = lista_(r.explicacion, "lo_flojo"); return conTiempos(nodo("div"), xs.length ? reloj(xs[0]) : "—"); };
+    fila(t("flojo_t"), flojo(ra), flojo(rb));
+  }
+  $("c-tabla").replaceChildren(...celdas);
+
+  // Los números casi no cambian entre versiones: se dicen, con el porqué, para que nadie los lea como ganador.
+  const s = Math.min(ra.video.duracion_s, rb.video.duracion_s) >= 30 ? 15 : 3;
+  const cuantos = (r) => Math.round(100 * en(r.prediccion.curva_predicha, r.video.duracion_s, s));
+  $("c-numeros").textContent = t("numeros_ab", s, cuantos(ra), cuantos(rb));
+
+  const dif = c && Array.isArray(c.diferencias) ? c.diferencias : [];
+  $("c-bloque-dif").classList.toggle("oculto", !dif.length);
+  $("c-dif").replaceChildren(...dif.map((x) => {
+    const li = nodo("li");
+    li.append(nodo("b", "", String(x.aspecto || "")),
+      conTiempos(nodo("p"), `${ver.A}: ${reloj(String(x.a || ""))}`),
+      conTiempos(nodo("p"), `${ver.B}: ${reloj(String(x.b || ""))}`),
+      nodo("span", "mejor-ab", x.mejor === "A" || x.mejor === "B" ? t("mejor_en", ver[x.mejor]) : t("igual_ab")));
+    return li;
+  }));
+  $("c-ver-a").href = `index.html?caso=${encodeURIComponent(`/casos/${a}/resultado.json`)}`;
+  $("c-ver-b").href = `index.html?caso=${encodeURIComponent(`/casos/${b}/resultado.json`)}`;
+  $("error").classList.add("oculto");
+  estado("comparacion");
+}
+$("c-otra").onclick = () => (conSubida ? reiniciarSubida() : estado("vacio"));
+
+$("soltar-video").onclick = () => $("archivo-video").click();
+$("soltar-video").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivo-video").click(); } };
+$("archivo-video").onchange = (e) => elegirVideo(e.target.files[0]);
+$("soltar-b").onclick = () => $("archivo-b").click();
+$("soltar-b").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivo-b").click(); } };
+$("archivo-b").onchange = (e) => elegirVideoB(e.target.files[0]);
+for (const [zona, elegirla] of [["soltar-video", elegirVideo], ["soltar-b", elegirVideoB]]) {
+  for (const ev of ["dragenter", "dragover"]) $(zona).addEventListener(ev, (e) => { e.preventDefault(); $(zona).classList.add("encima"); });
+  for (const ev of ["dragleave", "drop"]) $(zona).addEventListener(ev, (e) => { e.preventDefault(); $(zona).classList.remove("encima"); });
+  $(zona).addEventListener("drop", (e) => elegirla(e.dataTransfer.files[0]));
+}
+
 // Textos fijos en el idioma activo: los del HTML (data-t, data-t-aria), el botón de idioma, el enlace de regreso y los fondos.
 function aplicarTextos() {
   document.documentElement.lang = idioma;
   document.querySelectorAll("[data-t]").forEach((n) => { n.textContent = t(n.dataset.t); });
   document.querySelectorAll("[data-t-aria]").forEach((n) => n.setAttribute("aria-label", t(n.dataset.tAria)));
   const b = $("idioma"); b.textContent = t("idioma_boton"); b.lang = t("idioma_destino"); b.title = t("idioma_titulo");
-  const desde = de({ galeria: ["galeria.html", "galeria"], subir: ["subir.html", "subir"] }, new URLSearchParams(location.search).get("desde"));
-  $("a-galeria").classList.toggle("oculto", !desde);
-  if (desde) { $("a-galeria").href = desde[0]; $("a-galeria").textContent = t(desde[1]); }
   document.querySelectorAll(".opcion").forEach((o) => { o.lastChild.textContent = nombreFondo(FONDOS.find((f) => f.id === o.dataset.id)); });
 }
 const nombreFondo = (f) => de(tx().fondos, f.id) || f.nombre;
 
-// El botón cambia el idioma en el momento: conserva ?caso= y &desde=, lo recuerda y vuelve a escribir lo que está a la vista.
+// El botón cambia el idioma en el momento: conserva ?caso=, lo recuerda y vuelve a escribir lo que está a la vista.
 $("idioma").onclick = async () => {
   idioma = idioma === "en" ? "es" : "en";
   try { localStorage.setItem("retina-idioma", idioma); } catch (_) { /* sin almacenamiento: vale para esta visita */ }
@@ -954,14 +1541,21 @@ $("idioma").onclick = async () => {
     [...$("pasos").children].forEach((li, i) => { if (hechos[i]) li.querySelector(".hecho").click(); });
     if (d) { ultimaDecision = d; $("decision").textContent = tx().decisiones[d]; }
     window.scrollTo(0, y);
+  } else if (document.body.dataset.estado === "comparacion" && comparacionActual) {
+    const y = window.scrollY; pintarComparacion(comparacionActual); window.scrollTo(0, y);
   } else if (!$("error").classList.contains("oculto") && ultimoFallo) fallo(ultimoFallo);
 };
 aplicarTextos();
 
 // Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo del idioma; con doble clic, se elige el archivo.
+// Con python -m retina.app, sin ?caso= se abre la pantalla para subir un video.
 (async () => {
+  conSubida = await prepararSubida();
+  if (conSubida) aplicarTextos();
   // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
-  const pedido = new URLSearchParams(location.search).get("caso");
+  const q = new URLSearchParams(location.search), pedido = q.get("caso"), idA = q.get("a"), idB = q.get("b");
+  if (idA && idB && /^[0-9a-f]{12}$/.test(idA) && /^[0-9a-f]{12}$/.test(idB)) { await abrirComparacion(idA, idB); return; }
+  if (!pedido && conSubida) { estado("subir"); return; }
   let propio = null;
   if (pedido) {
     const u = new URL(pedido, location.href);
@@ -1124,7 +1718,8 @@ function iniciarGL() {
       const r = x.getBoundingClientRect();
       if (r.bottom < 0 || r.top > innerHeight || r.width < 2) continue;
       const rad = Math.min(parseFloat(getComputedStyle(x).borderTopLeftRadius) || 0, r.width / 2, r.height / 2);
-      const esmerilado = x.matches(".bloque, .linea-bloque") && document.body.dataset.estado === "resultado" ? 7 : x.matches(".fondos") ? 9 : 1.5;
+      const conTexto = ["resultado", "comparacion"].includes(document.body.dataset.estado);
+      const esmerilado = (x.matches(".bloque, .linea-bloque") && conTexto) || x.matches(".forma") ? 7 : x.matches(".fondos") ? 9 : 1.5;
       const o = ondas.get(x);
       if (o) { o.vel += (o.obj - o.amp) * 0.12; o.vel *= 0.84; o.amp += o.vel; o.obj *= 0.94; o.fase += dt; if (o.amp < 0.002 && o.obj < 0.002) ondas.delete(x); }
       R.set([r.left * dpr, r.top * dpr, r.width * dpr, r.height * dpr], n * 4);

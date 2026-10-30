@@ -58,6 +58,22 @@ def rasgos_voz(tramos: list[list], dur: float) -> np.ndarray:
     return r
 
 
+# Las transcripciones con que se entrenó (Whisper sobre el archivo) vienen en bloques de unos 28 s
+# (mediana de la distancia entre inicios, medida el 29-oct en la base de entrenamiento). Las de un video nuevo
+# (Voice Transcribe) vienen frase por frase; se juntan igual para que los rasgos midan lo mismo.
+BLOQUE_ENTRENAMIENTO_S = 28.2
+
+
+def en_bloques(tramos: list, largo: float = BLOQUE_ENTRENAMIENTO_S) -> list[list]:
+    juntos: list[list] = []
+    for t, x in sorted(((float(t), str(x)) for t, x in tramos), key=lambda f: f[0]):
+        if juntos and t < juntos[-1][0] + largo:
+            juntos[-1][1] += " " + x
+        else:
+            juntos.append([t, x])
+    return juntos
+
+
 # Bloques gruesos del video: la curva de Facebook viene en puntos enteros, así que
 # pasado el arranque solo se puede hablar de bloques, no de tramos.
 BLOQUES = [(0, 4), (4, 10), (10, 20), (20, 30), (30, 40)]

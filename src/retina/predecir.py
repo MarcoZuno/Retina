@@ -6,6 +6,12 @@ ridge sobre lo que ya se sabe antes de publicar: duración, tipo de
 producción, talento, hora y día, y las palabras del título. La v1 suma los
 vectores de V-JEPA 2 por tramo y los descriptores de Spark.
 
+Para un video de fuera (un talento o un tipo de producción que el modelo no
+conoce) se usa el cerebro para cualquier video: duración, si es reel, hora y
+día, el título publicado y la voz del arranque, sin nada propio de la casa.
+Con talentos escondidos se equivoca menos que la v0 con los campos vacíos
+(eval/cualquier_video.py; regla y resultado en docs/decisiones.md, 29-oct).
+
 Uso (medición en los videos de prueba):
     python -m retina.predecir --pares RUTA.csv --salida RUTA.json
 """
@@ -14,14 +20,19 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import unicodedata
 import zlib
 from pathlib import Path
 
 import numpy as np
 
 from .curvas import N_PUNTOS, cargar, dividir, grupo_parecido, metricas, regla_de_hoy, tramo_exceso
+from .voz import en_bloques, voz_inicio
 
 N_PALABRAS = 1024
+N_ARRANQUE = 512  # primeras 25 palabras dichas, en su propio espacio
+N_VOZ = len(voz_inicio([[0.0, "hola"]], 60.0))
+LAMBDA_UNIVERSAL = 300  # la que eligió la validación en los 10 grupos de eval/cualquier_video.py
 VACIAS = set("de la el en y a que los las un una por con para del se su al lo es tu te mp4 reel igtv".split())
 
 
@@ -33,7 +44,7 @@ def tipo_produccion(codigo: str) -> str:
 def palabras_titulo(archivo: str, codigo: str) -> list[str]:
     # El nombre es «AAAA-MM-DD CODIGO TALENTO TIPO EDITOR Título»; se usa todo lo que
     # no es fecha ni código, en minúsculas.
-    texto = archivo.replace(codigo, " ").lower()
+    texto = (archivo.replace(codigo, " ") if codigo else archivo).lower()  # sin código, replace("") partiría cada letra
     texto = re.sub(r"\d{4}-\d{2}-\d{2}", " ", texto)
     return [p for p in re.findall(r"[a-záéíóúñü]{3,}", texto) if p not in VACIAS]
 
@@ -60,6 +71,43 @@ class Rasgos:
         for p in palabras_titulo(v["archivo"], v["codigo"]):
             bolsa[zlib.crc32(p.encode()) % N_PALABRAS] = 1.0
         return np.concatenate([[1.0], num, dia, tipo, tal, base, bolsa])
+
+
+def plano(texto: str) -> str:
+    """Minúsculas y sin acentos, para comparar nombres escritos de varias formas."""
+    return "".join(c for c in unicodedata.normalize("NFD", texto.lower()) if unicodedata.category(c) != "Mn")
+
+
+def de_fuera(v: dict) -> dict:
+    """El video como llega de cualquier creador: sin talento, sin código y solo con su título."""
+    # Con «titulo» vacío se queda vacío: el nombre de archivo de la casa trae talento y editor.
+    return {**v, "talento": "", "codigo": "", "archivo": v["titulo"] if "titulo" in v else v.get("archivo", "")}
+
+
+def fijos_universales(titulo: str, tramos: list | None, dur: float, quitar: frozenset = frozenset()) -> np.ndarray:
+    """Lo que trae cualquier video y no depende de la fecha: palabras del título y la voz del
+    arranque (cuándo entra, cuánto se dice en 3 y 15 s, pausas, preguntas, primeras palabras).
+    `quitar`: palabras que no se aprenden (el cerebro público quita los nombres de talentos)."""
+    bolsa = np.zeros(N_PALABRAS)
+    for p in palabras_titulo(titulo, ""):
+        if not (quitar and plano(p) in quitar):
+            bolsa[zlib.crc32(p.encode()) % N_PALABRAS] = 1.0
+    arranque = np.zeros(N_ARRANQUE)
+    if tramos:
+        dichas = " ".join(x for _, x in sorted(tramos, key=lambda t: float(t[0]))).lower().split()[:25]
+        for p in (x.strip(".,¿?¡!") for x in dichas):
+            if not (quitar and plano(p) in quitar):
+                arranque[zlib.crc32(("v:" + p).encode()) % N_ARRANQUE] = 1.0
+        vz = np.concatenate([[1.0], voz_inicio(tramos, dur)])
+    else:
+        vz = np.zeros(N_VOZ + 1)
+    return np.concatenate([bolsa, vz, arranque])
+
+
+def rasgos_universales(v: dict, base: np.ndarray, fijos: np.ndarray) -> np.ndarray:
+    d, h = v["dur"], v["fecha"].hour
+    num = [np.log(d), np.log(d) ** 2, h / 23, np.sin(2 * np.pi * h / 24), np.cos(2 * np.pi * h / 24)]
+    return np.concatenate([[1.0], num, np.eye(7)[v["fecha"].weekday()], [v.get("reel", 0.0)], fijos, base])
 
 
 def ajustar_ridge(X: np.ndarray, Y: np.ndarray, lam: float) -> np.ndarray:
@@ -190,7 +238,10 @@ class Modelo:
         self.filas, self.W0, self.rasgos, self.extra = filas, W0, rasgos, extra or {}
 
     @classmethod
-    def entrenar(cls, filas: list[dict], carpeta_vectores: Path | None = None) -> "Modelo":
+    def entrenar(cls, filas: list[dict], carpeta_vectores: Path | None = None, voz: dict | None = None,
+                 todas: list[dict] | None = None) -> "Modelo":
+        """`todas`: la historia completa para el cerebro para cualquier video (así se midió); la v0
+        y la regla de parecidos se quedan con `filas`."""
         rasgos = Rasgos(filas)
         X, Y, _ = preparar(filas, filas, filas, rasgos)
         m = cls(filas, ajustar_ridge(X, Y, 30), rasgos)
@@ -207,16 +258,39 @@ class Modelo:
                             for v in con])
             yt = np.concatenate([caidas(v["curva"]) - caidas(p) for v, p in zip(con, p0)])
             m.extra = {"proy": proy, "media": media, "Wt": ajustar_ridge(Xt, yt, 100)}
+        if voz:  # el cerebro para cualquier video aprende de todos como si fueran de fuera
+            todas = todas or filas
+            fuera = [de_fuera(v) for v in todas]
+            bases = [regla_de_hoy(f, todas, todas)[0] for f in fuera]
+            X = np.array([rasgos_universales(f, b, fijos_universales(f["archivo"], voz.get(v["codigo"]), v["dur"]))
+                          for f, v, b in zip(fuera, todas, bases)])
+            m.extra["universal"] = ajustar_ridge(X, np.array([v["curva"] - b for v, b in zip(todas, bases)]),
+                                                 LAMBDA_UNIVERSAL)
         return m
+
+    def de_la_casa(self, v: dict) -> bool:
+        """Un talento o un tipo de producción que el modelo ya conoce. Lo demás llega de fuera."""
+        return (bool(v.get("talento")) and v["talento"] in self.rasgos.talentos)             or tipo_produccion(v.get("codigo", "")) in self.rasgos.tipos
 
     def curva_v0(self, v: dict) -> tuple[np.ndarray, np.ndarray, str]:
         base, fuente = regla_de_hoy(v, self.filas, self.filas)
         return np.clip(base + self.rasgos(v, base) @ self.W0, 0, 1), base, fuente
 
-    def predecir(self, v: dict, emb: np.ndarray | None = None, audio: np.ndarray | None = None) -> dict:
-        p, base, fuente = self.curva_v0(v)
-        _, _, n_parecidos = grupo_parecido(v, self.filas, self.filas)
-        uso_video = emb is not None and "Wt" in self.extra
+    def predecir(self, v: dict, emb: np.ndarray | None = None, audio: np.ndarray | None = None,
+                 tramos: list | None = None) -> dict:
+        """`tramos`: lo que se dice, [[inicio_s, texto], …]. Sin voz, un video de fuera usa la v0 vacía."""
+        casa = self.de_la_casa(v)
+        universal = not casa and bool(tramos) and "universal" in self.extra
+        if universal:
+            f = de_fuera(v)
+            base, fuente = regla_de_hoy(f, self.filas, self.filas)
+            fijos = fijos_universales(f["archivo"], en_bloques(tramos), v["dur"])
+            p = np.clip(base + rasgos_universales(f, base, fijos) @ self.extra["universal"], 0, 1)
+            _, _, n_parecidos = grupo_parecido(f, self.filas, self.filas)
+        else:
+            p, base, fuente = self.curva_v0(v)
+            _, _, n_parecidos = grupo_parecido(v, self.filas, self.filas)
+        uso_video = not universal and emb is not None and "Wt" in self.extra
         if uso_video:
             X = np.hstack([np.ones((N_PUNTOS - 1, 1)),
                            rasgos_tramo(emb, self.extra["proy"], self.extra["media"], v["cubeta"], audio)])
@@ -231,6 +305,9 @@ class Modelo:
             "regla_de_parecidos": fuente,
             "n_parecidos": n_parecidos,
             "uso_video": uso_video,
+            "cerebro": "cualquier_video" if universal else "casa",
+            "conoce_al_creador": casa,
+            "uso_voz": universal,
             "datos_hasta": max(h["fecha"] for h in self.filas).strftime("%Y-%m-%d"),
         }
 

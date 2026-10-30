@@ -149,11 +149,23 @@
  "explicacion": {
   "por_que": "Del segundo 0.0 al 7.2 la presentadora saluda y dice su nombre antes de decir de qué trata el video, y el texto en pantalla no menciona el pan hasta el segundo 9.6.",
   "lo_que_funciona": "El primer truco, del segundo 14.4 al 21.6, se ve en un plano cerrado y se entiende sin audio.",
+  "lo_bueno": [
+   "Del segundo 14.4 al 21.6 el primer truco se ve en un plano cerrado y se entiende sin audio.",
+   "En el segundo 9.6 el texto en pantalla ya dice que el video es de pan."
+  ],
+  "lo_flojo": [
+   "Del segundo 0 al 7.2 la presentadora saluda y dice su nombre antes de decir de qué trata el video.",
+   "Hasta el segundo 9.6 el texto en pantalla no menciona el pan."
+  ],
   "que_cambiar": "Abrir con el plano del pan duro contra el pan suave y el texto «3 trucos para que tu pan no se endurezca»; el saludo va después del primer truco.",
   "pasos": [
    "Corta el plano del pan duro contra el pan suave (segundo 14.4) y ponlo al inicio del video.",
    "Pon encima el texto «3 trucos para que tu pan no se endurezca».",
    "Mueve el saludo de la presentadora para después del primer truco."
+  ],
+  "mejoras_opcionales": [
+   "Acorta el saludo del segundo 0 al 7.2 a una sola frase.",
+   "Deja el texto del pan en pantalla del segundo 14.4 al 21.6, mientras se ve el truco."
   ],
   "tipo_de_cambio": "adelantar_dato",
   "momento_s": 0.0,
@@ -170,7 +182,7 @@
   "licencia": {
    "modelo": "meta-models/muse-spark-open-1026",
    "servido_por": "Baseten",
-   "instrucciones": "skills/agente.md (agente-v2)",
+   "instrucciones": "skills/agente.md (agente-v3)",
    "fuente": "agente",
    "motor": "abierto+api",
    "rescate": false,

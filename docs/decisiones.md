@@ -201,3 +201,124 @@ para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V
   agente sacó de SAM o de videos parecidos puede parecerle inventado. El agente sigue por omisión por lo
   que sí está medido (cierra solo los 50 casos y corrige lo que el validador le regresa), y la revisión
   humana de las tarjetas queda pendiente. Costo: USD 0.80.
+
+## 29-oct-2026 · ¿Retina sirve con un creador que nunca vio? Regla escrita antes de medir
+
+- **Por qué.** Retina es para cualquier persona, no solo para Badabun. Hoy el nivel usa el talento,
+  el tipo de producción (prefijo del código) y el nombre del archivo de Badabun; con un video de fuera
+  todo eso viene vacío y el número queda en el promedio de su duración.
+- **Qué se mide** (`eval/cualquier_video.py`). Prueba de jul-sep 2026, solo videos con talento. Los
+  talentos se reparten en 5 grupos y cada grupo se esconde por completo (entrenamiento e historia de
+  videos parecidos) antes de predecir sus videos, que entran sin talento, sin código y solo con su
+  título: así llega un video de fuera. Se comparan:
+  A. promedio de videos de su duración (90 días);
+  B. Retina de hoy con esos campos vacíos;
+  C. cerebro para cualquier video: duración, si es reel, hora y día, palabras del título publicado y
+     la voz del arranque (cuándo empieza a hablar, cuánto se dice en 3 y 15 s, pausas, preguntas,
+     primeras palabras). Nada propio de Badabun.
+  Aparte, en talentos conocidos (prueba normal): v0 de hoy contra C más la capa de la casa (talento y
+  tipo), para ver que lo de Badabun suma encima.
+- **Regla.** C pasa a ser el cerebro base si, contra B, baja el error de toda la curva y sube la
+  correlación de orden a los 15 s (spearman), y en al menos una de las dos los intervalos de 95 % no
+  se cruzan. Además, C más la casa no puede quedar peor que la v0 en talentos conocidos (intervalos
+  cruzados cuentan como empate). Si C no pasa, B se queda y la tarjeta avisa cuando el video está lejos
+  de lo que Retina conoce.
+- **Límite.** Todo esto es Facebook y el público de Badabun. Esconder un talento de Badabun no es lo
+  mismo que un creador de YouTube con su propio público; es lo más cercano que permite la data.
+- **Resultado (29-oct, jul-sep, videos de talentos escondidos).** C gana en las cinco medidas
+  (error a los 3 s, a los 15 s, a la mitad, al final y en toda la curva) y en el orden a los 15 s, pero
+  los intervalos sueltos se cruzan en las dos medidas de la regla: **por la regla escrita, C no pasa.**
+  En talentos conocidos, C más la casa no supera a la v0 (intervalos cruzados): la v0 se queda para los
+  videos de la casa. Cifras en la carpeta de datos privada, como todas las de la base de Badabun.
+- **Confirmación (regla escrita antes de correrla).** Los intervalos sueltos castigan de más cuando
+  los dos cerebros se miden en los mismos videos; lo justo es la diferencia por video (B menos C) con
+  su intervalo. Como esa idea salió después de ver jul-sep, jul-sep queda como pista y la decisión se
+  toma en un periodo que C no ha visto: prueba ene-jun 2026, entrenamiento antes de 2026-01-01, C sin
+  cambios (mismos rasgos, λ elegida igual). C pasa si el intervalo de 95 % de la diferencia pareja del
+  error de toda la curva queda entero arriba de 0 y la diferencia pareja del orden a los 15 s es
+  positiva. Si pasa, Retina usa C para videos de fuera y la v0 para los de la casa. Si no, B se queda
+  y la tarjeta avisa cuando el video está lejos de lo que Retina conoce.
+- **Resultado de la confirmación (29-oct, ene-jun 2026, videos de talentos escondidos).** C pasa:
+  el intervalo de 95 % de la diferencia pareja del error de toda la curva queda entero arriba de 0 y
+  la diferencia pareja del orden a los 15 s es positiva, también con su intervalo arriba de 0. Lo mismo
+  sale en jul-sep con la comparación pareja. La mejora es real y chica: C se acerca más que B en un
+  poco más de la mitad de los videos y recorre cerca de la mitad del camino entre no conocer al creador
+  y conocerlo. **Se decide:** Retina usa C para un video de fuera cuando ya tiene su voz (Voice
+  Transcribe), la v0 para los de la casa (talento o tipo de producción conocidos) y, sin voz, la v0 con
+  los campos vacíos. La tarjeta dice cuando no conoce al creador. Cifras en la carpeta privada.
+
+## 29-oct-2026 (noche) · El cerebro público. Regla escrita antes de medir
+
+- **Por qué.** Quien clone el repo debe poder revisar su propio video sin los datos de Badabun. Lo que se
+  publica es lo aprendido de la retención, nunca un video: sin ingresos, y sin aprender de videos
+  no elegibles, de temas fuera de alcance o graves (`reglas/alcance-v1.json`, en título y primeras palabras
+  dichas; ante la duda, fuera) ni de nombres de talentos. Va en un JSON (`retina.publico`), no en pickle.
+- **Qué se mide.** En `eval/cualquier_video.py`, la variante D arma el cerebro público con lo de antes
+  del corte y sin el grupo escondido, y usa la curva fija por duración que trae el archivo (la de los
+  90 días antes del corte), como pasará con quien lo use.
+- **Regla.** D se publica si en ene-jun 2026, con talentos escondidos, la diferencia pareja del error de
+  toda la curva contra la curva fija por duración (lo único que quedaría sin él) tiene su intervalo de
+  95 % entero arriba de 0. Se reporta además cuánto pierde contra B y C. Si no pasa, el archivo público
+  lleva solo las curvas por duración y la tarjeta lo dice.
+- **Resultado (29-oct, ene-jun 2026, videos de talentos escondidos).** D pasa: la diferencia pareja
+  del error de toda la curva contra la curva fija por duración tiene su intervalo de 95 % entero arriba de
+  0, y también ordena mejor los videos a los 15 s. Contra B (la v0 de la casa con los campos vacíos) queda
+  empatado, sin llevar nada de la casa. Contra C pierde un poco: una parte por la curva fija (la de los 90
+  días antes del corte, no la que se mueve día a día) y otra por lo que se dejó fuera. **Se decide:** el
+  repo lleva `modelos/retina-publico.json` en cuanto haya autorización para publicar lo aprendido (decisión 2);
+  hasta entonces sigue fuera por `.gitignore`. Cifras en la carpeta privada.
+
+## 29-oct-2026 (noche) · Lo que ve el jurado: idioma, SAM, Muse Image y el plan B
+
+- **Idioma.** El jurado lee inglés: el panel manda su idioma al subir el video y Spark describe, escribe la
+  tarjeta y la comparación A/B en ese idioma (explicar-v7, comparar-v2). Las reglas de Meta traen su título
+  en inglés. Probado de punta a punta en inglés: la tarjeta pasó el validador al primer intento.
+- **SAM sin agente.** En el modo público la tarjeta sale de una vuelta (el juez ciego del 28-oct la prefirió),
+  y SAM solo corría dentro del agente. Ahora, antes de la tarjeta, Muse Spark 1.3 elige de la lista cerrada
+  qué promete el título (nunca personas) y SAM revisa si se ve en los primeros 3 segundos. Cuesta menos de
+  un centavo.
+- **Muse Image a pedido.** En la app, un botón dibuja el storyboard del cambio (unos USD 0.03). No corre solo:
+  cuesta, y así lo aprueba quien lo aprieta.
+- **Plan B de la ridge.** Si los organizadores dicen que los pesos fijos cuentan como modelo que no es de
+  Meta, `RETINA_SOLO_MODELOS_META=1` los apaga: el número queda en el promedio de su duración, no hay nivel
+  de riesgo y la tarjeta lo dice. Probado de punta a punta con un video. Mientras no contesten, sigue apagado.
+
+
+## 29-oct-2026 (noche) · ¿Un mejor inicio trae más alcance en Facebook? Regla escrita antes de medir
+
+- **Por qué.** Retina promete revisar el inicio. Eso vale si un inicio que retiene más se traduce en lo que
+  le importa a una página: alcance y que Facebook lo recomiende. Si no, la curva sería un dato bonito.
+- **Datos.** La base de curvas más las demás métricas de los exports de Meta (`retina.metricas_meta`), por
+  publicación. Fuera: videos no elegibles o sin dato de elegibilidad, y sin alcance. Ninguna columna de ingresos se
+  lee.
+- **Qué se mide** (`eval/alcance_privado.py`).
+  - Inicio: cuánto retiene el video al terminar su primer cuarto (punto 10 de 41) contra sus parecidos
+    (la regla de siempre, solo con videos anteriores).
+  - Alcance relativo: su alcance contra la mediana de los videos de su misma duración de los 90 días
+    anteriores (en logaritmo).
+  - Recomendación: la parte de los segundos vistos que vino de Recomendaciones.
+- **Regla 1 (inicio y alcance).** Decimos que un mejor inicio va con más alcance si la correlación de orden
+  (spearman) entre las dos cosas es positiva con su intervalo de 95 % entero arriba de 0 en 2020-2023 y
+  también en 2024-2026, por separado. Para decirlo en palabras: el alcance mediano del tercio de videos con
+  mejor inicio contra el del tercio con peor, con su intervalo. Revisión aparte: lo mismo quitando el
+  efecto de cada talento (cada video contra el promedio de su talento). Es una relación, no prueba causa.
+- **Regla 2 (lo que Retina predice antes de publicar).** Con el modelo entrenado antes del 1-jul-2026, en
+  jul-sep 2026: si la correlación entre el inicio que predijo Retina y el alcance relativo real tiene su
+  intervalo de 95 % arriba de 0, decimos que la predicción de Retina sirve para anticipar alcance.
+- **Límite conocido.** Un video que Facebook reparte a gente que no lo buscaba suele retener menos; eso
+  empuja la correlación hacia abajo. Si aun así sale positiva, es evidencia conservadora.
+- **Resultado (29-oct, noche).** Pasan las dos reglas. Regla 1: en 2020-2023 y en 2024-2026, por separado,
+  la correlación entre el inicio y el alcance relativo es positiva con el intervalo entero arriba de 0, y
+  el tercio con mejor inicio llegó a varias veces más gente que el tercio con peor. Se sostiene quitando el
+  efecto de cada talento, y el inicio también va con una parte mayor de reproducciones por
+  Recomendaciones. Regla 2: en jul-sep 2026, lo que Retina predijo antes de publicar se relaciona con el
+  alcance real (intervalo arriba de 0): el tercio que Retina calificó mejor llegó a más gente que el que
+  calificó peor. Es una relación, no prueba causa. Cifras en la carpeta privada.
+
+## 29-oct-2026 (noche) · Corrección: los créditos sí pueden entrenar con lo que se manda
+
+Una entrada anterior decía que lo que se manda con los créditos del concurso no se usa para entrenar.
+En el Discord del concurso (27-oct, 14:43), una persona de Meta escribió lo contrario: con los créditos gratis,
+el contenido que se manda puede usarse. Quien corra Retina con contenido de una empresa debe saberlo; por eso existe
+el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes de publicar).
+

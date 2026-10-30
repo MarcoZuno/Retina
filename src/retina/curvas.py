@@ -34,6 +34,9 @@ def cargar(ruta: Path) -> list[dict]:
                 "talento": r["talento"].strip(),
                 "archivo": r.get("archivo_nombre", ""),
                 "titulo": r.get("titulo", ""),
+                "reel": float(r.get("tipo_publicacion", "") == "Reels"),
+                # Parte de las vistas que vino de elegibilidad; vacío = no se sabe (el cerebro público lo deja fuera).
+                "elegibilidad": float(r["participacion_x"]) if r.get("participacion_x") else None,
                 "curva": np.array([float(r[f"c{i:02d}"]) for i in range(N_PUNTOS)]),
             })
     filas.sort(key=lambda x: x["fecha"])

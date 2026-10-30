@@ -29,6 +29,7 @@ modelos/
 *.csv
 *.log
 *.jsonl
-!costos.jsonl
+!docs/costos-equipo.jsonl
 error.txt
+mis-revisiones/
 estado.json

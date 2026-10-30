@@ -8,11 +8,10 @@ la API falla, el resultado se queda con lo que sí corrió y la «licencia» dic
 no se pudo revisar. El storyboard no corre aquí: cuesta y necesita aprobación
 (retina.storyboard --aprobar).
 
-Retina está hecha para revisar un video ANTES de publicarlo. Para quien lo use
-con contenido de una empresa hay un candado: con RETINA_SOLO_PUBLICADOS=1 (lo
-que viene por omisión) a la API de Meta solo van videos ya publicados y hay que
-confirmarlo con --ya-publicado. Un creador con su propio video lo apaga con
-RETINA_SOLO_PUBLICADOS=0 en su .env.
+Retina está hecha para revisar un video ANTES de publicarlo: por omisión, cualquier
+video va a la API de Meta. Una empresa que no quiera mandar borradores prende el
+candado con RETINA_SOLO_PUBLICADOS=1 en su .env: entonces solo van videos ya
+publicados y hay que confirmarlo con --ya-publicado.
 
 Uso:
     python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json --salida CARPETA \
@@ -32,7 +31,7 @@ from pathlib import Path
 import numpy as np
 
 from . import meta_api
-from .curvas import cubeta
+from .curvas import cubeta, tramo_exceso
 from .segmentar import segmentar
 
 # Lo que se paga y depende del video: si el video cambia, se borra para no explicar otro.
@@ -40,9 +39,9 @@ PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", 
 
 
 def solo_publicados() -> bool:
-    """El candado se lee después del .env; encendido salvo que se apague con un 0."""
+    """El candado se lee después del .env; apagado salvo que se prenda con un 1."""
     meta_api._cargar_env()
-    return os.environ.get("RETINA_SOLO_PUBLICADOS", "1").strip() != "0"
+    return os.environ.get("RETINA_SOLO_PUBLICADOS", "0").strip() == "1"
 
 
 def huella(video: Path) -> str:
@@ -63,6 +62,74 @@ def preparar_carpeta(video: Path, salida: Path) -> None:
     archivo.write_text(nueva, encoding="utf-8")
 
 
+def solo_modelos_meta() -> bool:
+    """Plan B (29-oct): si los organizadores dicen que una fórmula ajustada (la ridge) cuenta como modelo
+    que no es de Meta, RETINA_SOLO_MODELOS_META=1 la apaga. La curva queda en el promedio de videos de su
+    duración, no hay nivel de riesgo y la tarjeta sale solo de lo que ven los modelos de Meta."""
+    meta_api._cargar_env()
+    return os.environ.get("RETINA_SOLO_MODELOS_META", "0").strip() == "1"
+
+
+def sin_formula(pred: dict) -> dict:
+    base = np.array(pred["curva_parecidos"])
+    t = tramo_exceso(base, base)
+    caida = round(float((base[t] - base[t + 1]) * 100), 1)
+    return {**pred, "curva_predicha": pred["curva_parecidos"], "tramo_riesgo": t, "caida_predicha_pp": caida,
+            "caida_parecidos_pp": caida, "cerebro": "promedio", "uso_voz": False, "uso_video": False, "sin_formula": True}
+
+
+def sin_nivel(pred: dict) -> dict:
+    from .predecir import caidas
+    from .voz import BLOQUES, NOMBRES_BLOQUES, bloques
+    b = bloques(caidas(np.array(pred["curva_parecidos"])))
+    return {"nivel": "sin_nivel", "exceso_arranque_pp": 0.0,
+            "bloques": [{"bloque": NOMBRES_BLOQUES[i], "tramos": list(BLOQUES[i]),
+                         "caida_parecidos_pp": round(float(b[i]) * 100, 1)} for i in range(len(BLOQUES))],
+            "uso_voz": False, "entrenado_con": 0, "comparado_con_su_tipo": False, "sin_formula": True}
+
+
+def es_vertical(salida: Path) -> float:
+    """Un reel es vertical; basta el primer cuadro (segmentar conserva la proporción)."""
+    cuadro = next(iter(sorted((salida / "cuadros").glob("c*.jpg"))), None)
+    datos = cuadro.read_bytes() if cuadro else b""
+    i = 2  # el tamaño va en el encabezado SOF del JPEG; así no hace falta otra dependencia
+    while i + 9 < len(datos) and datos[i] == 0xFF:
+        if datos[i + 1] in (0xC0, 0xC1, 0xC2):
+            alto, ancho = int.from_bytes(datos[i + 5:i + 7], "big"), int.from_bytes(datos[i + 7:i + 9], "big")
+            return float(alto > ancho)
+        i += 2 + int.from_bytes(datos[i + 2:i + 4], "big")
+    return 0.0
+
+
+def tramos_de_voz(salida: Path) -> list[list] | None:
+    """Lo que se dice según Voice Transcribe, como [[inicio_s, texto], …]."""
+    ruta = salida / "transcribir.json"
+    if not ruta.exists():
+        return None
+    turnos = json.loads(ruta.read_text(encoding="utf-8")).get("turnos") or []
+    return [[t["startMs"] / 1000, t["transcript"]] for t in turnos if t.get("transcript")] or None
+
+
+def licencia(pred: dict, no_pude: list) -> dict:
+    return {
+        "comparado_con": (f"{pred['n_parecidos']:,} videos " if pred.get("n_parecidos") is not None else "videos ") + {
+            "cubeta+talento 90 d": "del mismo talento y duración de los últimos 90 días",
+            "cubeta 90 d": "de la misma duración de los últimos 90 días",
+            "cubeta+talento": "del mismo talento y duración",
+            "cubeta": "de la misma duración",
+            "publica": "de la misma duración en una página grande de Facebook en México",
+        }.get(pred["regla_de_parecidos"], "publicados"),
+        "regla": pred["regla_de_parecidos"],
+        "n_parecidos": pred["n_parecidos"],
+        "datos_hasta": pred["datos_hasta"],
+        "vio_el_video": pred["uso_video"],
+        "sin_formula": bool(pred.get("sin_formula")),
+        "conoce_al_creador": pred.get("conoce_al_creador", True),
+        "cerebro": pred.get("cerebro", "casa"),
+        "no_pude_revisar": no_pude,
+    }
+
+
 def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
     """Corre un paso de la API; si falla, lo anota y sigue con lo demás."""
     t = time.time()
@@ -76,11 +143,11 @@ def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
 
 
 def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, fecha: str,
-           titulo: str, con_api: bool, arranque: Path, ver_video: bool = True, voz: Path | None = None,
-           publicado: bool = False, motor: str = "") -> dict:
+           titulo: str, con_api: bool, arranque: Path | None, ver_video: bool = True, voz: Path | None = None,
+           publicado: bool = False, motor: str = "", idioma: str = "es") -> dict:
     if con_api and not publicado and solo_publicados():
         raise ValueError("El candado está encendido: a la API de Meta solo van videos ya publicados. "
-                         "Confírmalo con --ya-publicado, o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
+                         "Marca «ya publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
     tiempos, no_pude = {}, []
     preparar_carpeta(video, salida)
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
@@ -98,35 +165,32 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             emb = audio = None
             no_pude.append(f"Lo que pasa en pantalla tramo a tramo con V-JEPA 2 ({type(e).__name__}).")
 
-    from .predecir import Modelo
+    from .publico import cargar_modelo
     v = {"fecha": datetime.strptime(fecha, "%Y-%m-%d %H:%M"), "dur": man["duracion_s"], "codigo": codigo,
-         "talento": talento.upper().strip(), "archivo": titulo}
+         "talento": talento.upper().strip(), "archivo": titulo, "titulo": titulo, "reel": es_vertical(salida)}
     v["cubeta"] = cubeta(v["dur"])
-    m = Modelo.cargar(modelo)
+    m = cargar_modelo(modelo)  # .json = cerebro público (sin datos de nadie); .pkl = modelo privado de la casa
     t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
+    plan_b = solo_modelos_meta()
+    if plan_b:
+        pred = sin_formula(pred)
 
-    from .arranque import Arranque
-    riesgo_arranque = Arranque.cargar(arranque).predecir(v, np.array(pred["curva_parecidos"]))
+    if plan_b:
+        riesgo_arranque = sin_nivel(pred)
+    else:
+        from .arranque import Arranque
+        arr = Arranque.cargar(arranque) if arranque else m.arranque()  # el público trae su propio riesgo
+        riesgo_arranque = arr.predecir(v, np.array(pred["curva_parecidos"]))
 
     resultado = {
         "version": "retina-v1",
+        "idioma": idioma,
         "video": {"duracion_s": man["duracion_s"], "codigo": codigo, "talento": talento, "titulo": titulo},
         "prediccion": pred,
         "arranque": riesgo_arranque,
         "explicacion": None,
         "tiempos_s": tiempos,
-        "licencia": {
-            "comparado_con": f"{pred['n_parecidos']:,} videos " + {
-                "cubeta+talento 90 d": "del mismo talento y duración de los últimos 90 días",
-                "cubeta 90 d": "de la misma duración de los últimos 90 días",
-                "cubeta+talento": "del mismo talento y duración",
-                "cubeta": "de la misma duración",
-            }.get(pred["regla_de_parecidos"], "publicados"),
-            "regla": pred["regla_de_parecidos"],
-            "datos_hasta": pred["datos_hasta"],
-            "vio_el_video": pred["uso_video"],
-            "no_pude_revisar": no_pude,
-        },
+        "licencia": licencia(pred, no_pude),
     }
 
     def escribir() -> None:
@@ -141,23 +205,34 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         # Si el caso ya trae la transcripción o la descripción del mismo video, se reusan: cuestan.
         if not (salida / "transcribir.json").exists():
             _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida)
+        tramos = tramos_de_voz(salida)
+        if tramos and not m.de_la_casa(v) and not plan_b:
+            # Video de fuera: con la voz ya se puede usar el cerebro para cualquier video.
+            pred = m.predecir(v, emb, audio, tramos)
+            resultado["prediccion"], resultado["licencia"] = pred, licencia(pred, no_pude)
+            escribir()
         if not (salida / "describir.json").exists():
-            _paso("describir", tiempos, no_pude, "Lo que se ve tramo a tramo", describir.describir, salida)
+            _paso("describir", tiempos, no_pude, "Lo que se ve tramo a tramo",
+                  lambda c: describir.describir(c, idioma=idioma), salida)
         if (salida / "describir.json").exists():
-            if voz is not None:  # el agente lee resultado.json: por eso va después de escribirlo
+            if voz is not None and m.filas:  # el agente lee resultado.json y busca en la historia de la casa
                 from .agente import cargar_voz, correr_agente
                 resultado["explicacion"] = _paso("agente", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
                                                  correr_agente, salida, m, cargar_voz(voz), motor)
             else:
+                # Sin agente, SAM revisa igual si lo que promete el título se ve en los primeros 3 segundos.
+                from .sam import medir_promesa
+                _paso("sam", tiempos, no_pude, "Si lo que promete el título se ve al inicio (SAM 3.1)",
+                      medir_promesa, salida, titulo)
                 resultado["explicacion"] = _paso("explicar", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
-                                                 explicar.explicar, salida, riesgo_arranque, motor)
+                                                 explicar.explicar, salida, riesgo_arranque, motor, "explicar.json", idioma)
         else:
             no_pude.append("Por qué y qué cambiar en el arranque (no hubo descripción del video).")
         if (salida / "describir.json").exists():
             # Lo que Meta recomienda para los primeros segundos, calculado en código (no llama a la API).
             from .revision_meta import revisar
             resultado["revision_meta"] = _paso("revision_meta", tiempos, no_pude,
-                                               "Las recomendaciones de Meta para el inicio", revisar, salida) or []
+                                               "Las recomendaciones de Meta para el inicio", revisar, salida, idioma) or []
     no_pude.append("La música: no se analiza la letra ni la licencia.")
     escribir()
     return resultado
@@ -166,7 +241,8 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("video", type=Path)
-    ap.add_argument("--modelo", type=Path, required=True)
+    ap.add_argument("--modelo", type=Path, default=Path(__file__).resolve().parents[2] / "modelos" / "retina-publico.json",
+                    help="Por omisión, el cerebro público. Un .pkl es el modelo privado de una empresa.")
     ap.add_argument("--salida", type=Path, required=True)
     ap.add_argument("--codigo", default="BORRADOR")
     ap.add_argument("--talento", default="")
@@ -174,14 +250,16 @@ def main() -> None:
     ap.add_argument("--titulo", default="")
     ap.add_argument("--con-api", action="store_true", help="Usa la Meta Model API (cuesta).")
     ap.add_argument("--ya-publicado", action="store_true", help="Confirma que el video ya está publicado (lo pide el candado RETINA_SOLO_PUBLICADOS=1).")
-    ap.add_argument("--arranque", type=Path, required=True, help="Modelo del riesgo del arranque (JSON de retina.arranque).")
+    ap.add_argument("--arranque", type=Path, help="Modelo del riesgo del arranque (JSON de retina.arranque). "
+                    "Con el cerebro público (modelos/retina-publico.json) no hace falta: ya lo trae.")
     ap.add_argument("--voz", type=Path, help="Voz de la historia (voz.jsonl): activa el agente en lugar de explicar.")
     ap.add_argument("--motor", default="", choices=["", "api", "abierto", "abierto+api"],
                     help="Quién escribe la tarjeta: api (Spark 1.3), abierto (Muse Spark Open) o abierto+api "
                          "(Spark Open con rescate de Spark 1.3). Por omisión, RETINA_MOTOR del .env.")
+    ap.add_argument("--idioma", default="es", choices=["es", "en"], help="Idioma de la tarjeta.")
     a = ap.parse_args()
     r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque,
-               voz=a.voz, publicado=a.ya_publicado, motor=a.motor)
+               voz=a.voz, publicado=a.ya_publicado, motor=a.motor, idioma=a.idioma)
     print(f"Riesgo del arranque: {r['arranque']['nivel']} · {r['tiempos_s']}")
     for x in r["licencia"]["no_pude_revisar"]:
         print(f"  no revisé: {x}")

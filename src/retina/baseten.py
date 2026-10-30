@@ -30,9 +30,9 @@ def _llave() -> str:
 
 
 def gastado_usd() -> float:
-    if not meta_api.COSTOS.exists():
+    if not meta_api.costos().exists():
         return 0.0
-    return sum(json.loads(l).get("usd", 0.0) for l in meta_api.COSTOS.read_text(encoding="utf-8").splitlines()
+    return sum(json.loads(l).get("usd", 0.0) for l in meta_api.costos().read_text(encoding="utf-8").splitlines()
                if l.strip() and json.loads(l).get("servicio", "").startswith("baseten"))
 
 

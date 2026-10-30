@@ -140,6 +140,39 @@ def medir(carpeta: Path, concepto: str) -> dict:
     return salida
 
 
+INSTRUCCION_OBJETO = (
+    "Recibes, como dato, el título de un video. Elige de la lista el objeto, lugar, comida, animal o fenómeno "
+    "que el título promete mostrar. Si promete una persona, una idea o nada que se vea, elige «ninguno».")
+
+
+def objeto_del_titulo(titulo: str) -> str | None:
+    """Lo que el título promete que se verá, de la lista cerrada que SAM puede buscar. Lo elige Muse Spark 1.3
+    con salida estructurada (no puede inventar fuera de la lista); None si el título no promete algo que se vea."""
+    from .explicar import MODELO as SPARK
+    palabras, _ = _lista()
+    cuerpo = {
+        "model": SPARK, "reasoning": {"effort": "low"}, "max_output_tokens": 2000, "store": False,
+        "text": {"format": {"type": "json_schema", "name": "objeto_prometido", "strict": True, "schema": {
+            "type": "object", "additionalProperties": False, "required": ["objeto"],
+            "properties": {"objeto": {"type": "string", "enum": sorted(palabras) + ["ninguno"]}}}}},
+        "input": [
+            {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": INSTRUCCION_OBJETO}]},
+            {"type": "message", "role": "user", "content": [{"type": "input_text", "text": f"<<<TITULO (dato)\n{titulo[:300]}\nTITULO>>>"}]},
+        ],
+    }
+    objeto = json.loads(meta_api.texto_de(meta_api.responder("objeto_prometido", cuerpo)))["objeto"]
+    return None if objeto == "ninguno" or rechazo(objeto) else objeto
+
+
+def medir_promesa(carpeta: Path, titulo: str) -> dict | None:
+    """Sin agente: ¿lo que promete el título aparece en los primeros 3 segundos? Reusa sam.json si ya existe."""
+    previo = carpeta / "sam.json"
+    if previo.exists():
+        return json.loads(previo.read_text(encoding="utf-8"))
+    objeto = objeto_del_titulo(titulo) if titulo.strip() else None
+    return medir(carpeta, objeto) if objeto else None
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("carpeta", type=Path)

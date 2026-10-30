@@ -31,6 +31,9 @@ CAMPOS_TRAMO = ("que_pasa", "texto_en_pantalla", "tipo_de_plano", "cambio_de_pla
                 "presentador_en_pantalla", "tipo_de_gancho")
 MAX_CARACTERES = 220  # por campo de texto: la tarjeta se lee de un vistazo
 MAX_PASOS, MAX_CARACTERES_PASO = 4, 140  # «qué hacer» en pasos que un editor sigue sin explicación
+# Lo bueno, lo flojo y mejoras opcionales (29-oct): la tarjeta verde casi no decía nada a quien edita.
+# (mínimo, máximo, caracteres por punto). Las mejoras miden lo mismo que un paso: se hacen en el editor.
+LISTAS = {"lo_bueno": (1, 3, 160), "lo_flojo": (0, 3, 160), "mejoras_opcionales": (0, 3, MAX_CARACTERES_PASO)}
 # Lo que la persona no tiene por qué entender: jerga del sistema y cifras internas de audiencia.
 JERGA = re.compile(r"\bpp\b|puntos porcentuales|%|de cada 100|\bs\d+(?:[.,]\d+)?\b|\btramos?\b|"
                    r"ver_arranque|ver_tramos|\boir\b|buscar_parecidos|medir_lo_prometido|entregar_tarjeta|"
@@ -46,8 +49,11 @@ def esquema() -> dict:
     return _objeto({
         "por_que": {"type": "string"},
         "lo_que_funciona": {"type": "string"},
+        "lo_bueno": {"type": "array", "items": {"type": "string"}},
+        "lo_flojo": {"type": "array", "items": {"type": "string"}},
         "que_cambiar": {"type": "string"},
         "pasos": {"type": "array", "items": {"type": "string"}},
+        "mejoras_opcionales": {"type": "array", "items": {"type": "string"}},
         "tipo_de_cambio": {"type": "string", "enum": CAMBIOS},
         "momento_s": {"type": "number"},
         "anzuelo_detectado": {"type": "string", "enum": ["ninguno", *ids_anzuelos()]},
@@ -81,6 +87,12 @@ def datos_del_arranque(carpeta: Path, arranque: dict) -> dict:
                     **{k: d[k] for k in CAMPOS_TRAMO}}
                    for d in desc["tramos"] if d["tramo"] < FIN_ARRANQUE],
     }
+    sam = carpeta / "sam.json"
+    if sam.exists():  # lo midió SAM 3.1 sobre los primeros 3 segundos
+        x = json.loads(sam.read_text(encoding="utf-8"))
+        if "aparece" in x:
+            datos["lo_que_promete_el_titulo"] = {"objeto": x["concepto"], "se_ve_en_los_primeros_3_s": x["aparece"],
+                                                 "desde_el_segundo": x["primer_segundo"]}
     tr = carpeta / "transcribir.json"
     if tr.exists():
         x = json.loads(tr.read_text(encoding="utf-8"))
@@ -95,11 +107,19 @@ def datos_del_arranque(carpeta: Path, arranque: dict) -> dict:
 _NUM = re.compile(r"\d+(?:[.,]\d+)?")
 
 
+def lista(salida: dict, campo: str) -> list[str]:
+    """Una lista de textos de la tarjeta. Las tarjetas de antes del 29-oct no traen lo_bueno, lo_flojo ni
+    mejoras_opcionales: lo que falta, o no es lista de textos, cuenta como lista vacía."""
+    v = salida.get(campo)
+    return [x for x in v if isinstance(x, str)] if isinstance(v, list) else []
+
+
 def cifras_inventadas(salida: dict, datos: dict) -> list[str]:
     """Números del texto que no salen de los datos (se acepta el redondeo a entero)."""
     en_datos = {float(n.replace(",", ".")) for n in _NUM.findall(json.dumps(datos, ensure_ascii=False))}
     validos = en_datos | {float(round(x)) for x in en_datos} | {float(int(x)) for x in en_datos} | {0.0, 1.0, 2.0, 3.0}
-    texto = " ".join([salida["por_que"], salida["lo_que_funciona"], salida["que_cambiar"], *salida.get("pasos", [])])
+    texto = " ".join([salida["por_que"], salida["lo_que_funciona"], salida["que_cambiar"], *lista(salida, "pasos"),
+                      *(t for campo in LISTAS for t in lista(salida, campo))])
     return sorted({n for n in _NUM.findall(texto) if float(n.replace(",", ".")) not in validos})
 
 
@@ -165,13 +185,31 @@ def revisar(salida: dict, datos: dict) -> list[str]:
         if salida.get(campo) not in opciones:  # el agente no tiene esquema estricto: se revisa aquí
             problemas.append(f"{campo} «{salida.get(campo)}» no es un valor válido ({', '.join(opciones)})")
     pasos = salida.get("pasos", [])
+    bueno, mejoras = lista(salida, "lo_bueno"), lista(salida, "mejoras_opcionales")
+    # «lo_flojo» puede nombrar el anzuelo que ya trae el video, como «por_que»; lo bueno y las mejoras, nunca.
     texto = " ".join(sin_citas_a_quitar(t, datos) for t in [salida["que_cambiar"], salida["lo_que_funciona"],
-                                                             *salida["storyboard"], *pasos])
+                                                             *salida["storyboard"], *pasos, *bueno, *mejoras])
     cita = (" — si es el anzuelo que hay que quitar, cítalo entre «comillas» tal como se dice en el video, "
             "sin describirlo con otras palabras") if salida.get("anzuelo_detectado", "ninguno") != "ninguno" else ""
     problemas += [f"{r['regla']} (frases: {', '.join(r['frases'])}){cita}" for r in integridad.revisar(texto)]
     if t := toca_intocable(" ".join([salida["que_cambiar"], *pasos])):
         problemas.append(f"la sugerencia toca algo intocable: {', '.join(t)}")
+    for i, m in enumerate(mejoras, 1):  # una por una: cada mejora es un cambio aparte
+        if t := toca_intocable(m):
+            problemas.append(f"la mejora opcional {i} toca algo intocable: {', '.join(t)}")
+    for campo, (minimo, maximo, caracteres) in LISTAS.items():
+        v = salida.get(campo, [])
+        if not isinstance(v, list) or not all(isinstance(x, str) for x in v):
+            problemas.append(f"«{campo}» tiene que ser una lista de textos")
+            continue
+        if not minimo <= len(v) <= maximo:
+            problemas.append(f"«{campo}» tiene que traer de {minimo} a {maximo} puntos; trae {len(v)}")
+        for i, x in enumerate(v, 1):
+            if j := sorted({m.group(0) for m in JERGA.finditer(x)}):
+                problemas.append(f"«{campo}» {i} trae jerga o cifras internas: {', '.join(j)}. "
+                                 "Di los segundos como «segundo 4» y no cites porcentajes")
+            if len(x) > caracteres:
+                problemas.append(f"«{campo}» {i} mide {len(x)} caracteres; el máximo es {caracteres}")
     for campo in ("por_que", "lo_que_funciona", "que_cambiar"):
         if j := sorted({m.group(0) for m in JERGA.finditer(salida[campo])}):
             problemas.append(f"«{campo}» trae jerga o cifras internas que la persona no debe ver: {', '.join(j)}. "
@@ -198,7 +236,7 @@ def revisar(salida: dict, datos: dict) -> list[str]:
         problemas.append(f"cifras que no vienen en los datos: {', '.join(n)}")
     if not 0 <= salida["momento_s"] <= datos["primer_cuarto_s"][1]:
         problemas.append(f"momento_s {salida['momento_s']} fuera del arranque (0 a {datos['primer_cuarto_s'][1]} s)")
-    if datos["nivel_de_riesgo"] != "bajo" and not salida["que_cambiar"].strip() and salida["anzuelo_detectado"] == "ninguno":
+    if datos["nivel_de_riesgo"] in ("alto", "medio") and not salida["que_cambiar"].strip() and salida["anzuelo_detectado"] == "ninguno":
         problemas.append("el nivel no es «bajo» y no trae un cambio")
     return problemas
 
@@ -211,9 +249,9 @@ def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
         "model": MODELO,
         "reasoning": {"effort": esfuerzo},
         "max_output_tokens": 16000,
-        "prompt_cache_key": "retina-explicar-v5",  # gitleaks:allow (etiqueta de caché, no es llave)
+        "prompt_cache_key": "retina-explicar-v7",  # gitleaks:allow (etiqueta de caché, no es llave)
         "store": False,
-        "text": {"format": {"type": "json_schema", "name": "explicacion_v4", "strict": True, "schema": esquema()}},
+        "text": {"format": {"type": "json_schema", "name": "explicacion_v5", "strict": True, "schema": esquema()}},
         "input": [
             {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": instrucciones()}]},
             {"type": "message", "role": "user", "content": [{"type": "input_text", "text": texto}]},
@@ -297,17 +335,19 @@ def escribir(datos: dict, motores: tuple, pedir=pedir) -> tuple[dict, list, str]
     return salida, intentos, motores[-1]
 
 
-def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "explicar.json") -> dict:
+def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "explicar.json", idioma: str = "es") -> dict:
     motor = motor or motor_por_omision()
     datos = datos_del_arranque(carpeta, arranque)
+    if idioma == "en":  # la tarjeta sale en el idioma del panel de quien subió el video
+        datos["idioma_de_la_tarjeta"] = "inglés"
     salida, intentos, quien = escribir(datos, MOTORES[motor])
     if intentos[-1]["problemas"]:
-        salida.update(que_cambiar="", pasos=[], tipo_de_cambio="ninguno", storyboard=[])
+        salida.update(que_cambiar="", pasos=[], mejoras_opcionales=[], tipo_de_cambio="ninguno", storyboard=[])
         salida["no_pude_verificar"].append("No hubo una sugerencia que pasara el validador y el filtro de integridad.")
     from . import baseten
     salida["licencia"] = {"modelo": baseten.MODELO if quien == "abierto" else MODELO,
                           "servido_por": "Baseten" if quien == "abierto" else "Meta Model API",
-                          "instrucciones": "skills/explicar.md (explicar-v5)",
+                          "instrucciones": "skills/explicar.md (explicar-v7)",
                           "reglas": integridad.reglas()["version"], "intentos": intentos,
                           "rescate": quien != MOTORES[motor][0]}
     (carpeta / nombre).write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")

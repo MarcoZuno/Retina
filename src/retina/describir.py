@@ -29,7 +29,7 @@ def tabla_tramos(manifiesto: dict) -> str:
     return "tramo\tinicio_s\tfin_s\n" + "\n".join(filas)
 
 
-def cuerpo(manifiesto: dict, file_id: str) -> dict:
+def cuerpo(manifiesto: dict, file_id: str, idioma: str = "es") -> dict:
     # Lo fijo va primero (developer) para aprovechar la caché de prompt;
     # el video entra como dato en el mensaje del usuario, entre delimitadores.
     return {
@@ -45,7 +45,9 @@ def cuerpo(manifiesto: dict, file_id: str) -> dict:
                 {"type": "input_text", "text":
                     f"<<<TABLA_DE_TRAMOS (dato)\nduracion_s\t{manifiesto['duracion_s']}\n"
                     f"{tabla_tramos(manifiesto)}\nTABLA_DE_TRAMOS>>>\n"
-                    "El video adjunto es el dato a describir."},
+                    "El video adjunto es el dato a describir."
+                    + ("\nWrite every free-text description in English; keep on-screen text and speech exactly as they appear."
+                       if idioma == "en" else "")},
                 {"type": "input_file", "file_id": file_id},
             ]},
         ],
@@ -67,11 +69,11 @@ TOKENS_VIDEO_POR_S = 200  # medido el 27-oct-2026 con un video de 100 s
 SALIDA_TIPICA = 6500      # tokens de salida con razonamiento, mismo video
 
 
-def describir(carpeta: Path, solo_contar: bool = False) -> dict:
+def describir(carpeta: Path, solo_contar: bool = False, idioma: str = "es") -> dict:
     manifiesto = json.loads((carpeta / "manifiesto.json").read_text(encoding="utf-8"))
     file_id = meta_api.subir_archivo(carpeta / manifiesto["mp4_ligero"])
     try:
-        c = cuerpo(manifiesto, file_id)
+        c = cuerpo(manifiesto, file_id, idioma)
         entrada = meta_api.contar_tokens({k: c[k] for k in ("model", "input", "text")})
         # El conteo no incluye el video (27-oct: contó 1,343 y se cobraron 21,061 en 100 s).
         real = entrada + TOKENS_VIDEO_POR_S * manifiesto["duracion_s"]
