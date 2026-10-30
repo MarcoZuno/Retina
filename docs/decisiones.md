@@ -473,3 +473,26 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   y la fórmula aprendió de diferencias entre videos distintos, no entre dos versiones del mismo video. Ajustarla hasta que suba
   sería acomodar el resultado. Esto tampoco demuestra que la apertura nueva sea peor: retención real no se midió.
 
+## 30-oct-2026 · Segunda medición de la apertura, con videos nuevos. Regla escrita antes de medir
+
+- **Por qué.** La primera medición no pasó (10 de 18) y esos 50 casos ya no sirven: un arreglo probado en los mismos casos
+  no demuestra nada. Esta usa videos que no se han tocado.
+- **Qué cambió desde la primera.** El vocabulario de SAM, calibrado con dibujos inventados (`eval/calibrar_vocabulario.py`,
+  `reglas/sam-vocabulario-v1.json`): de 167 palabras, SAM encontró 104 tal cual, 10 con su palabra general («tortilla» se busca
+  como «food») y 53 salen de lo que se puede comprobar con SAM. También las correcciones de la revisión independiente (un dibujo
+  rechazado gasta un intento, los cuadros no pueden nombrar a nadie que no salga del video). Las instrucciones de escritura no
+  cambiaron.
+- **Lo que este cambio hace a la medición.** Quitar las palabras difíciles ayuda a pasar, y eso no se esconde: esas 53 palabras
+  ya no se comprueban con SAM. Por eso se reporta también qué parte de los títulos queda con comprobación.
+- **Qué se mide.** 30 videos de jul-sep de 2026 que no están en los 50 ni en la afinación, barajados con la semilla 20261030. Son
+  los primeros 30 cuyo título promete algo que SAM puede comprobar, de 83 títulos revisados. La lista quedó fija antes de ver
+  un resultado (sha256 de la lista privada: d2b86e5f53adad56453dc887b7324fd9f9b203bde29367dccc2f8b8bf56139e7). Sin retención y sin
+  video: el título y lo que se dice (`eval/apertura_nuevos.py`), porque lo que falló fue el dibujo y SAM, no la lectura del video.
+- **Regla.** Las dos tienen que pasar:
+  - A. Al menos 24 de 30 (80 %) pasan todo en 2 correcciones o menos: las reglas de texto, el filtro en cada cuadro y SAM encuentra
+    lo prometido en el primer cuadro.
+  - B. Prueba trampa: 10 cuadros aprobados contra un objeto de otra familia. SAM rechaza al menos 9.
+- **Se reporta, sin ser condición.** El intervalo de Wilson de 95 % de A, qué se corrigió, qué falló y el costo.
+- **Si no pasa.** Se publica igual, junto con la primera, y no se reajusta en estos 30 casos. Lo que esto no mide es lo mismo que
+  antes: si la apertura nueva retiene más gente.
+
