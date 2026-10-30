@@ -277,7 +277,7 @@ class Modelo:
         return np.clip(base + self.rasgos(v, base) @ self.W0, 0, 1), base, fuente
 
     def predecir(self, v: dict, emb: np.ndarray | None = None, audio: np.ndarray | None = None,
-                 tramos: list | None = None) -> dict:
+                 tramos: list | None = None, ficha: dict | None = None) -> dict:
         """`tramos`: lo que se dice, [[inicio_s, texto], …]. Sin voz, un video de fuera usa la v0 vacía."""
         casa = self.de_la_casa(v)
         universal = not casa and bool(tramos) and "universal" in self.extra

@@ -79,7 +79,9 @@ def titulo_publico(titulo: str, quitar: frozenset) -> str:
     return " ".join(p for p in sin.split() if plano(re.sub(r"[^\w]", "", p)) not in quitar)
 
 
-def entrenar(filas: list[dict], voz: dict) -> dict:
+def entrenar(filas: list[dict], voz: dict, fichas: dict | None = None) -> dict:
+    """`fichas` (retina.ficha, por código): si vienen, la ficha del arranque entra como rasgo del número."""
+    from .ficha import ficha_a_vector
     temas = patrones()
     quedan = [v for v in filas if motivo_fuera(v, voz.get(v["codigo"]), temas) is None]
     quitar = nombres(filas)
@@ -89,6 +91,8 @@ def entrenar(filas: list[dict], voz: dict) -> dict:
     bases = [regla_de_hoy(f, quedan, quedan)[0] for f in afuera]
     X = np.array([rasgos_universales(f, b, fijos_universales(f["archivo"], voz.get(v["codigo"]), v["dur"], quitar))
                   for f, v, b in zip(afuera, quedan, bases)])
+    if fichas:
+        X = np.hstack([X, np.array([ficha_a_vector(fichas.get(v["codigo"])) for v in quedan])])
     W = ajustar_ridge(X, np.array([v["curva"] - b for v, b in zip(quedan, bases)]), LAMBDA_UNIVERSAL)
 
     hasta = max(v["fecha"] for v in quedan)
@@ -112,7 +116,7 @@ def entrenar(filas: list[dict], voz: dict) -> dict:
                   "video: pesos y curvas promedio por duración. No trae títulos, talentos, códigos, ingresos ni cifras "
                   "de un video. No aprendió de videos no elegibles ni de temas fuera de alcance o graves.",
         "datos_hasta": hasta.strftime("%Y-%m-%d"),
-        "rasgos": {"n_palabras": N_PALABRAS, "n_arranque": N_ARRANQUE, "lambda": LAMBDA_UNIVERSAL,
+        "rasgos": {"n_palabras": N_PALABRAS, "n_arranque": N_ARRANQUE, "lambda": LAMBDA_UNIVERSAL, "ficha": bool(fichas),
                    "cubetas_s": CUBETAS[:-1]},
         "curvas_por_duracion": [redondo(c) for c in curvas],
         "cualquier_video": redondo(W),
@@ -142,11 +146,15 @@ class ModeloPublico:
     def de_la_casa(self, v: dict) -> bool:
         return False
 
-    def predecir(self, v: dict, emb=None, audio=None, tramos: list | None = None) -> dict:
+    def predecir(self, v: dict, emb=None, audio=None, tramos: list | None = None, ficha: dict | None = None) -> dict:
         base = self.curvas[v["cubeta"]]
         if tramos:
             f = de_fuera(v)
-            p = np.clip(base + rasgos_universales(f, base, fijos_universales(f["archivo"], en_bloques(tramos), v["dur"])) @ self.W, 0, 1)
+            x = rasgos_universales(f, base, fijos_universales(f["archivo"], en_bloques(tramos), v["dur"]))
+            if self.d["rasgos"].get("ficha"):
+                from .ficha import ficha_a_vector
+                x = np.concatenate([x, ficha_a_vector(ficha)])
+            p = np.clip(base + x @ self.W, 0, 1)
         else:
             p = base.copy()
         t = tramo_exceso(p, base)
@@ -187,12 +195,18 @@ def main() -> None:
     ap.add_argument("--base", type=Path, required=True)
     ap.add_argument("--voz", type=Path, required=True)
     ap.add_argument("--salida", type=Path, required=True)
+    ap.add_argument("--fichas", type=Path, help="Fichas del arranque (retina.ficha): entran al número.")
     a = ap.parse_args()
     voz = {}
     for linea in a.voz.open(encoding="utf-8"):
         d = json.loads(linea); voz[d["codigo"]] = d["tramos"]
     filas = cargar(a.base)
-    r = entrenar(filas, voz)
+    fichas = None
+    if a.fichas:
+        fichas = {}
+        for linea in a.fichas.open(encoding="utf-8"):
+            d = json.loads(linea); fichas[d.pop("codigo")] = d
+    r = entrenar(filas, voz, fichas)
     a.salida.parent.mkdir(parents=True, exist_ok=True)
     a.salida.write_text(json.dumps(r, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     # Los conteos se quedan en la consola de quien lo arma: no van en el archivo público.

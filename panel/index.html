@@ -272,6 +272,10 @@ body[data-tema="claro"] .linea { background: rgba(255,255,255,.28); }
 .franja.buena { background: var(--verde); } .franja.floja { background: var(--ambar); }
 .ficha { padding: 22px 26px; border-radius: var(--radio); margin-top: 18px; }
 .ficha-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tacticas { margin-top: 16px; } .tacticas h3 { font-size: 16px; margin: 0 0 6px; }
+.tacticas ul { list-style: none; padding: 0; margin: 0; } .tacticas li { margin: 5px 0; padding-left: 26px; position: relative; }
+.tacticas li::before { position: absolute; left: 0; font-weight: 800; }
+.tacticas li.mas::before { content: "▲"; color: var(--verde); } .tacticas li.menos::before { content: "▼"; color: var(--ambar); }
 .ficha-chips span { padding: 6px 12px; border-radius: 99px; background: rgba(255,255,255,.10); font-size: 14px; }
 body[data-tema="claro"] .ficha-chips span { background: rgba(14,26,51,.08); }
 .zona { position: absolute; top: 0; bottom: 0; background: var(--nivel-zona); box-shadow: inset 2px 0 0 var(--nivel), inset -2px 0 0 var(--nivel); }
@@ -454,6 +458,11 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         <div class="vidrio ficha oculto" id="ficha">
           <h2 class="cabeza" data-t="ficha_t">Cómo arranca tu video, según Muse Spark Open</h2>
           <div class="ficha-chips" id="ficha-chips"></div>
+          <div class="tacticas oculto" id="tacticas">
+            <h3 data-t="tacticas_t">Lo que pasó con videos que arrancan como el tuyo</h3>
+            <ul id="tacticas-lista"></ul>
+            <p class="nota" data-t="tacticas_nota">En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.</p>
+          </div>
         </div>
 
         <div class="bloque vidrio">
@@ -629,6 +638,14 @@ const TEXTOS = {
     tu_video_pred: "Tu video (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
     por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado", bajar: "Bajar para el editor",
     ficha_t: "Cómo arranca tu video, según Muse Spark Open",
+    tacticas_t: "Lo que pasó con videos que arrancan como el tuyo",
+    tacticas_nota: "En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.",
+    tactica: { mas: (x) => `Los que ${x} retuvieron más gente en su primer cuarto que videos parecidos.`,
+      menos: (x) => `Los que ${x} retuvieron menos gente en su primer cuarto que videos parecidos.`,
+      presenta: "se presentan antes de decir el tema", presentacion: "arrancan con una presentación", saludo: "arrancan con un saludo",
+      dato: "arrancan con un dato o una cifra", conflicto: "arrancan con un conflicto", tema_tarde: "dicen el tema después de la primera frase",
+      curiosidad_alta: "dejan mucha curiosidad desde el inicio", curiosidad_baja: "dejan poca curiosidad al inicio",
+      alegria: "arrancan con pura alegría", ternura: "arrancan con ternura", indignacion: "arrancan con indignación", sorpresa: "arrancan con sorpresa" },
     ficha: { gancho: "Gancho", si: "sí", no: "no", presenta: "Se presenta antes del tema", tema: "El tema llega en la primera frase",
       promete: "Promete algo que se verá", cifra: "Cifra al inicio", interaccion: "Pide interacción", claridad: "Claridad", curiosidad: "Curiosidad",
       emocion: "Emoción", de5: (n) => `${n} de 5`,
@@ -795,6 +812,14 @@ const TEXTOS = {
     tu_video_pred: "Your video (Retina's prediction)", lo_que_paso_real: "What actually happened",
     por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied", bajar: "Download for the editor",
     ficha_t: "How your video opens, according to Muse Spark Open",
+    tacticas_t: "What happened with videos that open like yours",
+    tacticas_nota: "Across thousands of videos from a large Facebook page in Mexico. It describes what happened with other videos; it promises nothing about yours.",
+    tactica: { mas: (x) => `Videos that ${x} kept more people through their first quarter than similar videos.`,
+      menos: (x) => `Videos that ${x} kept fewer people through their first quarter than similar videos.`,
+      presenta: "introduce the speaker before saying the topic", presentacion: "open with an introduction", saludo: "open with a greeting",
+      dato: "open with a fact or a number", conflicto: "open with a conflict", tema_tarde: "say the topic after the first sentence",
+      curiosidad_alta: "spark a lot of curiosity from the start", curiosidad_baja: "spark little curiosity at the start",
+      alegria: "open with pure joy", ternura: "open with tenderness", indignacion: "open with outrage", sorpresa: "open with surprise" },
     ficha: { gancho: "Hook", si: "yes", no: "no", presenta: "Introduces themselves before the topic", tema: "Topic in the first sentence",
       promete: "Promises something you'll see", cifra: "Number at the start", interaccion: "Asks for engagement", claridad: "Clarity",
       curiosidad: "Curiosity", emocion: "Emotion", de5: (n) => `${n} of 5`,
@@ -1242,6 +1267,16 @@ function fichaArranque(r) {  // cómo arranca, según Muse Spark Open: descripci
     `${F.promete}: ${sn(f.promete_algo_visible)}`, `${F.emocion}: ${de(F.emociones, f.emocion) || f.emocion}`,
     ...(f.pide_interaccion ? [`${F.interaccion}: ${F.si}`] : []),
   ].map((x) => nodo("span", "", x)));
+  // Solo los rasgos cuya diferencia tuvo un intervalo de 95 % lejos de cero (eval/tacticas_gancho.py, 29-oct).
+  const T = tx().tactica, reglas = [
+    [f.presenta_antes_del_tema, "menos", "presenta"], [f.gancho === "presentacion" && !f.presenta_antes_del_tema, "menos", "presentacion"],
+    [f.gancho === "saludo", "menos", "saludo"], [f.tema_en_la_primera_frase === false, "menos", "tema_tarde"],
+    [f.curiosidad === 2 || f.curiosidad === 3, "menos", "curiosidad_baja"], [f.emocion === "alegria", "menos", "alegria"],
+    [f.emocion === "ternura", "menos", "ternura"], [f.gancho === "dato_o_cifra", "mas", "dato"], [f.gancho === "conflicto", "mas", "conflicto"],
+    [f.curiosidad >= 5, "mas", "curiosidad_alta"], [f.emocion === "indignacion", "mas", "indignacion"], [f.emocion === "sorpresa", "mas", "sorpresa"],
+  ].filter(([si]) => si);
+  $("tacticas").classList.toggle("oculto", !reglas.length);
+  $("tacticas-lista").replaceChildren(...reglas.map(([, sentido, k]) => nodo("li", sentido, T[sentido](T[k]))));
 }
 
 function textoParaEditor() {

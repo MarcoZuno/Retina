@@ -51,7 +51,7 @@ def usd(uso) -> float:
 
 
 def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfuerzo: str | None = None,
-              herramientas: list[dict] | None = None):
+              herramientas: list[dict] | None = None, temperatura: float | None = None):
     """Devuelve el mensaje de la respuesta: su texto y, si se le dieron herramientas, las que llamó.
     `esfuerzo` (low, medium, high) es el razonamiento; Spark Open en Baseten lo respeta (Meta, 27-oct)."""
     from openai import OpenAI
@@ -62,6 +62,8 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
     extra = {"reasoning_effort": esfuerzo} if esfuerzo else {}
     if herramientas:
         extra["tools"] = herramientas
+    if temperatura is not None:  # 0 = el mismo video da la misma respuesta
+        extra["temperature"] = temperatura
     r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens, **extra)
     meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage),
                         entrada=getattr(r.usage, "prompt_tokens", 0), salida=getattr(r.usage, "completion_tokens", 0))
@@ -69,11 +71,11 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
 
 
 def chat(servicio: str, mensajes: list[dict], esquema: dict | None = None, max_tokens: int = 8000,
-         esfuerzo: str | None = None) -> str:
+         esfuerzo: str | None = None, temperatura: float | None = None) -> str:
     """Devuelve el texto de la respuesta. `esquema` se ignora aquí: lo describe quien arma los mensajes."""
     # Spark Open en las Model APIs de Baseten no acepta salida estructurada ni modo JSON (docs de Baseten,
     # 28-oct-2026): el formato se pide en las instrucciones y el validador de Retina revisa lo demás.
-    return completar(servicio, mensajes, max_tokens, esfuerzo).content or ""
+    return completar(servicio, mensajes, max_tokens, esfuerzo, temperatura=temperatura).content or ""
 
 
 def main() -> None:

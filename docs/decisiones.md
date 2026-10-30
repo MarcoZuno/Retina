@@ -365,3 +365,13 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   menos D) es positiva. Si entra, Retina le pide la ficha de cada video nuevo a Muse Spark Open al revisarlo.
   Si no, la ficha se queda solo como descripción en la tarjeta (la táctica del gancho), sin tocar el número.
 
+- **Resultado (29-oct, noche; corrida con el commit 8fcfaac, el de la regla).** Pasa en los dos periodos: con
+  la ficha, el número se equivoca menos con creadores que nunca vio (diferencia pareja con intervalo entero
+  arriba de 0) y ordena mejor los videos a los 15 s. **Se decide:** la ficha entra al cerebro público
+  (`modelos/retina-publico.json`, `rasgos.ficha`) y Retina se la pide a Muse Spark Open a cada video nuevo, con
+  temperatura 0 para que el mismo video dé la misma ficha. Cifras en la carpeta privada.
+- **Lo que pasó con cada táctica** (`eval/tacticas_gancho.py`, descriptivo, elegibles). En la tarjeta solo van,
+  en palabras y sin cifras, los rasgos cuya diferencia contra videos parecidos tuvo un intervalo de 95 % lejos
+  de cero: presentarse antes del tema, saludo o presentación como gancho, decir el tema tarde, poca curiosidad,
+  arrancar con pura alegría o ternura (retuvieron menos); un dato o una cifra, un conflicto, mucha curiosidad,
+  sorpresa o indignación (retuvieron más). Describe lo que pasó con otros videos, no promete nada del tuyo.

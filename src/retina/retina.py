@@ -223,9 +223,14 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         if not (salida / "transcribir.json").exists():
             _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida)
         tramos = tramos_de_voz(salida)
+        # Cómo arranca, según Muse Spark Open (táctica del gancho, claridad, curiosidad). Se muestra siempre y,
+        # si el cerebro público la aprendió, también entra al número.
+        from .ficha import ficha_de
+        resultado["ficha"] = _paso("ficha", tiempos, no_pude, "Cómo arranca (ficha de Muse Spark Open)",
+                                   ficha_de, titulo, tramos)
         if tramos and m is not None and not m.de_la_casa(v) and not plan_b:
             # Video de fuera: con la voz ya se puede usar el cerebro para cualquier video.
-            pred = m.predecir(v, emb, audio, tramos)
+            pred = m.predecir(v, emb, audio, tramos, resultado["ficha"])
             resultado["prediccion"], resultado["licencia"] = pred, licencia(pred, no_pude)
             escribir()
         if not (salida / "describir.json").exists():
@@ -237,10 +242,6 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
                 resultado["explicacion"] = _paso("agente", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
                                                  correr_agente, salida, m, cargar_voz(voz), motor)
             else:
-                # Cómo arranca, según Muse Spark Open (la táctica del gancho, claridad, curiosidad): descripción.
-                from .ficha import ficha_de
-                resultado["ficha"] = _paso("ficha", tiempos, no_pude, "Cómo arranca (ficha de Muse Spark Open)",
-                                           ficha_de, titulo, tramos_de_voz(salida))
                 # Sin agente, SAM revisa igual si lo que promete el título se ve en los primeros 3 segundos.
                 from .sam import medir_promesa
                 _paso("sam", tiempos, no_pude, "Si lo que promete el título se ve al inicio (SAM 3.1)",

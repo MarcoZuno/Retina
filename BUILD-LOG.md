@@ -480,3 +480,19 @@ tarjetas verdes, saber qué está bien, qué está flojo y qué más se puede me
 
 **Costo:** unos USD 0.05 (una revisión sin cerebro, en limpio).
 
+### Día 4 (29-oct, noche) · Retina lee el inicio (con los créditos nuevos)
+
+- Investigación de otras herramientas y de métodos (SnapUGC 2025,
+  anuncios 2026). Lo que mejor funciona en la literatura: un modelo multimodal llena una ficha fija del inicio y
+  un modelo pequeño aprende de ella. Las herramientas comerciales no publican validación; Retina sí.
+- `retina.ficha`: Muse Spark Open anota el arranque (gancho, se presenta antes del tema, tema en la primera
+  frase, promesa, cifra, interacción, claridad, curiosidad, emoción) en lotes de 20. Toda la base desde 2022,
+  sin un lote fallido; temperatura 0 para que el mismo video dé la misma ficha.
+- Regla sellada con commit (8fcfaac) antes de medir; pasó en dos periodos: la ficha entra al cerebro público.
+- La tarjeta muestra cómo arranca el video y qué pasó con videos que arrancan igual (solo lo que tuvo un
+  intervalo lejos de cero, en palabras). También franjas de lo bueno y lo flojo en la línea del tiempo y un
+  botón para bajar el resumen para el editor.
+- Pruebas: 131.
+
+**Costo:** unos USD 18 de Baseten (la ficha de toda la base) y centavos de Meta en pruebas en limpio.
+

@@ -86,7 +86,7 @@ def anotar(videos: list[tuple[str, str, list | None]]) -> dict[str, dict]:
     texto = "\n".join(entrada(n, t, tr) for n, (_, t, tr) in enumerate(videos, 1))
     r = baseten.chat("ficha", [{"role": "system", "content": INSTRUCCIONES},
                                {"role": "user", "content": f"<<<VIDEOS (dato)\n{texto}\nVIDEOS>>>"}],
-                     max_tokens=8000, esfuerzo="low")
+                     max_tokens=8000, esfuerzo="low", temperatura=0)  # el mismo video, la misma ficha
     salida = {}
     for f in leer_arreglo(r):
         n = int(f.get("n", 0))
