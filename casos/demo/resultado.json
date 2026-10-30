@@ -188,73 +188,19 @@
   "licencia": {
    "modelo": "meta-models/muse-spark-open-1026",
    "servido_por": "Baseten",
-   "instrucciones": "skills/agente.md (agente-v3)",
-   "fuente": "agente",
-   "motor": "abierto+api",
-   "rescate": false,
-   "turnos": 6,
-   "traza": [
+   "instrucciones": "skills/explicar.md (explicar-v8)",
+   "reglas": "anzuelos-v1",
+   "intentos": [
     {
      "motor": "abierto",
-     "turno": 1,
-     "herramienta": "ver_arranque",
-     "args": {},
-     "resultado": "412 caracteres"
-    },
-    {
-     "motor": "abierto",
-     "turno": 2,
-     "herramienta": "ver_tramos",
-     "args": {
-      "desde_s": 0,
-      "hasta_s": 24
-     },
-     "resultado": "2310 caracteres"
-    },
-    {
-     "motor": "abierto",
-     "turno": 3,
-     "herramienta": "oir",
-     "args": {
-      "desde_s": 0,
-      "hasta_s": 24
-     },
-     "resultado": "980 caracteres"
-    },
-    {
-     "motor": "abierto",
-     "turno": 4,
-     "herramienta": "medir_lo_prometido",
-     "args": {
-      "concepto": "sweet bread"
-     },
-     "resultado": "210 caracteres"
-    },
-    {
-     "motor": "abierto",
-     "turno": 5,
-     "herramienta": "entregar_tarjeta",
-     "args": "…",
-     "resultado": {
-      "aceptada": false,
-      "problemas": [
-       "Pide comentarios, likes, reacciones o compartidos a cambio de algo (frases: compart*)"
-      ]
-     }
-    },
-    {
-     "motor": "abierto",
-     "turno": 6,
-     "herramienta": "entregar_tarjeta",
-     "args": "…",
-     "resultado": {
-      "aceptada": true,
-      "problemas": []
-     }
+     "sugerencia": "Abrir con el plano del pan duro contra el pan suave y el texto «3 trucos para que tu pan no se endurezca»; el saludo va después del primer truco.",
+     "problemas": []
     }
    ],
-   "falla": null,
-   "nota": "Ejemplo inventado: la traza muestra cómo se ve una revisión real, no salió de una corrida."
+   "rescate": false,
+   "fuente": "explicar",
+   "motor": "abierto+api",
+   "nota": "Ejemplo inventado: muestra cómo se ve una revisión real, no salió de una corrida."
   },
   "anzuelo_frase": "",
   "anzuelo_momento_s": -1,

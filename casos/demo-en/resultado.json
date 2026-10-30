@@ -188,73 +188,19 @@
   "licencia": {
    "modelo": "meta-models/muse-spark-open-1026",
    "servido_por": "Baseten",
-   "instrucciones": "skills/agente.md (agente-v3)",
-   "fuente": "agente",
-   "motor": "abierto+api",
-   "rescate": false,
-   "turnos": 6,
-   "traza": [
+   "instrucciones": "skills/explicar.md (explicar-v8)",
+   "reglas": "anzuelos-v1",
+   "intentos": [
     {
      "motor": "abierto",
-     "turno": 1,
-     "herramienta": "ver_arranque",
-     "args": {},
-     "resultado": "412 characters"
-    },
-    {
-     "motor": "abierto",
-     "turno": 2,
-     "herramienta": "ver_tramos",
-     "args": {
-      "desde_s": 0,
-      "hasta_s": 24
-     },
-     "resultado": "2310 characters"
-    },
-    {
-     "motor": "abierto",
-     "turno": 3,
-     "herramienta": "oir",
-     "args": {
-      "desde_s": 0,
-      "hasta_s": 24
-     },
-     "resultado": "980 characters"
-    },
-    {
-     "motor": "abierto",
-     "turno": 4,
-     "herramienta": "medir_lo_prometido",
-     "args": {
-      "concepto": "sweet bread"
-     },
-     "resultado": "210 characters"
-    },
-    {
-     "motor": "abierto",
-     "turno": 5,
-     "herramienta": "entregar_tarjeta",
-     "args": "…",
-     "resultado": {
-      "aceptada": false,
-      "problemas": [
-       "Pide comentarios, likes, reacciones o compartidos a cambio de algo (frases: compart*)"
-      ]
-     }
-    },
-    {
-     "motor": "abierto",
-     "turno": 6,
-     "herramienta": "entregar_tarjeta",
-     "args": "…",
-     "resultado": {
-      "aceptada": true,
-      "problemas": []
-     }
+     "sugerencia": "Open with the shot of stale bread next to soft bread and the text “3 tricks to keep your bread from going stale”; the greeting goes after the first trick.",
+     "problemas": []
     }
    ],
-   "falla": null,
-   "nota": "Made-up example: the trace shows what a real review looks like; it didn't come from a real run."
+   "rescate": false,
+   "fuente": "explicar",
+   "motor": "abierto+api",
+   "nota": "Ejemplo inventado: muestra cómo se ve una revisión real, no salió de una corrida."
   },
   "anzuelo_frase": "",
   "anzuelo_momento_s": -1,

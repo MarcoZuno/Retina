@@ -65,7 +65,7 @@ def regla_de_hoy(v: dict, historia: list[dict], entrenamiento: list[dict]) -> tu
 class _Indice:
     """Sumas acumuladas por cubeta (y cubeta + talento) ordenadas por fecha.
 
-    Con 30 mil videos, recorrer la historia completa por cada video tarda horas;
+    Con decenas de miles de videos, recorrer la historia completa por cada video tarda horas;
     así cada consulta es una búsqueda binaria. Da lo mismo que `_grupo_lento`.
     """
 
