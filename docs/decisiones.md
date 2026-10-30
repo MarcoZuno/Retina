@@ -547,3 +547,31 @@ están selladas; lo que estaba mal se corrige aquí.
   de video. Una cita ya tiene que estar en ese segundo y en los valores, no en los nombres de los campos.
 - **Comparar dos versiones.** Es la lectura de Spark sobre dos arranques, no una predicción de cuál pierde menos gente: en eso Spark no le
   ganó a una moneda.
+
+## 30-oct-2026 · Tercera medición: apertura-v2 en videos nuevos. Regla escrita antes de medir
+
+- **Por qué.** La segunda medición es una regresión, no una validación: se quitaron las palabras que SAM no reconocía y el código le
+  ordenaba a Muse Image poner al centro lo que SAM iba a buscar, así que pasar era lo esperado. Además la regla 3 («trae la promesa al
+  inicio») vaciaba el video: un ejemplo soltaba los tres trucos en 14 de 96 segundos. Y nadie había juzgado si las aperturas son fieles.
+- **Qué cambió (apertura-v2).** La regla 3 pide cumplir la promesa con su primera prueba y dejar lo demás al video. El código ya no le
+  ordena nada a Muse Image: quien escribe recibe el objeto prometido y el cuadro se dibuja solo de lo que escribió, así que SAM comprueba
+  la escritura. Las reglas de código son las mismas, más cifras con letra que faltaban y gentilicios que no son nombres.
+- **Cómo se afinó.** Con 6 casos aparte (`--piloto`, semilla 20261032), corridos dos veces, que no entran a esta medición. Sirvieron para
+  quitar dos defectos de redacción: mezclar inglés y español en los cuadros, y anunciar «la primera prueba es».
+- **Qué se mide** (`eval/apertura_v2.py`, `eval/juez_aperturas.py`). Videos de jul-sep de 2026 de hasta 4 minutos que no están en los 50, los
+  30, la afinación ni el piloto, barajados con la semilla 20261031: los primeros 30 cuyo título promete algo que SAM puede comprobar y los
+  primeros 20 que no, de 93 títulos revisados. Sin retención y sin video: el título y lo que se dice. La lista quedó fija antes de ver un
+  resultado (sha256 de la lista privada: 3adbcb88378cfc0a476c9f49355b41a3c696938be0b846c6f60999132a100314).
+- **Regla.** Todas tienen que pasar:
+  - A. Al menos 24 de los 30 con promesa pasan todo en 2 correcciones o menos, y SAM encuentra lo prometido en el primer cuadro.
+  - B. Al menos 16 de los 20 sin promesa pasan lo mismo menos SAM, que ahí no aplica.
+  - C. Trampa lejana: 10 cuadros aprobados contra un objeto de otra familia, de los que SAM encuentra tal cual. SAM rechaza al menos 9.
+  - D. Juez ciego, Muse Spark 1.3, con todo lo que se dice en el video: al menos 80 % de las aprobadas son fieles.
+  - E. El mismo juez: al menos 80 % de las aprobadas dejan algo importante para el resto del video.
+  - F. El mismo juez compara, sin saber cuál es cuál y en los dos órdenes, cada apertura con lo que el video dice en sus primeros 15
+    segundos. La nueva gana al menos 60 % de los pares firmes decididos, con al menos 20 decididos.
+- **Se reporta, sin ser condición.** Los intervalos de Wilson, que tratan como independientes casos que no lo son (11 de 30 son perro, gato
+  o cachorro); la trampa cercana, 10 cuadros contra otro objeto de su familia, donde el revisor es más débil; correcciones, fallas y
+  costo; y, como referencia, D y E sobre las 29 aperturas de la versión anterior, sin volver a escribirlas.
+- **Lo que esto no mide.** Si la apertura nueva retiene más gente. El juez es un modelo, no una persona ni una audiencia. No hay video.
+- **Si no pasa.** Se publica igual y no se reajusta en estos casos. Estos 50 casos no se vuelven a usar para esto.
