@@ -322,3 +322,22 @@ En el Discord del concurso (27-oct, 14:43), una persona de Meta escribió lo con
 el contenido que se manda puede usarse. Quien corra Retina con contenido de una empresa debe saberlo; por eso existe
 el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes de publicar).
 
+
+## 29-oct-2026 (noche) · ¿El semáforo sirve con videos de fuera? Regla sellada antes de medir
+
+- **Por qué.** La auditoría del 29-oct encontró que el semáforo del cerebro público pone en «alto» a
+  demasiados videos de fuera: sus cortes se fijaron con otra referencia (la de 90 días y el tipo de
+  producción), y el modo público usa la curva fija por duración.
+- **Qué se mide** (`eval/semaforo_publico.py`). Dos pruebas en periodos que el semáforo no ha visto:
+  entrenando antes del 1-jul-2025 y probando jul-dic 2025; entrenando antes del 1-ene-2026 y probando
+  ene-jun 2026. El cerebro público se arma solo con lo de antes del corte. Los cortes de «alto» y «medio»
+  se recalculan por duración con los videos de los 180 días antes del corte, como pasaría al usarlo (40 % y
+  75 % de lo que predice). Los videos de prueba entran como de fuera (sin talento ni código), elegibles.
+  «Perdió de más» = su gancho y primer cuarto perdieron más gente que la curva de su duración, la misma
+  que ve la persona en la tarjeta.
+- **Regla.** El semáforo se queda en el modo público solo si, en las dos pruebas: (1) «alto» sale en
+  entre 15 % y 35 % de los videos; (2) entre los «alto», la parte que de verdad perdió de más le gana a la
+  tasa base del periodo con intervalos de Wilson al 95 % que no se tocan; y (3) entre los «bajo», esa parte
+  queda por debajo de la tasa base. Si no pasa, el modo público no muestra semáforo: la tarjeta dice lo
+  que vio y el número queda como referencia. Una duración con menos de 50 videos de prueba se reporta
+  como «no medida» y la tarjeta avisa que Retina no conoce ese formato.
