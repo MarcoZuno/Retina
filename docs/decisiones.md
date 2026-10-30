@@ -446,3 +446,12 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
 - **Cómo se afina.** Las instrucciones y el validador se afinan solo con 9 revisiones que no están entre los 50. Antes de
   correr, el código se congela en un commit cuyo hash va en la bitácora. Si A, B o C fallan, el resultado se publica
   igual y no se reajusta en estos 50 casos.
+- **Resultado (30-oct; corrida con el commit 598b4bb, el del código congelado).** **No pasó.** A: 10 de 18, y pedía 15
+  (intervalo de 95 %: de 34 % a 75 %). B: 31 de 32, y pedía 26. C: SAM rechazó 10 de 10. En 9 de los 18 el borrador no
+  mostraba la promesa en sus primeros 3 segundos, y la apertura nueva sí la mostró en 2 de esos 9. De las 41 aperturas
+  aprobadas, 37 pasaron a la primera y 4 con una corrección. Costo: USD 3.36. Estos 50 casos ya no se usan para esto.
+- **Por qué falló A.** En 8 de los 18 casos la voz y las reglas pasaron y lo que falló, las tres veces, fue SAM. Un
+  diagnóstico con escenas inventadas (`eval/sam_objetos_dificiles.py`, sin ningún caso de la medición) encontró que casi
+  siempre era la palabra y no el dibujo: SAM no reconoce «tortilla» ni «nopal», pero en esos mismos dibujos encuentra
+  «food» y «cactus». «Fair», «city» y «dump» son escenas, no objetos, y Muse Image rechaza dibujar «vape».
+
