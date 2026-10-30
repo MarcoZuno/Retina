@@ -87,5 +87,22 @@ class DemoEstaticaConNginx(unittest.TestCase):
             self.assertFalse(any(r.match(ruta) for r in reglas), f"nginx sirve {ruta}")
 
 
+class ProxyEnLinea(unittest.TestCase):
+    """B12: el panel consulta cada 1.2 s (50 por minuto) y el límite era de 30; y proxy_params solo existe en Debian y Ubuntu."""
+
+    def setUp(self):
+        self.conf = (RAIZ / "deploy" / "proxy-en-linea.conf").read_text(encoding="utf-8")
+
+    def test_el_limite_solo_cuenta_los_POST(self):
+        zona = re.search(r"limit_req_zone\s+(\S+)\s+zone=retina_api", self.conf).group(1)
+        self.assertNotEqual(zona, "$binary_remote_addr")  # con la IP a secas, el sondeo del panel también cuenta
+        self.assertRegex(self.conf, r"map \$request_method " + re.escape(zona) + r" \{[^}]*POST\s+\$binary_remote_addr;[^}]*default\s+\"\";")
+
+    def test_no_depende_de_proxy_params(self):
+        self.assertNotIn("proxy_params", self.conf)
+        for cabecera in ("Host $host", "X-Forwarded-For $proxy_add_x_forwarded_for", "X-Forwarded-Proto $scheme"):
+            self.assertIn("proxy_set_header " + cabecera, self.conf)
+
+
 if __name__ == "__main__":
     unittest.main()
