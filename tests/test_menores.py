@@ -337,5 +337,22 @@ class LlaveYTopeParaQuienBajaElRepo(unittest.TestCase):
         self.assertIn("TOPE", str(e.exception).upper())
 
 
+class BotonDeOtraRevision(unittest.TestCase):
+    """B20: sin la API (la demo), «Abrir otra revisión» llevaba a una pantalla que pide un resultado.json:
+    quien no conoce el proyecto no sabe qué es. El botón dice a dónde va."""
+
+    def setUp(self):
+        self.panel = (RAIZ / "panel" / "index.html").read_text(encoding="utf-8")
+
+    def test_el_boton_dice_que_vuelve_al_inicio_en_los_dos_idiomas(self):
+        self.assertIn('otra: "Volver al inicio"', self.panel)
+        self.assertIn('otra: "Back to the start"', self.panel)
+        self.assertNotIn("Abrir otra revisión", self.panel)
+        self.assertNotIn("Open another review", self.panel)
+
+    def test_con_la_api_el_boton_sigue_siendo_revisar_otro_video(self):
+        self.assertIn('$("otra").dataset.t = "otro_video"', self.panel)
+
+
 if __name__ == "__main__":
     unittest.main()
