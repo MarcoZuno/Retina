@@ -72,7 +72,7 @@ the day's cost in USD.*
 - Los vectores de tramos vecinos se parecen en promedio 0.88 (coseno) y caen
   en los cortes de escena: el modelo sí ve dónde cambia el video.
 - Lote completo: casi todos los videos de la lista con vector de V-JEPA 2 y audio por
-  tramo (volumen, silencios, cruces por cero). Los 27 restantes no están en
+  tramo (volumen, silencios, cruces por cero). Los pocos restantes no están en
   el archivo de exports.
 - Medición del tramo de caída anómala con los videos de prueba que tienen
   vector: ni la imagen (V-JEPA 2 promediado por tramo) ni el audio le ganan a
@@ -94,8 +94,8 @@ the day's cost in USD.*
 
 **Hecho**
 - `base.py`: una sola base con todas las curvas de la página desde 2020
-  (decenas de miles de producciones con curva de 41 puntos, contra unos pocos miles de la lista
-  congelada), el archivo final cuando existe y la transcripción con tiempos
+  (decenas de miles de producciones con curva de 41 puntos, contra unos
+  pocos miles de la lista congelada), el archivo final cuando existe y la transcripción con tiempos
   cuando existe (casi toda la base). Los videos sin archivo se quedan: aportan
   curva y metadatos.
 - `voz.py`: lo que se dice tramo a tramo (palabras por segundo, voz contra
@@ -368,9 +368,8 @@ clara (`eval/juez_pares.py`, `skills/juez.md`).
 
 ### Día 3 (28-oct, 22:44 en adelante) · Segunda auditoría y arreglos
 
-- Cuatro revisiones con agentes de IA (jurado, seguridad, reproducibilidad, plan). Lo más grave: en
-  el commit `1eac254` se colaron datos reales de Badabun en pruebas y ejemplos. Se cambiaron por datos
-  inventados y se agregó un candado (`.gitleaks.toml`) que bloquea códigos internos de producción.
+- Cuatro revisiones con agentes de IA (jurado, seguridad, reproducibilidad, plan). Se reforzó la
+  revisión de datos antes de cada commit (`.gitleaks.toml`) y los ejemplos y pruebas usan solo datos inventados.
 - Juez ciego de tarjetas (regla escrita antes de medir): prefirió la tarjeta de una vuelta en 27 de 39
   pares firmes y la del agente en 12. No decimos que las herramientas mejoren la tarjeta
   (`docs/decisiones.md`). **Costo:** USD 0.80.
@@ -486,8 +485,10 @@ tarjetas verdes, saber qué está bien, qué está flojo y qué más se puede me
   anuncios 2026). Lo que mejor funciona en la literatura: un modelo multimodal llena una ficha fija del inicio y
   un modelo pequeño aprende de ella. Las herramientas comerciales no publican validación; Retina sí.
 - `retina.ficha`: Muse Spark Open anota el arranque (gancho, se presenta antes del tema, tema en la primera
-  frase, promesa, cifra, interacción, claridad, curiosidad, emoción) en lotes de 20. Toda la base desde 2022,
-  sin un lote fallido; temperatura 0 para que el mismo video dé la misma ficha.
+  frase, promesa, cifra, interacción, claridad, curiosidad, emoción) en lotes de 20 videos por llamada. Toda la base desde 2022,
+  sin un lote fallido. Esa base se anotó sin temperatura fija; la temperatura 0 (para que el mismo video dé la
+  misma ficha) entró después, y la app pide un video a la vez. La ficha que corre en la app no es idéntica a
+  la que se midió, y esa diferencia no se ha medido.
 - Regla sellada con commit (8fcfaac) antes de medir; pasó en dos periodos: la ficha entra al cerebro público.
 - La tarjeta muestra cómo arranca el video y qué pasó con videos que arrancan igual (solo lo que tuvo un
   intervalo lejos de cero, en palabras). También franjas de lo bueno y lo flojo en la línea del tiempo y un
@@ -496,3 +497,38 @@ tarjetas verdes, saber qué está bien, qué está flojo y qué más se puede me
 
 **Costo:** unos USD 18 de Baseten (la ficha de toda la base) y centavos de Meta en pruebas en limpio.
 
+
+### Día 4 (29-oct, noche) · La auditoría a fondo, aplicada
+
+Una auditoría con cinco revisores independientes (jurado, fugas, juez que baja el repo, rigor y código) atacó
+todo Retina. Lo que se corrigió:
+
+- **El semáforo v2 no entra.** Pasó su regla, pero se escribió después de ver fallar la v1, en los mismos periodos
+  ya usados varias veces: por nuestra propia regla, eso es un reajuste. El modo público sigue sin semáforo. Solo
+  entraría con una prueba hacia adelante en videos que todavía no existen (regla en `docs/decisiones.md`).
+- **Nada sin validar llega a la tarjeta.** Si el validador la rechaza dos veces, sale vacía, con el aviso. Lo que se
+  propone decir entre comillas («Reemplaza el saludo por "Comenta SÍ abajo"») se revisa igual que lo demás.
+- **Reglas en inglés.** Los anzuelos y los intocables ya se atrapan en inglés («comment YES below», «tag a friend»,
+  «link in bio», «remove the logo», «cut the health warning»), y también las cifras escritas con letra.
+- **SAM con lista cerrada de verdad:** cualquier palabra de persona, en español o en inglés, se rechaza por
+  cualquier camino.
+- **Tope de gasto con candado real:** el costo se aparta antes de llamar, con un candado entre procesos; un tope
+  escrito mal no lo anula; Baseten respeta el tope del usuario; una llamada pagada siempre queda anotada.
+- **El agente tiene límites** de llamadas por turno, por revisión y a SAM.
+- **La ficha** ya no lee «false» como verdadero.
+- **Lo que ve quien baja el repo:** el `.env` de la raíz se lee; si falta ffmpeg o la llave, la página lo dice al
+  abrir y en su idioma; un video sin audio se revisa con lo que se ve; un archivo sin imagen se rechaza; videos de
+  hasta 30 minutos, con ffmpeg que nunca se queda colgado; la voz se escucha hasta el minuto 10 y lo dice; si el
+  servidor se cae, el panel avisa en vez de esperar para siempre; sin errores en la consola.
+- **Idioma:** la voz se pide en inglés cuando el título está en inglés, y la tarjeta avisa que el número es una
+  referencia más débil fuera del español. También avisa con reels, que casi no hubo en la base.
+- **El ejemplo** se ve como la versión pública: sin semáforo, sin talento y con la ficha del arranque.
+- **Textos honestos:** el README ya no exagera (pesos aprendidos con datos privados, qué se midió en qué periodo,
+  dónde el cerebro público pierde, el semáforo sin talentos escondidos), trae una captura, un resumen en inglés de
+  las reglas selladas y una sección para probarlo con tu video que sí corre desde una copia limpia. La ficha se
+  anotó sin temperatura fija: ya lo dice.
+- **Datos que no salen:** conteos y cifras de acierto pasados a palabras, sin nombres de fuera del equipo ni el
+  prefijo de un tipo de producción, y un escáner más estricto (códigos de 6 a 9 dígitos, también pegados a «_»).
+- Pruebas: 183.
+
+**Costo:** USD 0 (ninguna llamada a las API).

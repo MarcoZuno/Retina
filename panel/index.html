@@ -93,7 +93,8 @@ a.pastilla { display: inline-flex; align-items: center; text-decoration: none; }
 .ejemplo { margin: 0 0 14px; padding: 10px 16px; border-radius: 14px; font-size: 14px; font-weight: 600;
   background: rgba(255,196,107,.20); color: var(--ambar-letra); box-shadow: inset 0 0 0 1px rgba(255,196,107,.45); }
 body[data-tema="claro"] .ejemplo { color: var(--ambar-letra); background: rgba(200,120,0,.12); }
-.opcion:focus-visible, .pastilla:focus-visible, .boton:focus-visible, .hecho:focus-visible, summary:focus-visible, .soltar:focus-visible, a:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
+.opcion:focus-visible, .pastilla:focus-visible, .boton:focus-visible, .hecho:focus-visible, summary:focus-visible, .soltar:focus-visible, a:focus-visible,
+button:focus-visible, [role="button"]:focus-visible, [role="radio"]:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
 main { flex: 1; display: grid; place-items: start center; padding: 8px 22px 48px; }
 .pantalla { display: none; width: 100%; }
 body[data-estado="vacio"] #vacio, body[data-estado="resultado"] #resultado { display: block; }
@@ -572,7 +573,11 @@ const TEXTOS = {
                    sub: "Retina solo da semáforo donde está medido. Lo de abajo sale de ver y oír tu video." },
     },
     sin_formula_gente: "En este modo el número es el promedio de videos de su duración; Retina no lo ajusta a tu video.",
-    formato_poco: "Retina vio pocos videos de menos de 30 segundos: toma el número con más cuidado.",
+    formato_poco: "Retina vio pocos reels y pocos videos de menos de 30 segundos: toma el número con más cuidado.",
+    otro_idioma: "Retina aprendió con videos en español: con otro idioma, el número es una referencia más débil.",
+    falta_ffmpeg: "A este equipo le falta ffmpeg y sin él no se puede revisar ningún video. Instálalo (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) y vuelve a abrir Retina.",
+    falta_llave: "Falta la llave de la Meta Model API (MODEL_API_KEY en el archivo .env): sin ella Retina no puede ver ni oír el video.",
+    sin_cerebro_aviso: "Esta copia no trae el cerebro público: la revisión saldrá sin número, solo con lo que ven y oyen los modelos de Meta.",
     sin_numero: "Esta copia de Retina no trae el cerebro público, así que no da un número: todo lo de abajo sale de lo que vieron y oyeron los modelos de Meta en tu video.",
     herramientas: {  // lo que revisó el agente, en palabras de quien edita
       ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
@@ -745,7 +750,11 @@ const TEXTOS = {
                    sub: "Retina only shows a traffic light where it has been measured. What follows comes from watching and listening to your video." },
     },
     sin_formula_gente: "In this mode the number is the average for videos of this length; Retina doesn't adjust it to your video.",
-    formato_poco: "Retina has seen few videos under 30 seconds: treat the number with extra care.",
+    formato_poco: "Retina has seen few reels and few videos under 30 seconds: treat the number with extra care.",
+    otro_idioma: "Retina learned from videos in Spanish: in another language, the number is a weaker reference.",
+    falta_ffmpeg: "This computer is missing ffmpeg, and without it no video can be reviewed. Install it (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) and open Retina again.",
+    falta_llave: "The Meta Model API key is missing (MODEL_API_KEY in the .env file): without it Retina can't watch or hear the video.",
+    sin_cerebro_aviso: "This copy doesn't include the public brain: the review will come without a number, only with what Meta's models see and hear.",
     sin_numero: "This copy of Retina doesn't include the public brain, so it gives no number: everything below comes from what Meta's models saw and heard in your video.",
     herramientas: {
       ver_arranque: "watched the opening and read the title", ver_tramos: "took a closer look at parts of the opening",
@@ -987,6 +996,7 @@ function cifras(r) {
   const l = r.licencia || {};
   if (comparadoCon(l)) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
   if (l.formato_poco_conocido) principal.append(nodo("p", "nota-gente", t("formato_poco")));
+  if (l.otro_idioma) principal.append(nodo("p", "nota-gente", t("otro_idioma")));
   if (l.conoce_al_creador === false && !sinFormula)  // en el plan B la frase de arriba ya lo explica
     principal.append(nodo("p", "nota-gente", t(l.cerebro === "cualquier_video" ? "creador_nuevo" : "creador_nuevo_sin_voz")));
 
@@ -1383,10 +1393,15 @@ function avisar(motivo) {  // motivo: una clave de TEXTOS o el texto que manda R
 
 async function prepararSubida() {
   if (location.protocol === "file:") return false;
+  let salud = {};
   try {
-    const r = await fetch("/api/talentos", { cache: "no-store" });
+    const r = await fetch("/api/salud", { cache: "no-store" });
     if (!r.ok) return false;
-    talentos = ((await r.json()).talentos || []).map(String);
+    salud = await r.json();
+    if (!salud.subir) return false;  // la demo sin llave: solo abre revisiones ya hechas
+    const rt = await fetch("/api/talentos", { cache: "no-store" });
+    if (!rt.ok) return false;
+    talentos = ((await rt.json()).talentos || []).map(String);
   } catch (_) { return false; }
   for (const x of talentos) { const o = nodo("option", "", x); o.value = x; $("v-talento").append(o); }
   // Con el cerebro público no hay talentos ni códigos de producción: esos campos ni se enseñan.
@@ -1394,6 +1409,10 @@ async function prepararSubida() {
   const ahora = new Date(); ahora.setMinutes(0, 0, 0); ahora.setHours(ahora.getHours() + 1);
   $("v-fecha").value = new Date(ahora - ahora.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   $("otra").dataset.t = "otro_video";
+  // Si falta algo, se dice al abrir, antes de que la persona elija un video.
+  if (salud.ffmpeg === false) avisar("falta_ffmpeg");
+  else if (salud.llave === false) avisar("falta_llave");
+  else if (salud.cerebro === false) avisar("sin_cerebro_aviso");
   return true;
 }
 
@@ -1460,10 +1479,18 @@ function subirVideo(archivo, extra, alSubir) {
 
 // Pregunta cada 3 s en qué va una revisión hasta que termina; devuelve su estado final.
 async function esperar(id, alPaso) {
+  let fallas = 0;  // 10 preguntas seguidas sin respuesta (30 s): Retina se cerró
   for (;;) {
     await new Promise((r) => setTimeout(r, 3000));
     let e;
-    try { const r = await fetch(`/api/estado/${id}`, { cache: "no-store" }); e = await r.json(); } catch (_) { continue; }
+    try {
+      const r = await fetch(`/api/estado/${id}`, { cache: "no-store" });
+      if (!r.ok) throw new Error(String(r.status));
+      e = await r.json(); fallas = 0;
+    } catch (_) {
+      if (++fallas >= 10) throw new Error("sin_conexion");
+      continue;
+    }
     if (e.estado === "listo" || e.estado === "error") return e;
     alPaso(e);
   }
@@ -1675,7 +1702,7 @@ aplicarTextos();
     if (u.origin === location.origin && /^\/casos\/[\w-]+\/resultado\.json$/.test(u.pathname)) propio = u.pathname;
     else { fallo("caso_invalido"); return; }
   }
-  for (const ruta of propio ? [propio] : ["resultado.json", DEMO()]) {
+  for (const ruta of propio ? [propio] : [DEMO()]) {
     try { await abrir(ruta, ruta === DEMO()); return; } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
   }
   if (propio) fallo("no_encontre");

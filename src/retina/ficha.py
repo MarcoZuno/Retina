@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -63,13 +64,29 @@ def leer_arreglo(texto: str) -> list[dict]:
     return json.loads(texto[i:j + 1])
 
 
+def _si_no(v) -> bool:
+    """Un sí/no de la respuesta del modelo. «false» como texto es falso (bool("false") es True); lo que no
+    se entiende lanza ValueError y la ficha entera se tira, igual que un valor fuera de rango."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)) and v in (0, 1):
+        return bool(v)
+    if isinstance(v, str):
+        t = unicodedata.normalize("NFKD", v).encode("ascii", "ignore").decode().strip().lower()
+        if t in ("true", "si", "yes", "1", "verdadero"):
+            return True
+        if t in ("false", "no", "0", "falso"):
+            return False
+    raise ValueError(f"no es un sí/no: {v!r}")
+
+
 def valida(f: dict) -> dict | None:
     """La ficha limpia, o None si no se puede usar."""
     try:
         g, e = str(f["gancho"]), str(f["emocion"])
         if g not in GANCHOS or e not in EMOCIONES:
             return None
-        sale = {"gancho": g, "emocion": e, **{k: bool(f[k]) for k in SI_NO}}
+        sale = {"gancho": g, "emocion": e, **{k: _si_no(f[k]) for k in SI_NO}}
         for k in ESCALAS:
             v = int(f[k])
             if not 1 <= v <= 5:

@@ -106,10 +106,13 @@ class ArchivoPublico(unittest.TestCase):
         self.assertIn(nivel, ("alto", "medio", "bajo"))
 
     def test_el_modo_publico_no_da_semaforo_y_avisa_en_videos_cortos(self):
-        self.assertFalse(self.modelo.semaforo)  # no pasó su regla sellada (eval/semaforo_publico.py)
+        self.assertFalse(self.modelo.semaforo)  # la v1 no pasó y la v2 es exploratoria (docs/decisiones.md)
         corto = {"fecha": datetime(2025, 12, 1, 18), "dur": 20.0, "cubeta": cubeta(20.0), "codigo": "", "talento": "",
                  "archivo": "receta", "titulo": "receta", "reel": 1.0}
         self.assertTrue(self.modelo.predecir(corto)["formato_poco_conocido"])
+        reel = {**corto, "dur": 75.0, "cubeta": cubeta(75.0)}  # vertical de más de 30 s: también casi no los vio
+        self.assertTrue(self.modelo.predecir(reel)["formato_poco_conocido"])
+        self.assertFalse(self.modelo.predecir({**reel, "reel": 0.0})["formato_poco_conocido"])
 
     def test_un_json_que_no_es_el_cerebro_publico_no_se_abre(self):
         with self.assertRaises(ValueError):

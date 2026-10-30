@@ -1,6 +1,12 @@
 # Retina
 
-**Before you publish, see where your audience leaves.**
+**Before you publish, see if your opening loses more people than videos like it, and what to change.**
+
+![A Retina card for a made-up example video: how many of 100 people are still watching, how the opening starts according to Muse Spark Open, why, and what to change](docs/img/retina-example-card.jpg)
+
+*The card above is a made-up example (no real video), as the public version shows it: no traffic light, a number
+from the public brain, and advice from Meta's models. Open it yourself in one minute, with no key: see
+"Try it in one minute" below.*
 
 Retina reviews a video draft before it goes to Facebook and tells you where its
 opening (the hook and the first quarter) may lose people, why, and what to change.
@@ -25,6 +31,29 @@ Startup track · theme *Build for Your World*.
 
 Team: **Marco Zuno** (representative) · **Jossafat Ruvalcaba** (lead developer).
 
+## What we measured, and what happened (sealed rules, in words)
+
+Every idea entered with its pass/fail rule written down **before** we measured, in
+[`docs/decisiones.md`](docs/decisiones.md), and the later ones were sealed with a git commit before measuring. We report
+what failed as well as what passed. The numbers come from a private Facebook archive of a large page in
+Mexico and stay out of this repository, so here they are in words.
+
+| Question | Rule written first | Result |
+|---|---|---|
+| Can the predicted curve beat today's rule (the average of videos of the same duration and creator over the previous 90 days)? | Beat it on error at 3 s, 15 s, mid-video, end and whole curve | **Passed** on videos the model had not seen |
+| Does the "high / medium / low" opening level pick out openings that really lose more people? | Better than the base rate, against videos of the same production type | **Passed**: openings flagged "high" lost more people than the base rate |
+| Can we point to the exact stretch where people leave? | Beat always guessing the most common stretch | **Did not pass.** The curve comes in whole points, so past the opening it is rounding noise. We dropped the promise |
+| Does speech improve the risk level? | Improve it on held-out videos | **Did not pass**, measured twice. Speech goes to the explanation instead |
+| Does looking at the video (frame features, audio, pace) improve the risk level? | Improvement above zero, with a confirmation period set in advance | **Did not pass** in either period |
+| Can Spark, watching two openings, say which loses more people? | Better than a coin flip, each pair judged in both orders | **Did not pass.** It was no better than a coin flip and the data model beat it |
+| Do the agent's tools make the card better than one pass? | The agent wins at least 60 % of firm pairs in a blind comparison | **Did not pass.** The blind judge preferred the one-pass card, so the public version writes the card in one pass |
+| Does Retina work for a creator it has never seen? | Lower error on the whole curve and better ordering at 15 s, with intervals that do not overlap | **First period did not pass.** We then changed the comparison (a paired difference per video), which makes that period a hint, not a result. A second period, with the new rule written before running, **passed**: a small, real improvement |
+| Does the public brain file (no video, no creator names) hold up? | Beat the fixed curve by duration on a period it had not seen | **Passed** its rule on Jan-Jun 2026. In later checks against the plain average for its duration it lost in Jul-Dec 2025 and only tied in Jan-Jun 2026 |
+| Does reading the opening (a fixed sheet filled by Muse Spark Open) improve the number? | Better in both of two periods | **Passed**, with the rule sealed by a commit before measuring |
+| Does a better opening go with more reach on Facebook? | A positive relation, in two separate periods and then on videos predicted before publishing | **Passed** (a relation, not proof of cause) |
+| Does the traffic light work for creators it has never seen (v1)? | "High" for 15-35 % of videos, clearly above the base rate, "low" below it, in two periods | **Did not pass**: it flagged too many videos as "high" in one period. **The public mode shows no traffic light.** |
+| A second traffic light (v2)? | Same rule as v1 | It passed, but it was written after seeing v1 fail and tested on periods already used several times. By our own rule it counts as exploratory and **is not in the public mode** |
+
 > Retain, never deceive: Retina never suggests what Meta's distribution rules
 > penalize (engagement bait, hiding the payoff, miracle cures, unlabeled AI).
 > If it sees one in a draft, it flags it. The list lives in
@@ -44,19 +73,22 @@ Team: **Marco Zuno** (representative) · **Jossafat Ruvalcaba** (lead developer)
 | Video features (tried) | V-JEPA 2 (open weights) | Our GPU | One vector per stretch. Measured: it does not improve the number, so the number does not depend on it |
 
 The number (how many of 100 people are still watching) is not an AI call: it is the average curve for
-videos of that length plus fixed weights learned from public retention patterns (`modelos/retina-publico.json`).
+videos of that length plus fixed weights (`modelos/retina-publico.json`) learned from the private retention data of a large Facebook page in Mexico (the company that provides the data). The file carries no video and no per-video data.
 If the organizers rule that fixed learned weights count as a non-Meta model, `RETINA_SOLO_MODELOS_META=1`
 turns them off: the number becomes the plain average for that length, there is no risk level, and the
 card comes only from what Meta's models saw and heard. The card says so.
+The public mode shows **no traffic light** (no "high / medium / low" level): the first version did not pass its
+rule, and the second passed its own but was written after seeing the first one fail and was tested on periods
+already used several times, so by our rule it counts as exploratory and stays out (see the table above).
 
 ## Status
 
-Day 4 of 10 (29-Oct-2026). See [`BUILD-LOG.md`](BUILD-LOG.md) for the dated
+Entry for the Meta Global AI Developer Hackathon (due 4-Nov-2026). See [`BUILD-LOG.md`](BUILD-LOG.md) for the dated
 diary and [`docs/decisiones.md`](docs/decisiones.md) for every decision.
 
 ## Architecture
 
-Three decoupled layers: **presentation** (`panel/`, from day 6) ·
+Three decoupled layers: **presentation** (`panel/`) ·
 **orchestration** (`retina.py`, calls the services in order and versions each
 output) · **services** (the table below). Each service takes files or JSON,
 returns files or JSON, and does not know who calls it.
@@ -81,7 +113,7 @@ number that no tool returned, points to a second outside the opening, or
 suggests engagement bait; the agent then corrects it. Guards: turn cap, repeated
 calls, the project budget cap, and a one-shot fallback (`explicar`). SAM is
 never used on people: Meta's acceptable use policy forbids tracking people
-across frames, and the code refuses the request before calling the API.
+across frames. The code only accepts objects from a closed list and refuses any person word, before calling the API.
 
 ### Service catalog
 
@@ -89,20 +121,20 @@ If a service is not in this table, it does not exist.
 
 | Service | Input → output | Meta model | Cost per call | Status |
 |---|---|---|---|---|
-| `segmentar` | MP4 → frames per stretch, 24 kHz mono WAV, 480p MP4 | ffmpeg (no model) | 0 | ✅ day 1 |
-| `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ day 2 |
-| `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | ≈ USD 0.05 / 100 s | ✅ day 2 |
-| `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | ✅ day 2 · optional: no gain on the risk level |
-| `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression | 0 | ✅ day 1 |
-| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | ✅ day 2 |
-| `explicar` | opening + descriptors + speech → why + one edit (one shot, validated; the agent's fallback) | Muse Spark Open or 1.3 (`RETINA_MOTOR`) | ≈ USD 0.03 | ✅ day 3 |
-| `agente` | case folder → card, with tools and the validator in the loop | **Muse Spark Open** (open weights, Baseten); Muse Spark 1.3 rescues | ≈ USD 0.04 | ✅ day 3 |
-| `sam` | first 3 s + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.006 | ✅ day 3 |
-| `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ day 2 |
-| `storyboard` | suggestion → 3 illustrations of the new opening, shown in the panel (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ day 3 |
+| `segmentar` | MP4 → frames per stretch, 24 kHz mono WAV, 480p MP4 | ffmpeg (no model) | 0 | ✅ |
+| `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ |
+| `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | ≈ USD 0.05 / 100 s | ✅ |
+| `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | ✅ · optional: no gain on the risk level |
+| `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression | 0 | ✅ |
+| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | ✅ |
+| `explicar` | opening + descriptors + speech → why + one edit (one shot, validated; the agent's fallback) | Muse Spark Open or 1.3 (`RETINA_MOTOR`) | ≈ USD 0.03 | ✅ |
+| `agente` | case folder → card, with tools and the validator in the loop | **Muse Spark Open** (open weights, Baseten); Muse Spark 1.3 rescues | ≈ USD 0.04 | ✅ |
+| `sam` | first 3 s + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.006 | ✅ |
+| `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ |
+| `storyboard` | suggestion → 3 illustrations of the new opening, shown in the panel (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | not built (after the event) |
 | `escuchar` | post id → real curve + labeled comments | Graph API + Spark | ≈ USD 0.02 | not built (after the event) |
-| `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ day 1 |
+| `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ |
 
 Rules live outside the code: [`reglas/`](reglas/). Every API call is logged
 (model, tokens, seconds, USD) in your own log (`mis-revisiones/costos.jsonl`, outside the
@@ -130,51 +162,72 @@ The panel is a "liquid glass" interface drawn with WebGL over backgrounds genera
 opened with a double click. It only paints text from the JSON (never HTML) and only loads cases from
 `casos/` on the same site.
 
-## Review your own video (any creator)
+## Try it with your own video
+
+Works from a clean copy of this repository. You need Python 3.12, ffmpeg and your own key for the Meta Model API.
 
 ```bash
 pip install -r requirements.txt
-# Put MODEL_API_KEY (and BASETEN_API_KEY for Muse Spark Open) in a .env and point RETINA_ENV to it.
-PYTHONPATH=src python -m retina.app --casos my-reviews --modelo modelos/retina-publico.json
+# ffmpeg:  winget install Gyan.FFmpeg  (Windows) · brew install ffmpeg (macOS) · apt install ffmpeg (Linux)
+cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env  (Retina reads .env at the repo root)
+# Open .env and put your Meta Model API key in MODEL_API_KEY.
+# Add BASETEN_API_KEY for Muse Spark Open; without it, Muse Spark 1.3 writes every card.
+PYTHONPATH=src python -m retina.app     # Windows PowerShell: $env:PYTHONPATH="src"; python -m retina.app
 ```
 
-Drop an MP4 in the page that opens, write its title and when it would go out, and the card is ready in
-about 3 minutes, in the language the page is in (English or Spanish). On the card, «Draw it with Muse Image» sketches
-the suggested opening in 3 frames. No Badabun video or per-video data is needed: `modelos/retina-publico.json` is the **public brain**,
-what Retina learned about retention without carrying any video. It holds weights and five average curves
-by length, and no titles, creators, production codes, revenue or per-video figures. It was trained only on
-videos that had no eligibility and do not touch out-of-scope topics or out-of-scope topics
-([`reglas/alcance-v1.json`](reglas/alcance-v1.json)), with creator names removed from the
-words it learns. It is JSON, so opening it runs no code. `python -m retina.publico` rebuilds it from a
-private base. The card says plainly when Retina does not know the creator: the number is a reference
-from a large Facebook page in Mexico, and the advice comes from Meta's models watching your video.
+The app opens in your browser at `http://127.0.0.1:8790` (change it with `--puerto`). Drop a video in the
+page, write its title and when it would go out, and the card is ready in about 3 minutes, in the language
+the page is in (English or Spanish). On the card, «Draw it with Muse Image» sketches the suggested opening in
+3 frames.
 
-A company can add its own layer on top (its creators, its history, its transcripts) with a private model:
-that is how Badabun runs it. The public brain is the same program with one file less.
-
-## How to run it with your own key
+Without the app, from the command line:
 
 ```bash
-pip install -r requirements.txt
-# Put MODEL_API_KEY in a .env OUTSIDE the repo (default: un .env fuera del repo),
-# or point RETINA_ENV to it. See .env.example.
-# The agent runs on Muse Spark Open by default: add BASETEN_API_KEY too. Without it,
-# Spark 1.3 takes every case. RETINA_MOTOR=api uses only Spark 1.3.
-cd src
-python -m retina.gate1 ping                      # one real call to Spark
-# Whole pipeline on a published video (the models are trained on private data):
-python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json \
-    --salida ../datos/casos/demo --con-api --ya-publicado --voz VOZ.jsonl
-python -m retina.agente ../datos/casos/demo --modelo MODELO.pkl --voz VOZ.jsonl
+PYTHONPATH=src python -m retina.retina VIDEO --salida CARPETA --con-api --ya-publicado --idioma en
 ```
 
-**From the browser (local prototype).** `python -m retina.app --casos CASES_DIR --modelo PREDECIR.pkl
---arranque ARRANQUE.json --voz VOZ.jsonl` opens the same panel with an upload screen: drop an MP4, write
-the title and the day and time it would be published, and optionally who is on camera and a production code
-(a date, code or name at the start of the file name, like `2026-01-15 XYZ0000001 Title.mp4`, is filled in).
-The same pipeline runs in the background, one video at a time, and the card opens in the panel when it is
-ready (about 3 minutes). It listens only on 127.0.0.1, accepts uploads only from its own page, only video files (MP4, MOV, WebM, MKV or AVI; anything that is not MP4 is converted first), and
-honours the published-only lock (`RETINA_SOLO_PUBLICADOS`) set in the `.env`.
+**With or without a number.** The number (how many of 100 people are still watching) comes from
+`modelos/retina-publico.json`, the **public brain**: weights and five average curves by video length,
+with no titles, creators, production codes, revenue or per-video figures. It was trained only on videos with
+no eligibility that do not touch out-of-scope topics or out-of-scope topics
+([`reglas/alcance-v1.json`](reglas/alcance-v1.json)), with creator names removed from the words
+it learns. It is JSON, so opening it runs no code. **If your copy does not include
+`modelos/retina-publico.json`, Retina still runs, but without a number:** the card comes only from what
+Meta's models see and hear in your video, and the app says so in the page and in the terminal when it starts
+(it does the same if ffmpeg or the key is missing). The card also says plainly when
+Retina does not know the creator: the number is a reference from a large Facebook page in Mexico, and the
+advice comes from Meta's models watching your video. The public mode shows no traffic light (see Results).
+
+**Who it was tested on.** We tested Retina on horizontal videos of 1 to 4 minutes from one large Facebook page in
+Spanish. It is meant for any creator, but with reels, videos under 30 seconds or other languages Retina
+warns you and the number is a weaker reference.
+
+Retina is built to review a video *before* you publish it, so by default any video goes to Meta's API, which
+costs money (the card of one video is a few US cents; your own cap is in `.env`, `RETINA_TOPE_USD`).
+With the free credits of the contest, the content you send may be used by Meta; a company that does not
+want to send drafts can turn on a lock with `RETINA_SOLO_PUBLICADOS=1` in its `.env`: then only
+already-published videos go, and `--con-api` requires `--ya-publicado`.
+
+No Badabun video or per-video data is needed. A company can add its own layer on top (its creators, its
+history, its transcripts) with a private model: that is how Badabun runs it. The public mode is the same
+program with one file less.
+
+### Reproducing our measurements (needs the private data)
+
+The measurements in `eval/` and the private model (`MODELO.pkl`) need Badabun's private
+archive, which is not in this repository. `python -m retina.publico` rebuilds the public brain from such a
+base. Without that data you can still read every rule in [`docs/decisiones.md`](docs/decisiones.md) and run
+the tests.
+
+### What else the app does
+
+**From the browser.** Besides the video, the upload screen takes optionally who is on camera and a production
+code (a date, code or name at the start of the file name, like `2026-01-15 XYZ0000001 Title.mp4`, is filled in;
+useful only to a company with its own private model). The pipeline runs in the background, one video at a time, and the card
+opens in the panel when it is ready (about 3 minutes). The app listens only on 127.0.0.1, accepts uploads only
+from its own page and only video files: common video formats (MP4 and MOV are used as they are; WebM, MKV,
+AVI and FLV are converted to MP4 with ffmpeg), and also an audio-only M4A. It honours the published-only lock
+(`RETINA_SOLO_PUBLICADOS`) set in the `.env`.
 
 **Compare two versions (A/B).** On the same upload screen, «Comparar dos versiones» takes two cuts of the
 same video. Retina reviews each one and then `retina.comparar` asks Muse Spark Open (Muse Spark 1.3 as
@@ -194,18 +247,15 @@ The panel reads only `resultado.json`; its contract is in
 
 Requires Python 3.12 and ffmpeg (on PATH or in `FFMPEG`; on Windows, `winget install Gyan.FFmpeg`).
 V-JEPA 2 and the local Whisper script are optional and need `pip install -r requirements-gpu.txt`
-and a GPU; without them the pipeline still runs. Retina is built to review a video *before* you publish it, so by default any video goes to
-Meta's API. A company that does not want to send drafts can turn on a lock with
-`RETINA_SOLO_PUBLICADOS=1` in its `.env`: then only already-published videos go, and
-`--con-api` requires `--ya-publicado`.
+and a GPU; without them the pipeline still runs.
 
 Tests (no API key, no private data): `pip install -r requirements.txt`, then
 `python -m unittest discover -s tests`.
 
 ## Open weights: the agent runs on Muse Spark Open
 
-The main step of Retina, the agent that investigates the opening and writes the
-card the editor sees, runs on **Muse Spark Open** (`meta-models/muse-spark-open-1026`,
+The main step of Retina (in the company version an agent that investigates the opening; in the
+public version a one-pass card) writes the card the editor sees on **Muse Spark Open** (`meta-models/muse-spark-open-1026`,
 served by Baseten's Model API), and it is the default. It gets the same instructions
 ([`skills/agente.md`](skills/agente.md)), the same five tools and the same
 validator as Muse Spark 1.3, through Chat Completions with tool calling
@@ -250,20 +300,28 @@ model wrote it. A blind judge preferred one-pass cards over the agent's (see Res
 
 ## Results
 
-Measured on videos the model never saw (Jul–Sep 2026), against today's rule
-("average of same format, talent and duration over the previous 90 days").
-No number is reported before it is measured, and figures from Badabun's
-private data are published only with management's approval.
+What was measured where. Every measurement is on videos the model had not seen, but the periods and the
+comparison rule differ, so do not read the rows as one test:
+
+- **Predicted curve, opening level and reach** (house model): Jul–Sep 2026, against today's rule, "the average
+  of videos of the same talent and duration over the previous 90 days".
+- **Creators it has never seen, the public brain, the opening sheet and the traffic light**: Jul–Dec 2025 and
+  Jan–Jun 2026 (the creator-never-seen test also used Jul–Sep 2026), against a fixed curve by duration, the
+  one the public mode uses. Several of these periods were used more than once, and we say so where it matters.
+- **The agent and the card comparisons**: the same 50 videos (Jul–Sep 2026), which we also used to tune the
+  agent's instructions.
+
+No number is reported before it is measured, and figures from Badabun's private data are not published.
 
 | Question | What we found |
 |---|---|
-| Does the predicted curve beat today's rule? | Yes, on all five measures (error at 3 s, 15 s, mid-video, end, whole curve). Figures pending approval. |
-| When Retina says the opening risk is "high", does the opening really lose more people? | Clearly more often than the base rate, measured against similar videos *of the same production type* so the type alone can't explain it, and the gap holds within each type. Figures pending approval. |
+| Does the predicted curve beat today's rule? | Yes, on all five measures (error at 3 s, 15 s, mid-video, end, whole curve), in Jul–Sep 2026. The figures stay private. |
+| When Retina says the opening risk is "high", does the opening really lose more people? | Clearly more often than the base rate, measured against similar videos *of the same production type* so the type alone can't explain it. We did not show that the gap holds inside each type: we only compared one production type against the rest, and inside that type the ranges touch. The figures stay private. |
 | Can it point to the exact stretch where people leave? | No. Past the opening it does worse than always guessing the most common stretch, because the curve comes in whole points. We dropped that promise. |
 | Does speech help the risk level? | No, measured twice. Speech goes to the agent's explanation instead. |
-| Does it work for a creator it has never seen? | Better than before, not as well as for a creator it knows. We hid whole groups of creators from training and history, then fed in their videos the way an outside video arrives: no creator, no production code, only the published title. A brain built only from what any video has (length, vertical or not, posting time, title, and how the speech opens) beat the metadata model on those same videos, on the whole curve and on ordering videos at 15 s. The rule was written before measuring, and the decision was confirmed on a second period (Jan–Jun 2026) set in advance ([`eval/cualquier_video.py`](eval/cualquier_video.py), [`docs/decisiones.md`](docs/decisiones.md)). Retina uses it for creators it doesn't know and says so on the card; videos from the house keep the model that knows them. The public brain file (trained without paid, out-of-scope or serious-topic videos and without creator names) also beats the plain average by length on that test, and ties with what the full private model gives a creator it doesn't know. Figures pending approval. |
-| Does reading the opening make the number better? | Yes. Muse Spark Open labeled the opening of every video since 2022 (hook tactic, clarity, curiosity...). With that sheet, the public brain missed by less for creators it never saw and ordered videos better, on two held-out periods, with the rule sealed by a commit before measuring ([`eval/cualquier_video.py`](eval/cualquier_video.py), variant E). Figures pending approval. |
-| Does the traffic light work for creators it has never seen? | Partly, so the public version does not show it. We wrote the rule before measuring and sealed it with a commit. On two held-out periods, videos flagged "high" lost more people than the base rate and "low" ones less, but in one period it flagged too many videos as high, above the limit we had set. By our own rule, the public version shows no traffic light: the card says what it saw and the number stays as a reference ([`eval/semaforo_publico.py`](eval/semaforo_publico.py)). Figures pending approval. |
+| Does it work for a creator it has never seen? | Better than before, not as well as for a creator it knows. We hid whole groups of creators from training and history, then fed in their videos the way an outside video arrives: no creator, no production code, only the published title. A brain built only from what any video has (length, vertical or not, posting time, title, and how the speech opens) was compared with the metadata model on those same videos. The rule was written before measuring, and **the first period (Jul–Sep 2026) did not pass it**. We then changed the comparison (a paired difference per video) after seeing that result, so that period counts as a hint. The new rule was written before running on a second period (Jan–Jun 2026), and it passed: a small, real improvement ([`eval/cualquier_video.py`](eval/cualquier_video.py), [`docs/decisiones.md`](docs/decisiones.md), which admits the change). Retina uses it for creators it doesn't know and says so on the card; videos from the house keep the model that knows them. The public brain file (trained without paid, out-of-scope or serious-topic videos and without creator names) passed its own rule against the fixed curve by duration in Jan–Jun 2026. Against the plain average for its duration, it **loses in Jul–Dec 2025** and only ties in Jan–Jun 2026. The figures stay private. |
+| Does reading the opening make the number better? | Yes. Muse Spark Open labeled the opening of every video since 2022 (hook tactic, clarity, curiosity...). With that sheet, the public brain missed by less for creators it never saw and ordered videos better, on two held-out periods, with the rule sealed by a commit before measuring ([`eval/cualquier_video.py`](eval/cualquier_video.py), variant E). One caveat: the sheets we measured were written without a fixed temperature and 20 videos per call; the app asks for one video at a time at temperature 0, so the sheet that runs in the app is not identical to the one we measured, and we have not measured that difference. The figures stay private. |
+| Does the traffic light work? | Not well enough to show it in the public mode. We wrote the rule before measuring and sealed it with a commit. The test did not hide any creator from the model. On two held-out periods, videos flagged "high" lost more people than the base rate and "low" ones less, but in one period it flagged too many videos as "high", above the limit we had set. By our own rule the first version does not pass. A second version passed its own rule, but we wrote it after seeing the first one fail, and it was tested on periods already used several times, so we treat it as exploratory and it is **not** in the public mode: the card says what it saw and the number stays as a reference ([`eval/semaforo_publico.py`](eval/semaforo_publico.py), [`eval/semaforo_publico_v2.py`](eval/semaforo_publico_v2.py)). The figures stay private. |
 | Do the agent's tools make the card better than one shot? | Not that we can show. A blind judge (Muse Spark 1.3, each pair in both orders) preferred the one-shot card in 27 of 39 firm pairs and the agent's in 12. The judge only sees the data the one-shot card had, so what the agent found with its tools can look invented to it. The rule was written before measuring ([`eval/juez_tarjetas.py`](eval/juez_tarjetas.py), [`docs/decisiones.md`](docs/decisiones.md)). |
 | Can Spark, watching two real openings of the same type, tell which one loses more people? | No. We ran a blind pairwise judge on clear-difference pairs, each pair in both orders to cancel position bias (with one order it picked the second video every time). When its verdict held in both orders it was no better than a coin flip, and the metadata model beat it on the same pairs. So the risk level stays with the model, and Spark does what it is good at: explaining *where* and *why*, and proposing the edit (`eval/juez_pares.py`). |
 
@@ -277,6 +335,9 @@ video as event work.
 - Badabun's existing Graph API reader and servers.
 - Internal findings measured before the event (e.g. effect of introducing the
   host before the hook). Retina must rediscover or beat them.
+
+- Before the event we explored the data in private notes (with the same test cut-off and the rule of
+  the previous 90 days). The code in this repository is new, and every figure was redone during the event.
 
 Everything in this repository was written from 26-Oct-2026 on.
 

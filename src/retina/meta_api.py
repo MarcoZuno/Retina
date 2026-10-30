@@ -9,9 +9,12 @@ imprime ni se escribe en los registros.
 from __future__ import annotations
 
 import json
+import math
 import os
 import random
+import threading
 import time
+import uuid
 from contextlib import contextmanager
 from email.utils import parsedate_to_datetime
 from pathlib import Path
@@ -37,8 +40,12 @@ class TopeAlcanzado(RuntimeError):
 
 
 def _cargar_env() -> None:
-    """Lee RETINA_ENV (o un .env fuera del repo) sin pisar lo que ya exista."""
-    ruta = Path(os.environ.get("RETINA_ENV", RAIZ.parent / "privado" / ".env"))
+    """Lee RETINA_ENV, o el .env de la raíz del repo (una copia recién bajada), o un .env fuera del repo,
+    sin pisar lo que ya exista."""
+    if os.environ.get("RETINA_ENV"):
+        ruta = Path(os.environ["RETINA_ENV"])
+    else:
+        ruta = next((r for r in (RAIZ / ".env", RAIZ.parent / "privado" / ".env") if r.exists()), RAIZ / ".env")
     if not ruta.exists():
         return
     for linea in ruta.read_text(encoding="utf-8").splitlines():
@@ -71,52 +78,144 @@ def costos() -> Path:
     return Path(os.environ.get("RETINA_COSTOS") or RAIZ / "mis-revisiones" / "costos.jsonl")
 
 
+TOPE_POR_OMISION_USD = 50.0
+RESERVA_VIGENCIA_S = 24 * 3600  # una reserva que nadie cerró (corrida caída) deja de contar al día siguiente
+_HILOS = threading.Lock()  # el candado de archivo ya separa procesos; este separa hilos del mismo proceso
+
+
 @contextmanager
 def _candado():
-    """Candado de archivo para que dos corridas a la vez no se pasen juntas del tope."""
+    """Candado entre procesos e hilos (archivo .candado creado con O_EXCL, que es atómico en Windows y Linux)
+    para que dos corridas a la vez no se pasen juntas del tope."""
     ruta = costos().with_suffix(".candado")
     ruta.parent.mkdir(parents=True, exist_ok=True)
-    for _ in range(600):
+    with _HILOS:
+        for _ in range(600):
+            try:
+                fd = os.open(ruta, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                break
+            except FileExistsError:
+                try:
+                    if time.time() - ruta.stat().st_mtime > 120:  # candado huérfano de una corrida caída
+                        ruta.unlink(missing_ok=True)
+                except OSError:  # lo soltaron entre el intento y el stat
+                    pass
+                time.sleep(0.05)
+        else:
+            raise RuntimeError(f"No pude tomar el candado de gasto ({ruta}).")
         try:
-            fd = os.open(ruta, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            break
-        except FileExistsError:
-            if time.time() - ruta.stat().st_mtime > 120:  # candado huérfano de una corrida caída
-                ruta.unlink(missing_ok=True)
-            time.sleep(0.1)
-    else:
-        raise RuntimeError(f"No pude tomar el candado de gasto ({ruta}).")
-    try:
-        yield
-    finally:
-        os.close(fd)
-        ruta.unlink(missing_ok=True)
+            yield
+        finally:
+            os.close(fd)
+            ruta.unlink(missing_ok=True)
 
 
-def gastado_usd() -> float:
+def _usd_de(fila: dict) -> float:
+    v = fila.get("usd", 0.0)
+    return float(v) if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) else 0.0
+
+
+def gastado_usd(prefijo: str = "") -> float:
+    """Lo ya anotado en el registro; con `prefijo`, solo los servicios que empiezan con él («baseten»)."""
     if not costos().exists():
         return 0.0
     total = 0.0
     for linea in costos().read_text(encoding="utf-8").splitlines():
         if linea.strip():
-            total += json.loads(linea).get("usd", 0.0)
+            fila = json.loads(linea)
+            if str(fila.get("servicio", "")).startswith(prefijo):
+                total += _usd_de(fila)
     return total
 
 
+def _archivo_reservas() -> Path:
+    return costos().with_suffix(".reservas")
+
+
+def _leer_reservas() -> dict:
+    """Reservas vigentes {id: {servicio, usd, t}}. Solo se llama con el candado tomado."""
+    try:
+        datos = json.loads(_archivo_reservas().read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    ahora = time.time()
+    return {k: v for k, v in datos.items() if isinstance(v, dict) and ahora - v.get("t", 0) < RESERVA_VIGENCIA_S}
+
+
+def _guardar_reservas(reservas: dict) -> None:
+    ruta = _archivo_reservas()
+    tmp = ruta.with_suffix(".reservas.tmp")
+    with tmp.open("w", encoding="utf-8") as f:
+        json.dump(reservas, f)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, ruta)
+
+
+def reservado_usd(prefijo: str = "") -> float:
+    with _candado():
+        return sum(_usd_de(v) for v in _leer_reservas().values() if str(v.get("servicio", "")).startswith(prefijo))
+
+
 def tope_usd() -> float:
+    """Tope del proyecto: RETINA_TOPE_USD, nunca más que TOPE_MAXIMO_USD. Un valor que no es un número
+    finito y positivo («nan», «inf», «-5», «mucho») se ignora y queda el tope por omisión."""
     # Se lee después del .env: leído al importar, el tope del .env no contaba.
     _cargar_env()
-    return min(float(os.environ.get("RETINA_TOPE_USD", "50")), TOPE_MAXIMO_USD)
+    try:
+        pedido = float(os.environ.get("RETINA_TOPE_USD", TOPE_POR_OMISION_USD))
+    except ValueError:
+        pedido = TOPE_POR_OMISION_USD
+    if not math.isfinite(pedido) or pedido < 0:
+        pedido = TOPE_POR_OMISION_USD
+    return min(pedido, TOPE_MAXIMO_USD)
+
+
+def _comprobar(estimado_usd: float, prefijo: str = "", tope_prefijo: float | None = None) -> tuple[float, float]:
+    """Con el candado tomado: lanza TopeAlcanzado si lo gastado + lo reservado + lo estimado pasa del tope."""
+    if not isinstance(estimado_usd, (int, float)) or not math.isfinite(estimado_usd) or estimado_usd < 0:
+        raise TopeAlcanzado(f"El costo estimado ({estimado_usd!r}) no es un número válido: no se llama a la API.")
+    pendientes = _leer_reservas()
+    reservado = sum(_usd_de(v) for v in pendientes.values())
+    gastado, tope = gastado_usd() + reservado, tope_usd()
+    if gastado + estimado_usd > tope:
+        raise TopeAlcanzado(
+            f"Tope del proyecto: llevamos {gastado:.2f} USD (con lo reservado) y el tope es "
+            f"{tope:.2f}. Súbelo en tu .env si hace falta."
+        )
+    if prefijo and tope_prefijo is not None:
+        propio = gastado_usd(prefijo) + sum(_usd_de(v) for v in pendientes.values()
+                                            if str(v.get("servicio", "")).startswith(prefijo))
+        if propio + estimado_usd > tope_prefijo:
+            raise TopeAlcanzado(f"Tope de {prefijo}: llevamos {propio:.2f} USD de {tope_prefijo:.2f}.")
+    return gastado, tope
 
 
 def _revisar_tope(estimado_usd: float = 0.0) -> None:
+    """Solo comprueba (no reserva). Para llamar a la API, usa `reservar`."""
     with _candado():
-        gastado, tope = gastado_usd(), tope_usd()
-    if gastado + estimado_usd > tope:
-        raise TopeAlcanzado(
-            f"Tope del proyecto: llevamos {gastado:.2f} USD y el tope es "
-            f"{tope:.2f}. Súbelo en tu .env si hace falta."
-        )
+        _comprobar(estimado_usd)
+
+
+def reservar(servicio: str, estimado_usd: float, prefijo: str = "", tope_prefijo: float | None = None) -> str:
+    """Comprueba el tope y aparta el costo estimado en el mismo paso, con el candado tomado: dos llamadas
+    en paralelo no pueden pasar las dos por el mismo hueco. Devuelve el id de la reserva; quien llama la
+    cierra con `_registrar(..., reserva=id)` al terminar, o con `liberar` si la API no cobró."""
+    with _candado():
+        _comprobar(estimado_usd, prefijo, tope_prefijo)
+        reservas = _leer_reservas()
+        id_ = uuid.uuid4().hex
+        reservas[id_] = {"servicio": servicio, "usd": float(estimado_usd), "t": time.time()}
+        _guardar_reservas(reservas)
+    return id_
+
+
+def liberar(reserva: str | None) -> None:
+    if reserva:
+        with _candado():
+            reservas = _leer_reservas()
+            if reservas.pop(reserva, None) is not None:
+                _guardar_reservas(reservas)
 
 
 def peor_caso_usd(cuerpo: dict) -> float:
@@ -125,7 +224,9 @@ def peor_caso_usd(cuerpo: dict) -> float:
     return cuerpo.get("max_output_tokens", 0) * salida / 1e6
 
 
-def _registrar(servicio: str, modelo: str, segundos: float, usd: float, **extra) -> None:
+def _registrar(servicio: str, modelo: str, segundos: float, usd: float, reserva: str | None = None, **extra) -> None:
+    """Anota el gasto real. Con `reserva`, en el mismo paso con candado suelta lo apartado. La fila se
+    escribe con flush y fsync: una llamada pagada no se pierde aunque la corrida se caiga."""
     fila = {
         "fecha": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "servicio": servicio,
@@ -135,8 +236,15 @@ def _registrar(servicio: str, modelo: str, segundos: float, usd: float, **extra)
         **extra,
     }
     costos().parent.mkdir(parents=True, exist_ok=True)
-    with _candado(), costos().open("a", encoding="utf-8") as f:
-        f.write(json.dumps(fila, ensure_ascii=False) + "\n")
+    with _candado():
+        with costos().open("a", encoding="utf-8") as f:
+            f.write(json.dumps(fila, ensure_ascii=False) + chr(10))
+            f.flush()
+            os.fsync(f.fileno())
+        if reserva:
+            reservas = _leer_reservas()
+            if reservas.pop(reserva, None) is not None:
+                _guardar_reservas(reservas)
 
 
 def usd_tokens(modelo: str, uso: dict) -> float:
@@ -197,17 +305,19 @@ def _error(r: requests.Response) -> RuntimeError:
 
 def responder(servicio: str, cuerpo: dict) -> dict:
     """POST /v1/responses. Devuelve el JSON y registra el costo real (usage)."""
-    _revisar_tope(peor_caso_usd(cuerpo))
+    reserva = reservar(servicio, peor_caso_usd(cuerpo))  # aparta el peor caso antes de llamar
     t0 = time.time()
+    # Si _pedir lanza (red, tiempo agotado) no sabemos si la API cobró: la reserva se queda apartada.
     # 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble.
     r = _pedir("POST", "/responses", intentos=3, json=cuerpo)
     if r.status_code != 200:
+        liberar(reserva)
         raise _error(r)
     datos = r.json()
     uso = datos.get("usage") or {}
     modelo = cuerpo["model"]
     _registrar(
-        servicio, modelo, time.time() - t0, usd_tokens(modelo, uso),
+        servicio, modelo, time.time() - t0, usd_tokens(modelo, uso), reserva,
         entrada=uso.get("input_tokens", 0),
         en_cache=(uso.get("input_tokens_details") or {}).get("cached_tokens", 0),
         salida=uso.get("output_tokens", 0),
@@ -257,7 +367,6 @@ def borrar_archivo(file_id: str) -> None:
 
 def transcribir_wav(ruta: Path, modo: str = "ENDPOINTING", idiomas=("Spanish",)) -> dict:
     """POST /v1/asr/transcribe con WAV mono 16 bits a 24 kHz (máx. 10 min, 32 MB)."""
-    _revisar_tope()
     modelo = "muse-voice-transcribe-1.0"
     ajustes = {
         "mode": modo,
@@ -267,6 +376,8 @@ def transcribir_wav(ruta: Path, modo: str = "ENDPOINTING", idiomas=("Spanish",))
     }
     if ruta.stat().st_size > 32 * 1024 * 1024:
         raise ValueError("El audio pasa de 32 MB (unos 10 min): Voice Transcribe no lo acepta.")
+    # Peor caso: el audio más largo que acepta (10 min).
+    reserva = reservar("transcribir", PRECIO_HORA_AUDIO[modelo] * 10 / 60)
     t0 = time.time()
     r = _pedir(
         "POST", "/asr/transcribe",
@@ -276,9 +387,10 @@ def transcribir_wav(ruta: Path, modo: str = "ENDPOINTING", idiomas=("Spanish",))
         },
     )
     if r.status_code != 200:
+        liberar(reserva)
         raise _error(r)
     datos = r.json()
     horas = datos.get("audioDurationMs", 0) / 3_600_000
     _registrar("transcribir", modelo, time.time() - t0, horas * PRECIO_HORA_AUDIO[modelo],
-               audio_ms=datos.get("audioDurationMs", 0))
+               reserva, audio_ms=datos.get("audioDurationMs", 0))
     return datos

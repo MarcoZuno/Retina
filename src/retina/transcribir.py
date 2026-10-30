@@ -10,9 +10,45 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
+import wave
 from pathlib import Path
 
 from . import meta_api
+
+# Voice Transcribe acepta hasta unos 10 minutos de audio (32 MB). Para el arranque basta: lo de después se
+# recorta y la tarjeta dice hasta dónde se escuchó.
+ESCUCHA_MAXIMA_S = 10 * 60
+# Palabras de todos los días que delatan el idioma. Retina aprendió con videos en español.
+COMUNES = {
+    "es": set("de la que el en y los se del las un por con no una su para es al lo como más pero sus le ya "
+              "este sí porque esta cuando muy sin sobre también me hasta hay donde todo nos uno les ni eso esto "
+              "qué yo otro él ella mi tu te así cómo hoy vas aquí mira".split()),
+    "en": set("the of and to in is it you that was for on are with as they be at have this from or had by not "
+              "but what all were we when your can there an which she do how their if will up about out then them "
+              "so would like him into has look more go see could people my than who its now did get here watch".split()),
+}
+
+
+def idioma_de(texto: str) -> str | None:
+    """«es» o «en» si el texto lo deja claro (dos palabras comunes o más, y más de un idioma que del otro)."""
+    palabras = re.findall(r"[^\W\d_]+", (texto or "").lower())
+    cuenta = {k: sum(p in comunes for p in palabras) for k, comunes in COMUNES.items()}
+    gana = max(cuenta, key=cuenta.get)
+    otro = min(cuenta, key=cuenta.get)
+    return gana if cuenta[gana] >= 2 and cuenta[gana] > cuenta[otro] else None
+
+
+def recortar(wav: Path, segundos: float = ESCUCHA_MAXIMA_S) -> tuple[Path, float | None]:
+    """El WAV tal cual si cabe; si no, una copia con sus primeros `segundos` y hasta dónde llega."""
+    with wave.open(str(wav), "rb") as w:
+        if w.getnframes() <= segundos * w.getframerate():
+            return wav, None
+        corto = wav.with_name(f"{wav.stem}-primeros-{int(segundos // 60)}-min.wav")
+        with wave.open(str(corto), "wb") as c:
+            c.setparams(w.getparams())
+            c.writeframes(w.readframes(int(segundos * w.getframerate())))
+    return corto, float(segundos)
 
 
 def silencios(turnos: list[dict], duracion_ms: int, minimo_ms: int = 3000) -> list[dict]:
@@ -27,9 +63,13 @@ def silencios(turnos: list[dict], duracion_ms: int, minimo_ms: int = 3000) -> li
     return huecos
 
 
-def transcribir(carpeta: Path) -> dict:
+def transcribir(carpeta: Path, lengua: str | None = None) -> dict:
+    """`lengua`: «en» si el video parece hablar en inglés (por su título); si no, se le pide español."""
     manifiesto = json.loads((carpeta / "manifiesto.json").read_text(encoding="utf-8"))
-    datos = meta_api.transcribir_wav(carpeta / manifiesto["audio"])
+    if not manifiesto.get("audio"):
+        raise ValueError("El video no trae audio.")
+    wav, hasta_s = recortar(carpeta / manifiesto["audio"])
+    datos = meta_api.transcribir_wav(wav, idiomas=("English",) if lengua == "en" else ("Spanish",))
     turnos = datos.get("turns", [])
     dur_ms = datos.get("audioDurationMs") or int(manifiesto["duracion_s"] * 1000)
     salida = {
@@ -38,6 +78,7 @@ def transcribir(carpeta: Path) -> dict:
         "arranque_voz_ms": turnos[0]["startMs"] if turnos else None,
         "turnos": [{k: t.get(k) for k in ("turnId", "startMs", "endMs", "transcript")} for t in turnos],
         "silencios": silencios(turnos, dur_ms),
+        "escucho_hasta_s": hasta_s,  # None: se escuchó completo
         "licencia": {"modelo": "muse-voice-transcribe-1.0", "modo": "ENDPOINTING",
                      "nota": "Tiempos por turno, no por palabra."},
     }

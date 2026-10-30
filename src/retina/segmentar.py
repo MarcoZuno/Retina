@@ -22,22 +22,50 @@ N_PUNTOS = 41
 N_TRAMOS = N_PUNTOS - 1
 
 
+# Retina revisa el arranque: un video de más de media hora no le aporta y tardaría demasiado en cortarse.
+DURACION_MAXIMA_S = 30 * 60
+# Ningún paso de ffmpeg se queda colgado: pasado este tiempo, la revisión falla con un aviso claro.
+TIEMPO_MAXIMO_S = 15 * 60
+
+
+class Aviso(ValueError):
+    """Algo que la persona puede arreglar. `clave` dice cuál, para que la app lo diga en su idioma."""
+
+    def __init__(self, clave: str, mensaje: str):
+        super().__init__(mensaje)
+        self.clave = clave
+
+
 def _ffmpeg() -> str:
     ruta = os.environ.get("FFMPEG") or shutil.which("ffmpeg")
     if not ruta:
-        raise RuntimeError("No encuentro ffmpeg: ponlo en el PATH o en la variable FFMPEG.")
+        raise Aviso("sin_ffmpeg", "No encuentro ffmpeg: instálalo, o pon su ruta en la variable FFMPEG.")
     return ruta
 
 
-def duracion_s(video: Path) -> float:
-    # ffmpeg -i escribe la duración en stderr; así no dependemos de ffprobe.
-    p = subprocess.run([_ffmpeg(), "-hide_banner", "-i", str(video)],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace")
-    m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", p.stderr)
+def _info(video: Path) -> str:
+    # ffmpeg -i escribe la duración y las pistas en stderr; así no dependemos de ffprobe.
+    try:
+        p = subprocess.run([_ffmpeg(), "-hide_banner", "-i", str(video)], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=120)
+    except subprocess.TimeoutExpired:
+        raise Aviso("no_lee", f"ffmpeg no pudo leer {video.name} a tiempo.") from None
+    return p.stderr
+
+
+def duracion_s(video: Path, info: str | None = None) -> float:
+    m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info if info is not None else _info(video))
     if not m:
-        raise RuntimeError(f"No pude leer la duración de {video.name}")
+        raise Aviso("no_lee", f"No pude leer la duración de {video.name}.")
     h, mi, s = m.groups()
     return int(h) * 3600 + int(mi) * 60 + float(s)
+
+
+def pistas(info: str) -> tuple[bool, bool]:
+    """(trae imagen, trae audio) según lo que ffmpeg -i dice de sus pistas."""
+    lineas = [x for x in info.splitlines() if re.search(r"Stream #\S+.*?: (Video|Audio):", x)]
+    return (any(": Video:" in x and "attached pic" not in x for x in lineas),  # la portada de un MP3 no es imagen
+            any(": Audio:" in x for x in lineas))
 
 
 def limites_tramos(duracion: float) -> list[tuple[float, float]]:
@@ -46,8 +74,11 @@ def limites_tramos(duracion: float) -> list[tuple[float, float]]:
 
 
 def _correr(args: list[str]) -> None:
-    p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *args],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    try:
+        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *args], capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S)
+    except subprocess.TimeoutExpired:
+        raise Aviso("ffmpeg_lento", f"ffmpeg tardó más de {TIEMPO_MAXIMO_S // 60} minutos y se detuvo.") from None
     if p.returncode != 0:
         raise RuntimeError(p.stderr.strip()[-500:])
 
@@ -56,15 +87,24 @@ def segmentar(video: Path, salida: Path, fps: float = 4.0, lado: int = 256) -> d
     salida.mkdir(parents=True, exist_ok=True)
     cuadros_dir = salida / "cuadros"
     cuadros_dir.mkdir(exist_ok=True)
-    dur = duracion_s(video)
+    info = _info(video)
+    dur = duracion_s(video, info)
+    con_imagen, con_audio = pistas(info)
+    if not con_imagen:  # un M4A o un MP3 con portada no es un video
+        raise Aviso("sin_imagen", "Ese archivo no trae imagen: Retina revisa videos.")
+    if dur > DURACION_MAXIMA_S:
+        raise Aviso("muy_largo", f"El video dura más de {DURACION_MAXIMA_S // 60} minutos: Retina revisa videos "
+                                 "de hasta media hora.")
 
     # Cuadros a fps fijo, lado corto = `lado` px (lo que espera V-JEPA 2).
     _correr(["-i", str(video), "-vf",
              f"fps={fps},scale='if(gt(iw,ih),-2,{lado})':'if(gt(iw,ih),{lado},-2)'",
              "-q:v", "3", str(cuadros_dir / "c%05d.jpg")])
     # Audio para Voice Transcribe: mono, PCM 16 bits, 24 kHz (tasa nativa del modelo).
-    _correr(["-i", str(video), "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le",
-             "-map_metadata", "-1", str(salida / "audio.wav")])
+    # Un video sin audio se revisa igual, solo con lo que se ve (la tarjeta lo dice).
+    if con_audio:
+        _correr(["-i", str(video), "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le",
+                 "-map_metadata", "-1", str(salida / "audio.wav")])
     # Copia ligera para la Files API: menos bytes que subir, mismos cuadros visibles.
     _correr(["-i", str(video), "-vf", "scale=-2:480", "-c:v", "libx264", "-preset", "veryfast",
              "-crf", "28", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart",
@@ -84,7 +124,7 @@ def segmentar(video: Path, salida: Path, fps: float = 4.0, lado: int = 256) -> d
         "duracion_s": round(dur, 3),
         "n_tramos": N_TRAMOS,
         "fps_cuadros": fps,
-        "audio": "audio.wav",
+        "audio": "audio.wav" if con_audio else None,
         "mp4_ligero": "ligero.mp4",
         "tramos": tramos,
         "tramos_sin_cuadros": [t["tramo"] for t in tramos if not t["cuadros"]],

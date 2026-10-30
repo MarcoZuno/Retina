@@ -293,15 +293,19 @@ class SubirLaVersionB(unittest.TestCase):
                                                   "log_message": lambda *a: None})
         self.servidor = http.server.ThreadingHTTPServer(("127.0.0.1", 0), functools.partial(clase, directory=str(RAIZ)))
         threading.Thread(target=self.servidor.serve_forever, daemon=True).start()
+        # Un equipo con ffmpeg y llave; la prueba de abajo quita la llave.
+        self.salud = mock.patch("retina.app.salud", return_value={"ffmpeg": True, "llave": True})
+        self.salud.start()
 
     def tearDown(self):
+        self.salud.stop()
         self.servidor.shutdown()
         self.servidor.server_close()
         self.dir.cleanup()
 
-    def subir(self, comparar_con: str | None):
+    def subir(self, comparar_con: str | None, idioma: str = "es"):
         h = {"X-Retina": "1", "X-Retina-Titulo": "Prueba", "X-Retina-Fecha": "2026-10-29 10:00", "X-Retina-Publicado": "1",
-             "Content-Type": "video/mp4"}
+             "Content-Type": "video/mp4", "X-Retina-Idioma": idioma}
         if comparar_con is not None:
             h["X-Retina-Comparar-Con"] = comparar_con
         c = http.client.HTTPConnection("127.0.0.1", self.servidor.server_port, timeout=10)
@@ -329,6 +333,14 @@ class SubirLaVersionB(unittest.TestCase):
         status, cuerpo = self.subir(None)
         self.assertEqual(status, 202)
         self.assertFalse((self.casos / cuerpo["id"] / "comparar_con.txt").exists())
+
+    def test_sin_llave_se_dice_antes_de_subir_y_en_el_idioma_del_panel(self):
+        with mock.patch("retina.app.salud", return_value={"ffmpeg": True, "llave": False}):
+            status, cuerpo = self.subir(None, idioma="en")
+        self.assertEqual(status, 503)
+        self.assertIn("MODEL_API_KEY", cuerpo["error"])
+        self.assertIn("key is missing", cuerpo["error"])
+        self.assertEqual(sorted(p.name for p in self.casos.iterdir()), ["a1b2c3d4e5f6"])  # no se guardó nada
 
 
 class AvanceYRevision(unittest.TestCase):

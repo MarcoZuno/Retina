@@ -5,8 +5,8 @@ validador revisa. Las herramientas solo leen lo que ya calcularon las
 estaciones (describir, transcribir, el riesgo del arranque y la historia de
 videos parecidos). La tarjeta se entrega con `entregar_tarjeta`, y el mismo
 validador de «explicar» la revisa dentro del ciclo: si falla, Spark recibe los
-problemas y corrige. Guardas: tope de turnos, llamadas repetidas y el tope de
-gasto del proyecto. Si el ciclo no cierra, cae a «explicar» de una sola vuelta.
+problemas y corrige. Guardas: tope de turnos, de llamadas por turno y por revisión,
+llamadas repetidas y el tope de gasto del proyecto. Si el ciclo no cierra, cae a «explicar» de una sola vuelta.
 
 El mismo ciclo corre con Spark 1.3 (API de Meta) o con Muse Spark Open (pesos
 abiertos, Baseten). Con «abierto+api», Spark Open investiga y escribe, y Spark
@@ -34,6 +34,10 @@ from .voz import BLOQUES, bloques
 MODELO = "muse-spark-1.3"
 MAX_TURNOS = 12
 REPETIDAS = 2  # la misma llamada con los mismos datos, más de esto, corta el ciclo
+# Límites de herramientas (cada llamada a SAM cuesta; un modelo desbocado hizo 240 en 12 turnos):
+MAX_LLAMADAS_POR_TURNO = 6  # las que se ejecutan en un solo turno; las demás reciben un aviso
+MAX_LLAMADAS_TOTAL = 30  # de consulta (todas menos entregar_tarjeta) por revisión y por motor; después solo se puede entregar
+MAX_LLAMADAS_SAM = 2  # medir_lo_prometido, por revisión y por motor
 
 
 def _herramienta(nombre: str, descripcion: str, props: dict) -> dict:
@@ -206,7 +210,7 @@ MOTORES = explicar.MOTORES
 
 def ciclo(caja, conv) -> tuple[dict | None, list, str | None]:
     """Un modelo investiga con las herramientas hasta que el validador acepta su tarjeta o se acaban los turnos."""
-    traza, cuenta = [], {}
+    traza, cuenta, consultas, sam = [], {}, 0, 0
     for turno in range(1, MAX_TURNOS + 1):
         try:
             llamadas, texto = conv.turno()
@@ -218,7 +222,7 @@ def ciclo(caja, conv) -> tuple[dict | None, list, str | None]:
             traza.append({"turno": turno, "texto": texto[:300]})
             conv.insistir()
             continue
-        tarjeta = None
+        tarjeta, en_turno, tope_llegado = None, 0, False
         for c in llamadas:
             try:
                 args = json.loads(c["argumentos"] or "{}")
@@ -226,9 +230,19 @@ def ciclo(caja, conv) -> tuple[dict | None, list, str | None]:
                 args = {"_invalidos": True}
             huella = hashlib.sha1(f"{c['nombre']}{json.dumps(args, sort_keys=True)}".encode()).hexdigest()
             cuenta[huella] = cuenta.get(huella, 0) + 1
+            en_turno += 1
+            consulta = c["nombre"] != "entregar_tarjeta"
             if cuenta[huella] > REPETIDAS:
                 res = {"error": "Ya hiciste esta misma llamada. Usa lo que ya tienes y entrega la tarjeta."}
+            elif en_turno > MAX_LLAMADAS_POR_TURNO:
+                res = {"error": f"Máximo {MAX_LLAMADAS_POR_TURNO} llamadas por turno. Usa lo que ya tienes y entrega la tarjeta."}
+            elif consulta and consultas >= MAX_LLAMADAS_TOTAL:
+                res, tope_llegado = {"error": "Ya no hay más consultas. Entrega la tarjeta con lo que tienes."}, True
+            elif c["nombre"] == "medir_lo_prometido" and sam >= MAX_LLAMADAS_SAM:
+                res = {"error": f"SAM ya se usó {MAX_LLAMADAS_SAM} veces. Entrega la tarjeta con lo que tienes."}
             else:
+                consultas += consulta
+                sam += c["nombre"] == "medir_lo_prometido"
                 try:
                     res = {"error": "Los argumentos no eran JSON válido."} if "_invalidos" in args else caja.correr(c["nombre"], args)
                 except meta_api.TopeAlcanzado:
@@ -242,6 +256,8 @@ def ciclo(caja, conv) -> tuple[dict | None, list, str | None]:
                 tarjeta = args
         if tarjeta:
             return tarjeta, traza, None
+        if tope_llegado:
+            conv.insistir()  # sin más consultas: que cierre con lo que tiene
     return None, traza, None
 
 

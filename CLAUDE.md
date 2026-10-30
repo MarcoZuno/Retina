@@ -9,7 +9,7 @@ español de México; README en inglés para el jurado.
 - Tests (sin llave ni datos): `python -m unittest discover -s tests`. El hook de pre-commit los
   corre con el escáner de secretos; si fallan, no hay commit.
 - Demo sin llave: `PYTHONPATH=src python -m retina.demo`.
-- Retina completo con la API de Meta: ver README («How to run it with your own key»).
+- Retina completo con la API de Meta: ver README («Try it with your own video»).
 
 ## Dónde está cada cosa
 
@@ -31,7 +31,7 @@ español de México; README en inglés para el jurado.
 3. **Medir antes de prometer:** una idea nueva entra con su regla de victoria escrita antes de
    correr, y se reporta aunque pierda (BUILD-LOG y `docs/decisiones.md`).
 4. **Tope de gasto en código** (`TOPE_MAXIMO_USD` en `meta_api.py`); el `.env` no lo sube.
-5. **Candado de borradores:** `RETINA_SOLO_PUBLICADOS=1` por omisión para contenido de empresa.
+5. **Candado de borradores:** `RETINA_SOLO_PUBLICADOS` viene apagado (0) por omisión, para revisar borradores; una empresa que no quiera mandarlos lo prende con 1.
 6. **Solo aportan código los integrantes aceptados del equipo** (reglas del concurso).
 7. **En el panel, todo lo que viene del JSON entra como texto** (`textContent`), nunca como HTML.
 8. Cada día de trabajo deja su entrada fechada en `BUILD-LOG.md`.

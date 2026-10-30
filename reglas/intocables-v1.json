@@ -1,15 +1,15 @@
 {
   "version": "intocables-v1",
-  "fecha": "2026-10-28",
-  "estado": "v1: lo común a todas las páginas. Lo propio de cada página (avisos de salud o de primeros auxilios, noticias) queda para después del concurso.",
+  "fecha": "2026-10-29",
+  "estado": "v1: lo común a todas las páginas. Lo propio de cada página (avisos de salud o de primeros auxilios, noticias) queda para después del concurso. El 29-oct se sumaron las mismas reglas en inglés.",
   "uso": "Retina nunca sugiere quitar, cortar, tapar ni cambiar esto, porque es marca, ley o línea editorial. El validador bloquea la sugerencia si un verbo de la lista va junto a uno de estos elementos.",
   "elementos": [
-    {"id": "logo", "nombre": "Logo o marca de la página", "frases": ["logo", "marca de la pagina", "cortinilla", "cintillo", "marca de agua de la pagina", "firma de la pagina"]},
-    {"id": "pixelado", "nombre": "Pixelados, difuminados y censuras (marcas ajenas, menores, datos personales)", "frases": ["pixel*", "difumin*", "censur*", "borroso", "desenfoque"]},
-    {"id": "titulo", "nombre": "El título del video (lo decide quien escribe el guion)", "frases": ["titulo"]},
-    {"id": "pregunta_editorial", "nombre": "La pregunta o postura editorial del video", "frases": ["estas a favor", "pregunta final", "postura", "opinion de la pagina"]},
-    {"id": "aviso_legal", "nombre": "Avisos legales y advertencias de salud", "frases": ["aviso legal", "advertencia", "consulta a tu medico", "consulta a tu veterinario", "contenido sensible"]},
-    {"id": "creditos", "nombre": "Créditos de material de terceros", "frases": ["credito*", "fuente:", "cortesia de"]}
+    {"id": "logo", "nombre": "Logo o marca de la página", "frases": ["logo", "marca de la pagina", "cortinilla", "cintillo", "marca de agua de la pagina", "firma de la pagina", "page logo", "channel logo", "brand mark", "lower third", "page watermark", "watermark of the page", "page signature", "bumper"]},
+    {"id": "pixelado", "nombre": "Pixelados, difuminados y censuras (marcas ajenas, menores, datos personales)", "frases": ["pixel*", "difumin*", "censur*", "borroso", "desenfoque", "blur*", "unblur*", "unpixel*", "censor*", "uncensor*", "mosaic"]},
+    {"id": "titulo", "nombre": "El título del video (lo decide quien escribe el guion)", "frases": ["titulo", "title", "video title", "headline"]},
+    {"id": "pregunta_editorial", "nombre": "La pregunta o postura editorial del video", "frases": ["estas a favor", "pregunta final", "postura", "opinion de la pagina", "final question", "closing question", "editorial stance", "stance", "page opinion", "in favor or against", "in favour or against", "are you in favor", "are you for or against"]},
+    {"id": "aviso_legal", "nombre": "Avisos legales y advertencias de salud", "frases": ["aviso legal", "advertencia", "consulta a tu medico", "consulta a tu veterinario", "contenido sensible", "legal notice", "legal disclaimer", "disclaimer*", "warning*", "health warning", "content warning", "sensitive content", "graphic content", "consult your doctor", "consult your vet", "ask your doctor", "ask your vet", "medical disclaimer", "first aid notice"]},
+    {"id": "creditos", "nombre": "Créditos de material de terceros", "frases": ["credito*", "fuente:", "cortesia de", "credit*", "source:", "courtesy of"]}
   ],
-  "verbos": ["quit*", "elimin*", "cort*", "borr*", "tap*", "ocult*", "saca*", "sin", "despixel*", "muestr* sin", "destap*", "cambia el", "cambia la", "reemplaz*", "mueve*"]
+  "verbos": ["quit*", "elimin*", "cort*", "borr*", "tap*", "ocult*", "saca*", "sin", "despixel*", "muestr* sin", "destap*", "cambia el", "cambia la", "reemplaz*", "mueve*", "remove*", "delete*", "erase*", "cut*", "hide*", "cover*", "crop*", "trim*", "drop", "omit*", "mask*", "eliminate*", "without", "take out", "take off", "get rid of", "replace*", "swap*", "rename*", "change the", "move*"]
 }

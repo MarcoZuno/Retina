@@ -56,27 +56,91 @@ PASO_COMPARAR = ("comparacion.json", "comparando")
 # el caso raro de que no (por ejemplo, si el servidor se reinició a media revisión de la A).
 ESPERA_A_S = 600
 
+# Lo que ve la persona cuando algo falla, en el idioma del panel. Los detalles técnicos van a error.txt.
+TEXTOS = {
+    "es": {
+        "falta_titulo": "Escribe el título del video (300 caracteres como máximo).",
+        "talento_largo": "El nombre del talento es demasiado largo.",
+        "codigo_malo": "El código de producción tiene que verse como XYZ0000001: letras y luego números.",
+        "falta_fecha": "La fecha de publicación tiene que traer día y hora.",
+        "sin_version_a": "No encuentro la versión A para comparar en este equipo. Vuelve a subir las dos versiones.",
+        "muy_pesado": "El video tiene que pesar menos de {mb} MB.",
+        "no_es_video": "Eso no parece un video. Sube un MP4, MOV, WebM, MKV o AVI.",
+        "incompleto": "El video no llegó completo. Vuelve a intentarlo.",
+        "no_lee": "No pude leer ese video. Prueba exportarlo como MP4 y súbelo otra vez.",
+        "sin_imagen": "Ese archivo no trae imagen: Retina revisa videos.",
+        "muy_largo": "El video dura más de media hora: Retina revisa videos de hasta 30 minutos.",
+        "ffmpeg_lento": "Cortar el video tardó demasiado y se detuvo. Prueba con un archivo más ligero.",
+        "sin_ffmpeg": "A este equipo le falta ffmpeg, y Retina lo necesita para cortar el video. Instálalo "
+                      "(Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) "
+                      "y vuelve a abrir Retina.",
+        "sin_llave": "Falta la llave de la Meta Model API (MODEL_API_KEY en el archivo .env). Sin ella Retina no "
+                     "puede ver ni oír el video.",
+        "candado": "El candado está encendido: a la API de Meta solo van videos ya publicados. Marca «ya "
+                   "publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.",
+        "falla": "La revisión no terminó ({tipo}). El detalle quedó en error.txt, en la carpeta de la revisión.",
+    },
+    "en": {
+        "falta_titulo": "Type the video's title (300 characters at most).",
+        "talento_largo": "The talent's name is too long.",
+        "codigo_malo": "The production code must look like XYZ0000001: letters, then numbers.",
+        "falta_fecha": "The publishing date needs a day and a time.",
+        "sin_version_a": "I can't find version A to compare on this computer. Upload both versions again.",
+        "muy_pesado": "The video must be smaller than {mb} MB.",
+        "no_es_video": "That doesn't look like a video. Upload an MP4, MOV, WebM, MKV or AVI.",
+        "incompleto": "The video didn't arrive complete. Try again.",
+        "no_lee": "I couldn't read that video. Try exporting it as MP4 and upload it again.",
+        "sin_imagen": "That file has no picture: Retina reviews videos.",
+        "muy_largo": "The video is longer than half an hour: Retina reviews videos up to 30 minutes.",
+        "ffmpeg_lento": "Cutting the video took too long and was stopped. Try a lighter file.",
+        "sin_ffmpeg": "This computer is missing ffmpeg, which Retina needs to cut the video. Install it "
+                      "(Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) "
+                      "and open Retina again.",
+        "sin_llave": "The Meta Model API key is missing (MODEL_API_KEY in the .env file). Without it Retina "
+                     "can't watch or hear the video.",
+        "candado": "The lock is on: only already-published videos go to Meta's API. Tick «already published», "
+                   "or turn it off with RETINA_SOLO_PUBLICADOS=0 if the video is yours.",
+        "falla": "The review didn't finish ({tipo}). The details are in error.txt, in the review's folder.",
+    },
+}
+
+
+def texto(idioma: str, clave: str, **datos) -> str:
+    return TEXTOS["en" if idioma == "en" else "es"][clave].format(**datos)
+
+
+def salud() -> dict:
+    """Lo que hace falta para revisar un video en este equipo (sin decir nunca la llave)."""
+    from .segmentar import Aviso, _ffmpeg
+    try:
+        _ffmpeg()
+        ffmpeg = True
+    except Aviso:
+        ffmpeg = False
+    return {"ffmpeg": ffmpeg, "llave": bool(os.environ.get("MODEL_API_KEY", "").strip())}
+
 
 def leer_datos(cabeceras) -> dict:
     """Los datos del video vienen en cabeceras X-Retina-* (codificadas como URL por los acentos)."""
     def campo(nombre: str) -> str:
         return unquote(cabeceras.get(f"X-Retina-{nombre}") or "").strip()
     titulo, talento, codigo, fecha = campo("Titulo"), campo("Talento"), campo("Codigo").upper(), campo("Fecha")
+    idioma = "en" if campo("Idioma") == "en" else "es"
     if not titulo or len(titulo) > 300:
-        raise ValueError("Escribe el título del video (300 caracteres como máximo).")
+        raise ValueError(texto(idioma, "falta_titulo"))
     if len(talento) > 80:
-        raise ValueError("El nombre del talento es demasiado largo.")
+        raise ValueError(texto(idioma, "talento_largo"))
     if codigo and not CODIGO.match(codigo):  # opcional: un video de otra cuenta no tiene código
-        raise ValueError("El código de producción tiene que verse como XYZ0000001: letras y luego números.")
+        raise ValueError(texto(idioma, "codigo_malo"))
     try:
         fecha = datetime.strptime(fecha, "%Y-%m-%d %H:%M").strftime("%Y-%m-%d %H:%M")
     except ValueError:
-        raise ValueError("La fecha de publicación tiene que traer día y hora.") from None
+        raise ValueError(texto(idioma, "falta_fecha")) from None
     return {"titulo": titulo, "talento": talento, "codigo": codigo, "fecha": fecha,
-            "publicado": campo("Publicado") == "1", "idioma": "en" if campo("Idioma") == "en" else "es"}
+            "publicado": campo("Publicado") == "1", "idioma": idioma}
 
 
-def comparar_con(cabeceras, casos: Path) -> Path | None:
+def comparar_con(cabeceras, casos: Path, idioma: str = "es") -> Path | None:
     """La carpeta de la versión A con la que se compara esta subida, o None si no viene la cabecera.
     Tiene que ser una revisión subida a este mismo servidor: un id de 12 letras hexadecimales cuya
     carpeta está en --casos y trae su video."""
@@ -84,7 +148,7 @@ def comparar_con(cabeceras, casos: Path) -> Path | None:
     if not valor:
         return None
     if not ID.fullmatch(valor) or not any((casos / valor / n).is_file() for n in ("video.mp4", SUBIDA)):
-        raise ValueError("No encuentro la versión A para comparar en este equipo. Vuelve a subir las dos versiones.")
+        raise ValueError(texto(idioma, "sin_version_a"))
     return casos / valor
 
 
@@ -112,15 +176,19 @@ def tipo_de_video(cabeza: bytes) -> str | None:
 
 def convertir_a_mp4(origen: Path, destino: Path) -> None:
     """Pasa el video a MP4 (H.264 y AAC) para que todo lo demás trabaje igual que con un MP4."""
-    from .segmentar import _ffmpeg
+    from .segmentar import TIEMPO_MAXIMO_S, Aviso, _ffmpeg
     temporal = destino.with_name("convirtiendo.mp4")
-    r = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-i", str(origen),
-                        "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
-                        "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(temporal)],
-                       capture_output=True, text=True, encoding="utf-8", errors="replace")
+    try:
+        r = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-i", str(origen),
+                            "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                            "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(temporal)],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S)
+    except subprocess.TimeoutExpired:
+        temporal.unlink(missing_ok=True)
+        raise Aviso("ffmpeg_lento", "Convertir el video tardó demasiado.") from None
     if r.returncode != 0 or not temporal.is_file():
         temporal.unlink(missing_ok=True)
-        raise ValueError("No pude leer ese video. Prueba exportarlo como MP4 y súbelo otra vez.")
+        raise Aviso("no_lee", "No pude leer ese video. Prueba exportarlo como MP4 y súbelo otra vez.")
     os.replace(temporal, destino)
 
 
@@ -198,12 +266,13 @@ def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_
         if not marca.exists():
             _escribir_estado(carpeta, estado="listo")
             return
-    except ValueError as e:  # el candado y los datos que no cuadran se le explican a la persona
-        _escribir_estado(carpeta, estado="error", mensaje=str(e))
+    except ValueError as e:  # el candado y los datos que no cuadran se le explican a la persona, en su idioma
+        clave, idioma = getattr(e, "clave", None), datos.get("idioma", "es")
+        _escribir_estado(carpeta, estado="error", mensaje=texto(idioma, clave) if clave in TEXTOS["es"] else str(e))
         return
     except Exception as e:  # noqa: BLE001 — cualquier otra falla se anota sin detalles internos
         (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
-        _escribir_estado(carpeta, estado="error", mensaje=f"La revisión no terminó ({type(e).__name__}). Avisa a quien corre Retina.")
+        _escribir_estado(carpeta, estado="error", mensaje=texto(datos.get("idioma", "es"), "falla", tipo=type(e).__name__))
         return
     comparar_al_terminar(carpeta, marca.read_text(encoding="utf-8").strip(), espera_s)
 
@@ -271,6 +340,8 @@ class ConSubida(SoloElPanel):
                 return self.send_error(404)
             if ruta == "/api/talentos":
                 return self._json(200, {"talentos": self.talentos})
+            if ruta == "/api/salud":  # el panel avisa al abrir si falta algo, antes de que la persona suba nada
+                return self._json(200, {"subir": True, **salud(), "cerebro": self.modelos.get("modelo") is not None})
             m = re.match(r"^/api/estado/([0-9a-f]{12})$", ruta)
             if m and (self.casos / m.group(1)).is_dir():
                 return self._json(200, estado(self.casos / m.group(1)))
@@ -283,18 +354,23 @@ class ConSubida(SoloElPanel):
             return self._json(*dibujar(self.casos / m.group(1)))
         if self.path != "/api/revisar" or not self._local() or not pedido_propio(self.headers, self.server.server_port):
             return self.send_error(404)
+        idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
         try:
             datos = leer_datos(self.headers)
-            version_a = comparar_con(self.headers, self.casos)
+            version_a = comparar_con(self.headers, self.casos, idioma)
         except ValueError as e:
             return self._json(400, {"error": str(e)})
+        listo = salud()
+        for falta in ("ffmpeg", "llave"):  # mejor decirlo ahora que después de subir 800 MB
+            if not listo[falta]:
+                return self._json(503, {"error": texto(idioma, f"sin_{falta}")})
         largo = largo_valido(self.headers.get("Content-Length"))
         if largo is None or not 12 <= largo <= MAX_MB * 1024 * 1024:
-            return self._json(400, {"error": f"El video tiene que pesar menos de {MAX_MB} MB."})
+            return self._json(400, {"error": texto(idioma, "muy_pesado", mb=MAX_MB)})
         cabeza = self.rfile.read(12)
         tipo = tipo_de_video(cabeza)
         if tipo is None:
-            return self._json(400, {"error": "Eso no parece un video. Sube un MP4, MOV, WebM, MKV o AVI."})
+            return self._json(400, {"error": texto(idioma, "no_es_video")})
         id_ = secrets.token_hex(6)
         carpeta = self.casos / id_
         carpeta.mkdir()
@@ -309,7 +385,7 @@ class ConSubida(SoloElPanel):
                 falta -= len(trozo)
         if falta > 0:
             shutil.rmtree(carpeta, ignore_errors=True)
-            return self._json(400, {"error": "El video no llegó completo. Vuelve a intentarlo."})
+            return self._json(400, {"error": texto(idioma, "incompleto")})
         if version_a is not None:  # antes de la fila: la revisión de la B ya sabe que va a comparar
             (carpeta / COMPARAR_CON).write_text(version_a.name, encoding="utf-8")
         self.fila.submit(revisar, carpeta, datos, self.modelos)
@@ -341,6 +417,12 @@ def main() -> None:
     from .publico import cargar_modelo
     meta_api._cargar_env()  # FFMPEG y RETINA_* del .env: el orquestador los necesita antes de la primera llamada
     talentos = sorted({f["talento"] for f in cargar_modelo(a.modelo).filas if f.get("talento")}) if a.modelo else []
+    listo = salud()
+    if not listo["ffmpeg"]:
+        print("Aviso: falta ffmpeg. Instálalo (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · "
+              "Linux: apt install ffmpeg) o pon su ruta en la variable FFMPEG. Sin él no se puede revisar ningún video.")
+    if not listo["llave"]:
+        print("Aviso: falta MODEL_API_KEY en el .env. Sin ella Retina no puede ver ni oír los videos.")
     clase = type("Manejador", (ConSubida,), {
         "casos": a.casos.resolve(), "talentos": talentos, "fila": ThreadPoolExecutor(max_workers=1),
         "modelos": {k: (r.resolve() if r else None) for k, r in (("modelo", a.modelo), ("arranque", a.arranque), ("voz", a.voz))}})

@@ -128,8 +128,9 @@ class ModeloPublico:
     """El cerebro público listo para un video. Se carga de JSON (no ejecuta código al abrirse)."""
 
     filas: list = []  # sin historia: no hay talentos que listar
-    # El semáforo no pasó su regla sellada con videos de fuera (eval/semaforo_publico.py, 29-oct): el modo
-    # público no lo muestra. El número sí pasó la suya (eval/cualquier_video.py) y se queda como referencia.
+    # El semáforo no pasó su regla sellada con videos de fuera (eval/semaforo_publico.py, 29-oct) y la v2
+    # (eval/semaforo_publico_v2.py) es un reajuste en los mismos periodos: el modo público no lo muestra hasta que
+    # pase la prueba hacia adelante (docs/decisiones.md). El número se queda como referencia.
     semaforo = False
 
     def __init__(self, d: dict):
@@ -170,8 +171,8 @@ class ModeloPublico:
             "cerebro": "cualquier_video" if tramos else "promedio",
             "conoce_al_creador": False,
             "uso_voz": bool(tramos),
-            # Pocos videos de menos de 30 s en la base reciente: el número es una referencia más débil.
-            "formato_poco_conocido": v["cubeta"] == 0,
+            # Casi no hay reels ni videos de menos de 30 s en la base: el número es una referencia más débil.
+            "formato_poco_conocido": v["cubeta"] == 0 or bool(v.get("reel")),
             "datos_hasta": self.d["datos_hasta"],
         }
 

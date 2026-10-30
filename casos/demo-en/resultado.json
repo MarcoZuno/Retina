@@ -3,8 +3,9 @@
  "ejemplo_inventado": true,
  "video": {
   "duracion_s": 96.0,
-  "codigo": "EJEMPLO",
-  "titulo": "Made-up example: three tricks to keep sweet bread from going stale"
+  "codigo": "",
+  "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
+  "talento": ""
  },
  "prediccion": {
   "curva_predicha": [
@@ -93,13 +94,18 @@
    0.4188,
    0.4159
   ],
-  "regla_de_parecidos": "cubeta+talento 90 d",
-  "n_parecidos": 40,
+  "regla_de_parecidos": "publica",
+  "n_parecidos": null,
   "uso_video": false,
-  "datos_hasta": "2026-10-27"
+  "datos_hasta": "2026-10-27",
+  "cerebro": "cualquier_video",
+  "conoce_al_creador": false,
+  "uso_voz": true,
+  "formato_poco_conocido": false,
+  "otro_idioma": false
  },
  "arranque": {
-  "nivel": "alto",
+  "nivel": "sin_nivel",
   "exceso_arranque_pp": 6.0,
   "bloques": [
    {
@@ -266,13 +272,19 @@
   "explicar": 20.0
  },
  "licencia": {
-  "comparado_con": "40 videos by the same host and of the same length, from the last 90 days",
-  "regla": "cubeta+talento 90 d",
+  "comparado_con": "videos videos de la misma duración en una página grande de Facebook en México",
+  "regla": "publica",
   "datos_hasta": "2026-10-27",
   "vio_el_video": false,
   "no_pude_revisar": [
    "The music: neither the lyrics nor the license are analyzed."
-  ]
+  ],
+  "n_parecidos": null,
+  "cerebro": "cualquier_video",
+  "conoce_al_creador": false,
+  "sin_formula": false,
+  "formato_poco_conocido": false,
+  "otro_idioma": false
  },
  "revision_meta": [
   {
@@ -323,5 +335,16 @@
    "evidencia": "Vertical 9:16.",
    "fuente": "https://www.facebook.com/business/ads/facebook-instagram-reels-ads"
   }
- ]
+ ],
+ "ficha": {
+  "gancho": "saludo",
+  "emocion": "alegria",
+  "presenta_antes_del_tema": true,
+  "tema_en_la_primera_frase": false,
+  "promete_algo_visible": true,
+  "cifra_al_inicio": false,
+  "pide_interaccion": false,
+  "claridad": 3,
+  "curiosidad": 3
+ }
 }

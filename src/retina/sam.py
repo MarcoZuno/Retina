@@ -41,23 +41,29 @@ def _singular(p: str) -> str:
     return p[:-2] if p.endswith("es") and p[:-2] in _lista()[0] else p[:-1] if p.endswith("s") else p
 
 
-def _lista() -> tuple[set, set]:
+def _lista() -> tuple[set, set, set]:
     d = json.loads(PERMITIDOS.read_text(encoding="utf-8"))
-    return set(d["palabras"]), set(d["personas"])
+    return set(d["palabras"]), set(d["personas"]), set(d["modificadores"])
 
 
 def rechazo(concepto: str) -> str | None:
-    """Lista cerrada: la última palabra tiene que ser un objeto, lugar, comida, animal o
-    fenómeno permitido, y ninguna palabra puede ser de persona. Devuelve el motivo o None."""
-    palabras, personas = _lista()
+    """Lista cerrada: todas las palabras tienen que ser de reglas/sam-permitidos-v1.json (objetos, lugares,
+    comida, animales, fenómenos y palabras de enlace), la última tiene que ser un objeto o lugar, y ninguna
+    puede ser de persona. Lo que no está en la lista se rechaza. Devuelve el motivo o None."""
+    if not isinstance(concepto, str):
+        return "El concepto tiene que ser un texto."
+    palabras, personas, modificadores = _lista()
     tokens = re.findall(r"[a-z]+", normalizar(concepto))
     if not tokens:
         return "El concepto va vacío."
     if any(t in personas or _singular(t) in personas for t in tokens):
         return "SAM no se usa sobre personas (condiciones de uso de Meta). Nombra un objeto o un lugar."
+    for t in tokens:
+        if not (t in palabras or _singular(t) in palabras or t in modificadores):
+            return (f"«{t}» no está en la lista de objetos y lugares permitidos "
+                    "(reglas/sam-permitidos-v1.json). Usa una frase corta en inglés de objetos y lugares de la lista.")
     if tokens[-1] not in palabras and _singular(tokens[-1]) not in palabras:
-        return (f"«{tokens[-1]}» no está en la lista de objetos y lugares permitidos "
-                "(reglas/sam-permitidos-v1.json). Usa una frase corta en inglés que termine en un objeto o lugar.")
+        return f"«{tokens[-1]}» no es un objeto ni un lugar: la frase tiene que terminar en uno de la lista."
     return None
 
 
@@ -75,6 +81,8 @@ def recortar(carpeta: Path) -> Path:
 
 
 async def _segmentar(file_id: str, concepto: str):
+    if motivo := rechazo(concepto):  # última puerta: ningún camino llega a la API con un concepto fuera de la lista
+        raise ValueError(motivo)
     from meta_sam_parser import parse_responses_stream, video_segmentation_format
     from openai import AsyncOpenAI
 
@@ -114,15 +122,19 @@ def medir(carpeta: Path, concepto: str) -> dict:
     if motivo := rechazo(concepto):
         return {"error": motivo}
     cuadros = SEGUNDOS * FPS
-    meta_api._revisar_tope(cuadros * USD_POR_CUADRO)
-    clip = recortar(carpeta)
-    file_id = meta_api.subir_archivo(clip)  # caducidad mínima de la API: 1 h
+    reserva = meta_api.reservar("sam", cuadros * USD_POR_CUADRO)
+    try:
+        clip = recortar(carpeta)
+        file_id = meta_api.subir_archivo(clip)  # caducidad mínima de la API: 1 h
+    except BaseException:
+        meta_api.liberar(reserva)  # todavía no se llamó a SAM: no se cobró
+        raise
     t0 = time.time()
     try:
         r = asyncio.run(_segmentar(file_id, concepto))
     finally:  # se registra aunque falle a media corrida: la API pudo haber cobrado
         meta_api.borrar_archivo(file_id)
-        meta_api._registrar("sam", MODELO, time.time() - t0, cuadros * USD_POR_CUADRO, cuadros=cuadros)
+        meta_api._registrar("sam", MODELO, time.time() - t0, cuadros * USD_POR_CUADRO, reserva, cuadros=cuadros)
     if r.outcome.status != "completed":
         return {"concepto": concepto, "error": f"SAM no terminó: {getattr(r.outcome, 'reason', 'sin motivo')}"}
     from meta_sam_parser import decode_mask_to_raster
@@ -149,7 +161,7 @@ def objeto_del_titulo(titulo: str) -> str | None:
     """Lo que el título promete que se verá, de la lista cerrada que SAM puede buscar. Lo elige Muse Spark 1.3
     con salida estructurada (no puede inventar fuera de la lista); None si el título no promete algo que se vea."""
     from .explicar import MODELO as SPARK
-    palabras, _ = _lista()
+    palabras = _lista()[0]
     cuerpo = {
         "model": SPARK, "reasoning": {"effort": "low"}, "max_output_tokens": 2000, "store": False,
         "text": {"format": {"type": "json_schema", "name": "objeto_prometido", "strict": True, "schema": {

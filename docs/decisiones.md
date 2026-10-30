@@ -101,7 +101,7 @@ Por qué se decidió cada cosa, con fecha. Lo más nuevo va arriba.
   le gana a decir siempre el más común. Se muestra la caída de los parecidos por
   bloque como contexto, y Spark explica qué pasa en el arranque viendo el video.
 - **La voz no entra al nivel.** Medido dos veces, con cientos de videos de
-  prueba. Va a la explicación de Spark, que sí la lee.
+  prueba en cada una. Va a la explicación de Spark, que sí la lee.
 
 ## 28-oct-2026 · Retina como agente
 
@@ -175,9 +175,9 @@ para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V
 - **Qué es.** Revisar desde los primeros segundos lo que Meta recomienda en público: gancho y
   mensaje en los primeros 3 s, que se entienda sin sonido en los primeros 10, que lo prometido se vea
   pronto, contenido propio y video vertical. Cada regla con su fuente (`reglas/recomendaciones-meta-v1.json`).
-- **Qué salió en los 50 casos** (`eval/revision_meta_casos.py`): los videos de Badabun ya cumplen casi
+- **Qué salió en los 50 casos** (`eval/revision_meta_casos.py`): los videos de la empresa ya cumplen casi
   todo (casi todos abren con gancho y mensaje y casi todos se entienden sin sonido). Lo único que separa
-  es si lo prometido se ve en los primeros 3 s, y con 10 casos medidos la diferencia no es clara.
+  es si lo prometido se ve en los primeros 3 s, y con tan pocos casos medidos la diferencia no es clara.
 - **Qué se decide.** Entra como «Según Meta», buenas prácticas con su segundo y su fuente, sin
   prometer que predicen. Sirve más a un creador que empieza que a un equipo que ya domina lo básico.
 
@@ -368,8 +368,11 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
 - **Resultado (29-oct, noche; corrida con el commit 8fcfaac, el de la regla).** Pasa en los dos periodos: con
   la ficha, el número se equivoca menos con creadores que nunca vio (diferencia pareja con intervalo entero
   arriba de 0) y ordena mejor los videos a los 15 s. **Se decide:** la ficha entra al cerebro público
-  (`modelos/retina-publico.json`, `rasgos.ficha`) y Retina se la pide a Muse Spark Open a cada video nuevo, con
-  temperatura 0 para que el mismo video dé la misma ficha. Cifras en la carpeta privada.
+  (`modelos/retina-publico.json`, `rasgos.ficha`) y Retina se la pide a Muse Spark Open a cada video nuevo.
+  **Cómo se anotó, exactamente:** la base de fichas con la que se midió se anotó sin temperatura fija y en
+  lotes de 20 videos por llamada. La temperatura 0 (para que el mismo video dé la misma ficha) entró después,
+  y la app pide un video a la vez. La ficha que corre en la app no es idéntica a la que se midió, y esa
+  diferencia no se ha medido. Cifras en la carpeta privada.
 - **Lo que pasó con cada táctica** (`eval/tacticas_gancho.py`, descriptivo, elegibles). En la tarjeta solo van,
   en palabras y sin cifras, los rasgos cuya diferencia contra videos parecidos tuvo un intervalo de 95 % lejos
   de cero: presentarse antes del tema, saludo o presentación como gancho, decir el tema tarde, poca curiosidad,
@@ -393,3 +396,24 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   intervalos que no se tocan, y los «bajo» quedaron debajo. **Se decide:** el modo público vuelve a mostrar
   semáforo con la v2. Las duraciones sin videos suficientes para calibrar (menos de 30 s y más de 4 min) quedan sin
   semáforo y con el aviso de formato poco conocido. Cifras en la carpeta privada.
+
+## 29-oct-2026 (noche) · El semáforo v2 no entra al modo público: se trata como exploratorio
+
+- **Por qué.** La auditoría del 29-oct en la noche encontró que la v2 pasó su regla, pero no es una prueba limpia:
+  se escribió después de ver fallar la v1, en los mismos dos periodos (jul-dic 2025 y ene-jun 2026), que ya se habían
+  usado varias veces para decidir otras cosas (la ficha, el cerebro público). Cada decisión se tomó viendo la anterior.
+  La v1 falló por marcar demasiados «alto», no por distinguir peor, y la v2 corrige justo eso. Además, en jul-dic 2025
+  sale al revés en videos de 2 a 4 minutos y no distingue en los de 30 a 60 segundos: lo carga la duración de 1 a 2
+  minutos. Por la regla de la casa («lo que no pase no entra, y no se reajusta después de ver el resultado»), un
+  reajuste no cuenta como pasar.
+- **Se decide.** El modo público sigue sin semáforo: la tarjeta dice lo que vio y el número queda como referencia. El
+  resultado de la v2 se queda publicado aquí como exploratorio. Esos dos periodos ya no se usan para ninguna prueba
+  nueva.
+- **Cómo podría entrar.** Solo con una prueba hacia adelante, en videos que todavía no existen al escribir esta regla:
+  los que la página publique del 30-oct al 2-nov de 2026 (hora de México), elegibles, sin fuera de alcance ni temas fuera de alcance, como
+  de fuera (sin talento ni código). Para cada uno, Retina anota con el cerebro público (con voz y ficha) la curva y el
+  nivel de la v2 antes de bajar su retención, y la huella sha256 de ese archivo se publica antes de leer cualquier
+  retención. Pasa el número si la diferencia pareja del error de toda la curva (curva fija por duración menos cerebro
+  público, en puntos) tiene su intervalo de 95 % entero arriba de 0. Pasa el semáforo con la misma vara de la v1: «alto» entre 15 %
+  y 35 %, los «alto» pierden de más con intervalos de Wilson que no se tocan con la tasa base, y los «bajo» quedan
+  debajo de la base. Con menos de 100 videos que se puedan medir no se concluye nada y el semáforo sigue fuera.

@@ -32,7 +32,7 @@ import numpy as np
 
 from . import meta_api
 from .curvas import cubeta, tramo_exceso
-from .segmentar import segmentar
+from .segmentar import Aviso, segmentar
 
 # Lo que se paga y depende del video: si el video cambia, se borra para no explicar otro.
 PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4")
@@ -132,6 +132,7 @@ def licencia(pred: dict | None, no_pude: list) -> dict:
         "vio_el_video": pred["uso_video"],
         "sin_formula": bool(pred.get("sin_formula")),
         "formato_poco_conocido": bool(pred.get("formato_poco_conocido")),
+        "otro_idioma": bool(pred.get("otro_idioma")),
         "conoce_al_creador": pred.get("conoce_al_creador", True),
         "cerebro": pred.get("cerebro", "casa"),
         "no_pude_revisar": no_pude,
@@ -154,8 +155,8 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
            titulo: str, con_api: bool, arranque: Path | None, ver_video: bool = True, voz: Path | None = None,
            publicado: bool = False, motor: str = "", idioma: str = "es") -> dict:
     if con_api and not publicado and solo_publicados():
-        raise ValueError("El candado está encendido: a la API de Meta solo van videos ya publicados. "
-                         "Marca «ya publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
+        raise Aviso("candado", "El candado está encendido: a la API de Meta solo van videos ya publicados. "
+                               "Marca «ya publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
     tiempos, no_pude = {}, []
     preparar_carpeta(video, salida)
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
@@ -196,7 +197,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         from .arranque import Arranque
         arr = Arranque.cargar(arranque) if arranque else m.arranque()  # el público trae su propio riesgo
         riesgo_arranque = arr.predecir(v, np.array(pred["curva_parecidos"]))
-        if not getattr(m, "semaforo", True):  # solo se muestra donde está medido
+        if not getattr(m, "semaforo", True):  # solo se muestra donde está medido (el público: no, ver publico.py)
             riesgo_arranque = {**riesgo_arranque, "nivel": "sin_nivel"}
 
     resultado = {
@@ -220,8 +221,16 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     else:
         from . import describir, explicar, transcribir
         # Si el caso ya trae la transcripción o la descripción del mismo video, se reusan: cuestan.
-        if not (salida / "transcribir.json").exists():
-            _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida)
+        if not man.get("audio"):
+            no_pude.append("La voz y los silencios: el video no trae audio. Lo de abajo sale solo de lo que se ve.")
+        elif not (salida / "transcribir.json").exists():
+            _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida,
+                  transcribir.idioma_de(titulo))
+        voz_json = salida / "transcribir.json"
+        hasta_s = json.loads(voz_json.read_text(encoding="utf-8")).get("escucho_hasta_s") if voz_json.exists() else None
+        if hasta_s:
+            no_pude.append(f"La voz después del minuto {int(hasta_s // 60)}: Voice Transcribe escucha hasta ahí, "
+                           "y el arranque queda completo.")
         tramos = tramos_de_voz(salida)
         # Cómo arranca, según Muse Spark Open (táctica del gancho, claridad, curiosidad). Se muestra siempre y,
         # si el cerebro público la aprendió, también entra al número.
@@ -231,6 +240,9 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         if tramos and m is not None and not m.de_la_casa(v) and not plan_b:
             # Video de fuera: con la voz ya se puede usar el cerebro para cualquier video.
             pred = m.predecir(v, emb, audio, tramos, resultado["ficha"])
+            # Retina aprendió las palabras en español: con otro idioma el número es una referencia más débil.
+            dichas = " ".join(x for _, x in tramos).split()[:60]
+            pred["otro_idioma"] = transcribir.idioma_de(titulo + " " + " ".join(dichas)) == "en"
             resultado["prediccion"], resultado["licencia"] = pred, licencia(pred, no_pude)
             escribir()
         if not (salida / "describir.json").exists():

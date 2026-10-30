@@ -2,14 +2,14 @@
 
 API compatible con Chat Completions de OpenAI. La llave va en el .env fuera del repo como
 BASETEN_API_KEY; nunca en el código. El costo de cada llamada se anota en costos.jsonl junto
-con el de la API de Meta, pero Baseten tiene su propio tope (TOPE_BASETEN_USD).
+con el de la API de Meta. Baseten tiene su propio tope (TOPE_BASETEN_USD) y además respeta el tope del
+usuario (RETINA_TOPE_USD); cada llamada aparta su peor caso antes de salir (meta_api.reservar).
 
 Uso (prueba de humo):
     python -m retina.baseten
 """
 from __future__ import annotations
 
-import json
 import os
 import time
 
@@ -30,16 +30,15 @@ def _llave() -> str:
 
 
 def gastado_usd() -> float:
-    if not meta_api.costos().exists():
-        return 0.0
-    return sum(json.loads(l).get("usd", 0.0) for l in meta_api.costos().read_text(encoding="utf-8").splitlines()
-               if l.strip() and json.loads(l).get("servicio", "").startswith("baseten"))
+    """Lo anotado de Baseten (los servicios «baseten-…» del registro de costos)."""
+    return meta_api.gastado_usd("baseten")
 
 
-def _revisar_tope(max_tokens: int) -> None:
+def _reservar(servicio: str, max_tokens: int) -> str:
+    """Aparta el peor caso de la llamada. Respeta los dos topes: el de Baseten y el del usuario
+    (RETINA_TOPE_USD, el mismo de la API de Meta, que cuenta todo el gasto del registro)."""
     peor = max_tokens * PRECIO[2] / 1e6
-    if gastado_usd() + peor > TOPE_BASETEN_USD:
-        raise meta_api.TopeAlcanzado(f"Tope de Baseten: llevamos {gastado_usd():.2f} USD de {TOPE_BASETEN_USD:.2f}.")
+    return meta_api.reservar(f"baseten-{servicio}", peor, "baseten", TOPE_BASETEN_USD)
 
 
 def usd(uso) -> float:
@@ -56,16 +55,22 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
     `esfuerzo` (low, medium, high) es el razonamiento; Spark Open en Baseten lo respeta (Meta, 27-oct)."""
     from openai import OpenAI
 
-    _revisar_tope(max_tokens)
-    cliente = OpenAI(api_key=_llave(), base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=2)
+    llave = _llave()  # sin llave no se aparta nada
+    reserva = _reservar(servicio, max_tokens)
+    cliente = OpenAI(api_key=llave, base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=2)
     t0 = time.time()
     extra = {"reasoning_effort": esfuerzo} if esfuerzo else {}
     if herramientas:
         extra["tools"] = herramientas
     if temperatura is not None:  # 0 = el mismo video da la misma respuesta
         extra["temperature"] = temperatura
-    r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens, **extra)
-    meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage),
+    try:
+        r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens, **extra)
+    except Exception as e:
+        if getattr(e, "status_code", None) is not None:  # la API contestó con error: no cobró
+            meta_api.liberar(reserva)
+        raise  # sin respuesta (red, tiempo): no sabemos si cobró, la reserva se queda hasta que venza
+    meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage), reserva,
                         entrada=getattr(r.usage, "prompt_tokens", 0), salida=getattr(r.usage, "completion_tokens", 0))
     return r.choices[0].message
 

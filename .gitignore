@@ -12,6 +12,7 @@ datos/
 *.jpg
 *.png
 !docs/img/*.png
+!docs/img/*.jpg
 
 # Python
 __pycache__/
@@ -33,3 +34,8 @@ modelos/
 error.txt
 mis-revisiones/
 estado.json
+
+# Candado y reservas del tope de gasto (retina.meta_api): viven junto al registro de costos y no se suben.
+*.candado
+*.reservas
+*.reservas.tmp

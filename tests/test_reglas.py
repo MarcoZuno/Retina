@@ -266,8 +266,15 @@ class SparkOpenConRescate(unittest.TestCase):
                 uso = mock.Mock(prompt_tokens=10, completion_tokens=5, prompt_tokens_details=None)
                 mensaje = mock.Mock(content=json.dumps(tarjeta()), tool_calls=None)
                 return mock.Mock(usage=uso, choices=[mock.Mock(message=mensaje)])
-        with mock.patch("openai.OpenAI", Cliente), mock.patch.object(baseten, "_llave", return_value="x"), \
-                mock.patch.object(meta_api, "_registrar"):
+        # Sin openai instalado también corre (módulo falso) y con un registro de costos temporal: apartar el
+        # gasto de la llamada escribe un archivo, y las pruebas no tocan el de quien las corre.
+        import tempfile
+        import types
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(sys.modules, {"openai": types.SimpleNamespace(OpenAI=Cliente)}), \
+                mock.patch.dict(os.environ, {"RETINA_COSTOS": str(Path(d) / "costos.jsonl"),
+                                             "RETINA_ENV": str(Path(d) / "no-hay.env")}), \
+                mock.patch.object(baseten, "_llave", return_value="x"):
             llamar()
         return pedidos
 
@@ -424,7 +431,10 @@ class Tope(unittest.TestCase):
 class FormatoDelPanel(unittest.TestCase):
     def test_el_ejemplo_trae_lo_que_lee_el_panel(self):
         r = json.loads((RAIZ / "casos" / "demo" / "resultado.json").read_text(encoding="utf-8"))
-        self.assertIn(r["arranque"]["nivel"], ("alto", "medio", "bajo"))
+        # El ejemplo se ve como la versión pública: sin semáforo (docs/decisiones.md) y con la ficha del arranque.
+        self.assertEqual(r["arranque"]["nivel"], "sin_nivel")
+        self.assertEqual((r["licencia"]["cerebro"], r["licencia"]["conoce_al_creador"]), ("cualquier_video", False))
+        self.assertTrue(r["ficha"]["gancho"])
         self.assertEqual(len(r["prediccion"]["curva_predicha"]), 41)
         self.assertEqual(len(r["prediccion"]["curva_parecidos"]), 41)
         for campo in explicar.esquema()["required"]:

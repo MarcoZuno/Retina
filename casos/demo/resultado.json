@@ -3,8 +3,9 @@
  "ejemplo_inventado": true,
  "video": {
   "duracion_s": 96.0,
-  "codigo": "EJEMPLO",
-  "titulo": "Ejemplo inventado: tres trucos para que el pan dulce no se endurezca"
+  "codigo": "",
+  "titulo": "Ejemplo inventado: tres trucos para que el pan dulce no se endurezca",
+  "talento": ""
  },
  "prediccion": {
   "curva_predicha": [
@@ -93,13 +94,18 @@
    0.4188,
    0.4159
   ],
-  "regla_de_parecidos": "cubeta+talento 90 d",
-  "n_parecidos": 40,
+  "regla_de_parecidos": "publica",
+  "n_parecidos": null,
   "uso_video": false,
-  "datos_hasta": "2026-10-27"
+  "datos_hasta": "2026-10-27",
+  "cerebro": "cualquier_video",
+  "conoce_al_creador": false,
+  "uso_voz": true,
+  "formato_poco_conocido": false,
+  "otro_idioma": false
  },
  "arranque": {
-  "nivel": "alto",
+  "nivel": "sin_nivel",
   "exceso_arranque_pp": 6.0,
   "bloques": [
    {
@@ -266,13 +272,19 @@
   "explicar": 20.0
  },
  "licencia": {
-  "comparado_con": "40 videos del mismo talento y duración de los últimos 90 días",
-  "regla": "cubeta+talento 90 d",
+  "comparado_con": "videos videos de la misma duración en una página grande de Facebook en México",
+  "regla": "publica",
   "datos_hasta": "2026-10-27",
   "vio_el_video": false,
   "no_pude_revisar": [
    "La música: no se analiza la letra ni la licencia."
-  ]
+  ],
+  "n_parecidos": null,
+  "cerebro": "cualquier_video",
+  "conoce_al_creador": false,
+  "sin_formula": false,
+  "formato_poco_conocido": false,
+  "otro_idioma": false
  },
  "revision_meta": [
   {
@@ -323,5 +335,16 @@
    "evidencia": "Vertical 9:16.",
    "fuente": "https://www.facebook.com/business/ads/facebook-instagram-reels-ads"
   }
- ]
+ ],
+ "ficha": {
+  "gancho": "saludo",
+  "emocion": "alegria",
+  "presenta_antes_del_tema": true,
+  "tema_en_la_primera_frase": false,
+  "promete_algo_visible": true,
+  "cifra_al_inicio": false,
+  "pide_interaccion": false,
+  "claridad": 3,
+  "curiosidad": 3
+ }
 }

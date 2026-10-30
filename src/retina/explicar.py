@@ -5,7 +5,7 @@ solo interpreta qué del gancho y del primer cuarto lo explica. Después, en
 código, un validador revisa que las cifras salgan de los datos y que el
 momento caiga dentro del arranque, y el filtro de integridad revisa la
 sugerencia. Si algo falla, se le pide a Spark otra vez diciéndole qué; si
-vuelve a fallar, la tarjeta sale sin sugerencia y lo dice. Nunca llega un
+vuelve a fallar, la tarjeta sale vacía (ningún texto del modelo) y lo dice. Nunca llega un
 anzuelo a la persona.
 
 Uso:
@@ -34,10 +34,18 @@ MAX_PASOS, MAX_CARACTERES_PASO = 4, 140  # «qué hacer» en pasos que un editor
 # Lo bueno, lo flojo y mejoras opcionales (29-oct): la tarjeta verde casi no decía nada a quien edita.
 # (mínimo, máximo, caracteres por punto). Las mejoras miden lo mismo que un paso: se hacen en el editor.
 LISTAS = {"lo_bueno": (1, 3, 160), "lo_flojo": (0, 3, 160), "mejoras_opcionales": (0, 3, MAX_CARACTERES_PASO)}
+NUM_LETRA = (r"(?:cien\w*|mil|diez|once|doce|trece|catorce|quince|veinte|veinti\w+|treinta|cuarenta|cincuenta|sesenta|"
+             r"setenta|ochenta|noventa|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|\d+)")
+NUM_LETRA_EN = (r"(?:hundred|thousand|ten|twelve|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|two|three|four|"
+                r"five|six|seven|eight|nine)")
 # Lo que la persona no tiene por qué entender: jerga del sistema y cifras internas de audiencia.
 JERGA = re.compile(r"\bpp\b|puntos porcentuales|%|de cada 100|\bs\d+(?:[.,]\d+)?\b|\btramos?\b|"
                    r"ver_arranque|ver_tramos|\boir\b|buscar_parecidos|medir_lo_prometido|entregar_tarjeta|"
-                   r"momento_s|\w+_\w+", re.I)
+                   r"momento_s|\w+_\w+|"
+                   # Cifras escritas con letra: «doce por ciento», «twelve percent», «de cada cien», «out of 100».
+                   r"por\s*ciento|porciento|\bper\s*cent|\bpercent\b|\bpor\s+cada\s+cien\w*|\ben\s+cada\s+cien\w*|"
+                   rf"\bde\s+cada\s+{NUM_LETRA}\b|\bout\s+of\s+(?:every\s+|each\s+|a\s+|one\s+)?(?:\d+|{NUM_LETRA_EN})\b|"
+                   r"\bper\s+hundred\b", re.I)
 INTOCABLES = RAIZ / "reglas" / "intocables-v1.json"
 
 
@@ -124,10 +132,15 @@ def cifras_inventadas(salida: dict, datos: dict) -> list[str]:
     return sorted({n for n in _NUM.findall(texto) if float(n.replace(",", ".")) not in validos})
 
 
-QUITAR = re.compile(r"\b(?:quit|elimin|cort|borr|sac|reemplaz|sustitu)\w*", re.I)
+QUITAR = re.compile(r"\b(?:quit|elimin|cort|borr|sac|reemplaz|sustitu|remov|delet|cut|drop|trim|replac|swap|erase)\w*", re.I)
 # Entre el verbo de quitar y la cita no puede haber otra orden: «corta el silencio y repite «…»».
-OTRA_ORDEN = re.compile(r"\b(?:di|dilo|pon|ponlo|ponla|agrega|añade|repite|mantén|manten|deja|adelanta|mueve|"
-                        r"pasa|sube|usa|pide|invita|cierra|termina|escribe|graba)\b", re.I)
+# También cuenta lo que se propone poner: «reemplaza el saludo por «…»», «replace the greeting with «…»».
+OTRA_ORDEN = re.compile(r"\b(?:di|dilo|dile|diles|pon|ponlo|ponla|ponle|agrega|añade|anade|repite|mantén|manten|deja|"
+                        r"adelanta|mueve|pasa|sube|usa|pide|invita|cierra|termina|escribe|graba|por|con|cambia|"
+                        r"cámbialo|cambialo|sustituye|reemplaza|reemplázalo|muestra|incluye|inserta|lee|menciona|"
+                        r"empieza|comienza|coloca|diga|digan|diciendo|"
+                        r"say|add|write|put|type|insert|include|use|replace|with|by|to|ask|tell|invite|read|show|"
+                        r"display|mention|start|end|repeat|keep|change|swap|substitute|caption|label)\b", re.I)
 CITA = re.compile(r"[«\"“‘']([^«»\"“”‘’']+)[»\"”’']")
 FIN_DE_FRASE = re.compile(r"[.!?;](?=\s|$)")  # no corta en «4.9»
 
@@ -336,6 +349,15 @@ def escribir(datos: dict, motores: tuple, pedir=pedir) -> tuple[dict, list, str]
     return salida, intentos, motores[-1]
 
 
+def tarjeta_sin_validar() -> dict:
+    """Lo único que sale cuando el validador rechazó la tarjeta dos veces: nada de lo que escribió el modelo
+    (ni «por_que», ni «lo_bueno», ni el anzuelo citado), porque nada que no pasó el validador llega a la persona."""
+    return dict(por_que="", lo_que_funciona="", lo_bueno=[], lo_flojo=[], que_cambiar="", pasos=[],
+                mejoras_opcionales=[], tipo_de_cambio="ninguno", momento_s=0.0, anzuelo_detectado="ninguno",
+                anzuelo_frase="", anzuelo_momento_s=-1, confianza="baja", storyboard=[],
+                no_pude_verificar=["No hubo una sugerencia que pasara el validador y el filtro de integridad."])
+
+
 def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "explicar.json", idioma: str = "es") -> dict:
     motor = motor or motor_por_omision()
     datos = datos_del_arranque(carpeta, arranque)
@@ -343,8 +365,7 @@ def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "expl
         datos["idioma_de_la_tarjeta"] = "inglés"
     salida, intentos, quien = escribir(datos, MOTORES[motor])
     if intentos[-1]["problemas"]:
-        salida.update(que_cambiar="", pasos=[], mejoras_opcionales=[], tipo_de_cambio="ninguno", storyboard=[])
-        salida["no_pude_verificar"].append("No hubo una sugerencia que pasara el validador y el filtro de integridad.")
+        salida = tarjeta_sin_validar()
     from . import baseten
     salida["licencia"] = {"modelo": baseten.MODELO if quien == "abierto" else MODELO,
                           "servido_por": "Baseten" if quien == "abierto" else "Meta Model API",
