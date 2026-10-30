@@ -30,6 +30,21 @@ def _guardar(datos: dict, destino: Path) -> None:
     destino.write_bytes(base64.b64decode(datos["data"][0]["b64_json"]))
 
 
+def dibujar_uno(prompt: str, destino: Path, refs: list | None = None, servicio: str = "storyboard") -> None:
+    """Una imagen con Muse Image. Con `refs` usa /v1/images/edits para mantener el mismo estilo."""
+    t0 = time.time()
+    if refs:
+        r = meta_api._pedir("POST", "/images/edits", json={"model": MODELO, "prompt": prompt, "images": refs, "n": 1})
+    else:
+        r = meta_api._pedir("POST", "/images/generations", json={
+            "model": MODELO, "prompt": prompt, "n": 1, "size": "1024x1792",
+            "response_format": "b64_json", "output_format": "png"})
+    if r.status_code != 200:
+        raise meta_api._error(r)
+    meta_api._registrar(servicio, MODELO, time.time() - t0, meta_api.PRECIO_IMAGEN[MODELO])
+    _guardar(r.json(), destino)
+
+
 def anotar(carpeta: Path, cuadros: list[str], rutas: list[Path]) -> None:
     """Anota las ilustraciones en el resultado.json del caso para que el panel las muestre, solo si
     son del mismo storyboard que trae su tarjeta (no de otra explicación de la misma carpeta)."""
@@ -62,20 +77,9 @@ def generar(explicacion: Path, estilo: list[Path], aprobar: bool) -> list[Path]:
     refs = [{"image_url": "data:image/png;base64," + base64.b64encode(p.read_bytes()).decode()} for p in estilo[:3]]
     salidas = []
     for i, c in enumerate(cuadros, 1):
-        prompt = ESTILO.format(i=i) + c
-        t0 = time.time()
-        if refs:
-            r = meta_api._pedir("POST", "/images/edits", json={"model": MODELO, "prompt": prompt, "images": refs, "n": 1})
-        else:
-            r = meta_api._pedir("POST", "/images/generations", json={
-                "model": MODELO, "prompt": prompt, "n": 1, "size": "1024x1792",
-                "response_format": "b64_json", "output_format": "png"})
-        if r.status_code != 200:
-            raise meta_api._error(r)
-        meta_api._registrar("storyboard", MODELO, time.time() - t0, meta_api.PRECIO_IMAGEN[MODELO])
         nombre = "storyboard" if explicacion.name == "resultado.json" else explicacion.stem
         destino = explicacion.with_name(f"{nombre}-cuadro{i}-ilustracion-ia.png")
-        _guardar(r.json(), destino)
+        dibujar_uno(ESTILO.format(i=i) + c, destino, refs)
         salidas.append(destino)
     anotar(explicacion.parent, cuadros, salidas)
     return salidas
