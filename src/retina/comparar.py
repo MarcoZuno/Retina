@@ -162,7 +162,7 @@ def revisar(salida, datos: dict) -> list[str]:
 
 
 def _texto_de_datos(datos: dict, aviso: str) -> str:
-    texto = "\n\n".join(f"<<<VERSION_{n} (dato)\n{json.dumps(datos[f'version_{n}'], ensure_ascii=False)}\nVERSION_{n}>>>"
+    texto = "\n\n".join(meta_api.como_dato(f"VERSION_{n}", json.dumps(datos[f"version_{n}"], ensure_ascii=False))
                         for n in (1, 2))
     if aviso:
         texto += f"\n\nTu respuesta anterior fue bloqueada por esto: {aviso}. Corrígelo."

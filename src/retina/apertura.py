@@ -213,7 +213,7 @@ def _pedir_spark(sistema: str, texto: str) -> dict:
 def pedir(datos: dict, aviso: str = "") -> dict:
     """Como en la tarjeta, Spark Open a veces gasta la salida pensando: se repite con más espacio."""
     para_el_modelo = {k: v for k, v in datos.items() if k != "fuente"}
-    texto = f"<<<DATOS_DEL_VIDEO (dato)\n{json.dumps(para_el_modelo, ensure_ascii=False)}\nDATOS_DEL_VIDEO>>>"
+    texto = meta_api.como_dato("DATOS_DEL_VIDEO", json.dumps(para_el_modelo, ensure_ascii=False))
     if aviso:
         texto += f"\n\nTu intento anterior fue rechazado por esto: {aviso}. Corrígelo."
     if quien_escribe()[1] != "Baseten":

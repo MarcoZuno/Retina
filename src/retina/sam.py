@@ -206,7 +206,7 @@ def objeto_del_titulo(titulo: str) -> str | None:
             "properties": {"objeto": {"type": "string", "enum": sorted(palabras) + ["ninguno"]}}}}},
         "input": [
             {"type": "message", "role": "developer", "content": [{"type": "input_text", "text": INSTRUCCION_OBJETO}]},
-            {"type": "message", "role": "user", "content": [{"type": "input_text", "text": f"<<<TITULO (dato)\n{titulo[:300]}\nTITULO>>>"}]},
+            {"type": "message", "role": "user", "content": [{"type": "input_text", "text": meta_api.como_dato("TITULO", titulo[:300])}]},
         ],
     }
     objeto = json.loads(meta_api.texto_de(meta_api.responder("objeto_prometido", cuerpo)))["objeto"]

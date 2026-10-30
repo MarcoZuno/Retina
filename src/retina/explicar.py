@@ -256,7 +256,7 @@ def revisar(salida: dict, datos: dict) -> list[str]:
 
 
 def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
-    texto = f"<<<DATOS_DEL_ARRANQUE (dato)\n{json.dumps(datos, ensure_ascii=False)}\nDATOS_DEL_ARRANQUE>>>"
+    texto = meta_api.como_dato("DATOS_DEL_ARRANQUE", json.dumps(datos, ensure_ascii=False))
     if aviso:
         texto += f"\n\nTu respuesta anterior fue bloqueada por esto: {aviso}. Corrígelo."
     return {

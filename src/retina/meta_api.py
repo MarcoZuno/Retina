@@ -12,6 +12,7 @@ import json
 import math
 import os
 import random
+import secrets
 import threading
 import time
 import uuid
@@ -37,6 +38,13 @@ PRECIO_HORA_AUDIO = {"muse-voice-transcribe-1.0": 0.18}
 
 class TopeAlcanzado(RuntimeError):
     pass
+
+
+def como_dato(nombre: str, contenido: str) -> str:
+    """Envuelve lo que viene de la persona o del video para que el modelo lo lea como dato. La marca lleva un sello al
+    azar en cada llamada: quien la escriba en su título o en lo que dice no puede adivinarla para salirse del bloque."""
+    marca = f"{nombre}_{secrets.token_hex(6)}"
+    return f"<<<{marca} (dato)\n{contenido}\n{marca}>>>"
 
 
 def _cargar_env() -> None:

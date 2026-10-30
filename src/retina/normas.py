@@ -88,7 +88,7 @@ def esquema() -> dict:
 def pedir(datos: dict, idioma: str) -> list:
     lista = [{"id": n["id"], "nombre": n["nombre"], "que_buscar": n["que_buscar"]} for n in reglas()]
     texto = (f"<<<LISTA_DE_NORMAS\n{json.dumps(lista, ensure_ascii=False)}\nLISTA_DE_NORMAS>>>\n\n"
-             f"<<<DATOS_DEL_VIDEO (dato)\n{json.dumps({**datos, 'idioma_de_la_revision': IDIOMAS[idioma]}, ensure_ascii=False)}\nDATOS_DEL_VIDEO>>>")
+             + meta_api.como_dato("DATOS_DEL_VIDEO", json.dumps({**datos, "idioma_de_la_revision": IDIOMAS[idioma]}, ensure_ascii=False)))
     cuerpo = {"model": MODELO, "reasoning": {"effort": "low"}, "max_output_tokens": 6000, "store": False,
               "text": {"format": {"type": "json_schema", "name": "normas_v1", "strict": True, "schema": esquema()}},
               "input": [{"type": "message", "role": "developer", "content": [{"type": "input_text", "text": instrucciones()}]},

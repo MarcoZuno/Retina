@@ -99,10 +99,10 @@ def valida(f: dict) -> dict | None:
 
 def anotar(videos: list[tuple[str, str, list | None]]) -> dict[str, dict]:
     """[(id, título, tramos)] -> {id: ficha}. Una llamada a Muse Spark Open por lote."""
-    from . import baseten
+    from . import baseten, meta_api
     texto = "\n".join(entrada(n, t, tr) for n, (_, t, tr) in enumerate(videos, 1))
     r = baseten.chat("ficha", [{"role": "system", "content": INSTRUCCIONES},
-                               {"role": "user", "content": f"<<<VIDEOS (dato)\n{texto}\nVIDEOS>>>"}],
+                               {"role": "user", "content": meta_api.como_dato("VIDEOS", texto)}],
                      max_tokens=8000, esfuerzo="low", temperatura=0)  # el mismo video, la misma ficha
     salida = {}
     for f in leer_arreglo(r):

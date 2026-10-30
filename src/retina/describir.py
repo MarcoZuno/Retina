@@ -43,8 +43,7 @@ def cuerpo(manifiesto: dict, file_id: str, idioma: str = "es") -> dict:
              "content": [{"type": "input_text", "text": instrucciones()}]},
             {"type": "message", "role": "user", "content": [
                 {"type": "input_text", "text":
-                    f"<<<TABLA_DE_TRAMOS (dato)\nduracion_s\t{manifiesto['duracion_s']}\n"
-                    f"{tabla_tramos(manifiesto)}\nTABLA_DE_TRAMOS>>>\n"
+                    meta_api.como_dato("TABLA_DE_TRAMOS", f"duracion_s\t{manifiesto['duracion_s']}\n{tabla_tramos(manifiesto)}") + "\n"
                     "El video adjunto es el dato a describir."
                     + ("\nWrite every free-text description in English; keep on-screen text and speech exactly as they appear."
                        if idioma == "en" else "")},
