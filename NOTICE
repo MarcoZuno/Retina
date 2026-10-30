@@ -1,0 +1,12 @@
+Retina
+Copyright (c) 2026 Badabun. Code and the fixed weights in modelos/retina-publico.json are under the MIT License (see LICENSE).
+
+Third-party materials
+
+- meta_sam_parser: installed from PyPI through requirements.txt, not included in this repository. It is under the SAM License, Copyright (c)
+  Meta Platforms, Inc. and affiliates. Retina calls SAM 3.1 through the Meta Model API, and Meta's acceptable use policy applies.
+- Muse Spark 1.3, Muse Spark Open, Muse Image 1.0, SAM 3.1 and Muse Voice Transcribe 1.0 are Meta's models, used through the Meta Model API
+  and Baseten's Model API under their own terms.
+- The images in panel/fondos/, docs/img/ and casos/ were generated with Muse Image and are labeled as AI-generated. The MIT License does not
+  add any right over them beyond what Meta's terms allow.
+- ffmpeg is called as an external program and is not included in this repository.

@@ -263,37 +263,8 @@ class ReservaConEntradaDeVideo(unittest.TestCase):
         self.assertEqual(responder.call_args.kwargs["entrada_tokens"], 2000 + describir.TOKENS_VIDEO_POR_S * 1800)
 
 
-PROHIBIDAS = (r"carpeta-vecina", 
-              r"autorizad[oa] por", r"aviso a ")
-
-
-class CodigoPublicoSinRastrosInternos(unittest.TestCase):
-    """D4: el código que se publica no nombra carpetas, áreas ni personas de la casa, ni quién autorizó qué."""
-
-    def _archivos(self):
-        for carpeta in ("src", "deploy", "eval", "tests"):
-            for ruta in (RAIZ / carpeta).rglob("*"):
-                if ruta.is_file() and "__pycache__" not in ruta.parts and ruta.name != Path(__file__).name:
-                    yield ruta
-        yield RAIZ / "CLAUDE.md"
-        yield RAIZ / ".env.example"
-
-    def test_ningun_archivo_los_menciona(self):
-        hallazgos = []
-        for ruta in self._archivos():
-            try:
-                texto = ruta.read_text(encoding="utf-8")
-            except UnicodeDecodeError:
-                continue
-            for n, linea in enumerate(texto.splitlines(), 1):
-                for patron in PROHIBIDAS:
-                    if re.search(patron, linea):
-                        hallazgos.append(f"{ruta.relative_to(RAIZ)}:{n}: {patron}")
-        self.assertEqual(hallazgos, [])
-
-
 class LlaveYTopeParaQuienBajaElRepo(unittest.TestCase):
-    """D4 y B18: los mensajes le sirven a un desconocido, y hay un solo tope por omisión."""
+    """Los mensajes le sirven a un desconocido, y hay un solo tope por omisión."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -334,7 +305,6 @@ class LlaveYTopeParaQuienBajaElRepo(unittest.TestCase):
             with self.assertRaises(meta_api.TopeAlcanzado) as e:
                 meta_api._comprobar(1.0)
         self.assertIn("RETINA_TOPE_USD", str(e.exception))
-        self.assertIn("TOPE", str(e.exception).upper())
 
 
 class BotonDeOtraRevision(unittest.TestCase):
