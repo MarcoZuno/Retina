@@ -375,3 +375,16 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   de cero: presentarse antes del tema, saludo o presentación como gancho, decir el tema tarde, poca curiosidad,
   arrancar con pura alegría o ternura (retuvieron menos); un dato o una cifra, un conflicto, mucha curiosidad,
   sorpresa o indignación (retuvieron más). Describe lo que pasó con otros videos, no promete nada del tuyo.
+
+## 29-oct-2026 (noche) · Semáforo público v2. Regla sellada antes de medir
+
+- **Por qué.** La v1 no pasó su regla y no se reajusta. La v2 es otra hipótesis: el nivel sale del número que sí
+  pasó su medición (el cerebro público con la ficha del arranque): cuánta gente predice que se va de más en el
+  gancho y el primer cuarto, contra la curva fija de su duración.
+- **Qué se mide** (`eval/semaforo_publico_v2.py`). La misma vara que la v1: dos periodos que no ha visto
+  (jul-dic 2025 y ene-jun 2026, con el cerebro armado solo con lo de antes), cortes por duración con los 180 días
+  antes del corte (40 % y 75 %), videos de prueba como de fuera y elegibles, y «perdió de más» contra la curva fija.
+- **Regla.** La misma de la v1: en las dos pruebas, «alto» en entre 15 % y 35 % de los videos; la parte de los
+  «alto» que de verdad perdió de más le gana a la tasa base con intervalos de Wilson que no se tocan; y los
+  «bajo» quedan debajo de la base. Si pasa, el modo público vuelve a mostrar semáforo, con estos cortes por
+  duración. Si no, se queda sin semáforo.
