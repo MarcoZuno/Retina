@@ -54,6 +54,14 @@ class ReglasDeTexto(unittest.TestCase):
     def test_una_cifra_del_video_si_pasa_aunque_venga_con_letra_en_el_titulo(self):
         self.assertEqual(ids(buena(voz=VOZ.replace("tres trucos", "3 trucos"))), [])
 
+    def test_una_fecha_o_una_lista_de_cifras_no_truena_el_revisor(self):
+        fuente = "el 30.10.2026 y las cifras 1,2,3"
+        self.assertEqual(apertura.cifras_nuevas("El 30.10.2026 y las cifras 1,2,3.", fuente), [])
+        self.assertEqual(apertura.cifras_nuevas("El 31.10.2026.", fuente), ["31"])
+
+    def test_los_miles_valen_con_coma_con_punto_o_sin_nada(self):
+        self.assertEqual(apertura.cifras_nuevas("Son 1,000 pesos y 2.500 más.", "1000 pesos y 2500 mas"), [])
+
     def test_un_nombre_que_no_viene_del_video_se_rechaza(self):
         self.assertIn("nombres", ids(buena(voz=VOZ + " Lo cuenta Martha Sánchez.")))
 
@@ -227,6 +235,15 @@ class Rehacer(unittest.TestCase):
             antes = apertura.antes_del_cambio(d, {"frases": [{"segundo": 1.0, "dice": " ".join(["palabra"] * 100)}]})
         self.assertEqual(len(antes["voz"].split()), apertura.MAX_PALABRAS)
         self.assertTrue(antes["voz"].endswith("…"))
+
+    def test_si_cambia_el_video_de_la_carpeta_la_apertura_vieja_se_borra(self):
+        from retina.retina import preparar_carpeta
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t); video = d / "v.mp4"
+            video.write_bytes(b"uno"); preparar_carpeta(video, d)
+            (d / "apertura.json").write_text("{}", encoding="utf-8")
+            video.write_bytes(b"dos"); preparar_carpeta(video, d)
+            self.assertFalse((d / "apertura.json").exists())
 
     def test_no_se_paga_dos_veces_por_la_misma_revision(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura, "pedir", side_effect=AssertionError("pagó")):

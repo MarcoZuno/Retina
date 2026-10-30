@@ -62,8 +62,12 @@ def _palabras(texto: str) -> list[str]:
 def _numeros(texto: str) -> set[float]:
     hallados = set()
     for n in re.findall(r"\d+(?:[.,]\d+)*", texto):
-        miles = re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+", n)
-        hallados.add(float(re.sub(r"[.,]", "", n) if miles else n.replace(",", ".")))
+        if re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+", n):  # 1,000 y 1.000
+            hallados.add(float(re.sub(r"[.,]", "", n)))
+        elif n.count(".") + n.count(",") == 1:  # 4.5 y 4,5
+            hallados.add(float(n.replace(",", ".")))
+        else:  # 30.10.2026 o 1,2,3: cada pieza es una cifra
+            hallados.update(float(x) for x in re.split(r"[.,]", n))
     return hallados | {float(LETRA[p]) for p in _palabras(texto) if p in LETRA}
 
 

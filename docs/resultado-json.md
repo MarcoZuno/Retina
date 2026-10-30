@@ -6,6 +6,24 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 
 *The panel reads only this file. The example is made up, with no real data.*
 
+## La apertura arreglada
+
+`apertura` solo existe si la persona apretó «Arreglar mi arranque» (`retina.apertura`). También queda en
+`apertura.json`, en la carpeta del caso.
+
+| Campo | Qué es | Dónde sale |
+|---|---|---|
+| `apertura.titulo` | El título tal cual. Nunca cambia. | Encabezado |
+| `apertura.objeto` | Lo que promete el título, de la lista cerrada de SAM; `null` si no promete algo que se vea. | «Después» |
+| `apertura.antes` | `voz` (lo que dice el borrador en sus primeros 15 s), `imagen` y `promesa` (lo que vio SAM). | «Antes» |
+| `apertura.despues` | `voz`, `cuadros` e `imagenes`. `null` si no pasó: nada sin comprobar llega a la persona. | «Después» |
+| `apertura.aprobada` | Si pasó todas las comprobaciones. | Resumen |
+| `apertura.vueltas` | Cuántas correcciones necesitó (máximo 2). | Resumen |
+| `apertura.comprobaciones` | Lista de `{id, paso}`: anzuelos, intocables, cifras, nombres, tema, largo, cuadros y promesa. | Lista con palomitas |
+| `apertura.intentos` | Qué falló en cada intento. Nunca trae el texto rechazado. | No se muestra |
+| `apertura.no_comprobe` | Lo que no se pudo revisar (por ejemplo, si SAM no contestó). | Lista |
+| `apertura.licencia` | Qué modelo escribió, dibujó y revisó. | Resumen |
+
 ## Lo que muestra la tarjeta
 
 `explicacion` la escribe el agente (`--con-api --voz`) o, sin `--voz`, `explicar` de una
