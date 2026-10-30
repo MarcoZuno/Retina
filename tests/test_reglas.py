@@ -820,6 +820,15 @@ class PlanBSoloModelosDeMeta(unittest.TestCase):
             if antes is not None:
                 os.environ["RETINA_SOLO_MODELOS_META"] = antes
 
+    def test_revisar_otra_vez_el_mismo_video_conserva_su_apertura(self):
+        from retina import retina as r
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(r, "segmentar", return_value={"duracion_s": 60.0}), \
+                mock.patch.object(r, "preparar_carpeta"), mock.patch.object(r, "solo_modelos_meta", return_value=True):
+            (Path(d) / "apertura.json").write_text('{"aprobada": true}', encoding="utf-8")
+            r.correr(Path("v.mp4"), None, Path(d), "X", "", "2026-10-28 10:00", "t", False, None)
+            hecho = json.loads((Path(d) / "resultado.json").read_text(encoding="utf-8"))
+        self.assertEqual(hecho["apertura"], {"aprobada": True})
+
     def test_de_fabrica_no_tener_numero_no_es_una_falta(self):
         from retina import retina as r
         with tempfile.TemporaryDirectory() as d, mock.patch.object(r, "segmentar", return_value={"duracion_s": 60.0}), \

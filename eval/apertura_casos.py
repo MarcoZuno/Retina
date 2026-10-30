@@ -78,6 +78,10 @@ def trampa(salida: Path, cuadros: list[tuple[str, str]], objetos: list[str]) -> 
     return filas
 
 
+def trampa_pasa(filas: list[dict]) -> bool:
+    return len(filas) == CUADROS_TRAMPA and sum(f["rechazo"] for f in filas) >= CONDICION["C"]
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--casos", type=Path, required=True)
@@ -114,7 +118,7 @@ def main() -> None:
         "regla": "docs/decisiones.md, 30-oct-2026",
         "A": {"n": len(grupo_a), "pasan": len(pasan_a), "ic95": wilson(len(pasan_a), len(grupo_a)), "pasa": len(pasan_a) >= CONDICION["A"]},
         "B": {"n": len(grupo_b), "pasan": len(pasan_b), "pasa": len(pasan_b) >= CONDICION["B"]},
-        "C": {"n": len(filas), "rechaza": rechaza, "pasa": rechaza >= CONDICION["C"]},
+        "C": {"n": len(filas), "rechaza": rechaza, "pasa": trampa_pasa(filas)},
         "correcciones_de_las_aprobadas": Counter(str(h["vueltas"]) for h in hechas.values() if h["aprobada"]),
         "que_fallo_en_las_no_aprobadas": Counter(p["id"] for h in hechas.values() if not h["aprobada"]
                                                  for p in h["intentos"][-1]["problemas"]),

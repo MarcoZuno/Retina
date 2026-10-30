@@ -136,8 +136,8 @@ def _medir_clip(preparar_clip, concepto: str, segundos: int) -> dict:
     try:
         r = asyncio.run(_segmentar(file_id, concepto))
     finally:  # se registra aunque falle a media corrida: la API pudo haber cobrado
-        meta_api.borrar_archivo(file_id)
         meta_api._registrar("sam", MODELO, time.time() - t0, costo, reserva, cuadros=cuadros)
+        meta_api.borrar_archivo(file_id)
     if r.outcome.status != "completed":
         return {"concepto": concepto, "error": f"SAM no terminó: {getattr(r.outcome, 'reason', 'sin motivo')}"}
     from meta_sam_parser import decode_mask_to_raster
@@ -145,7 +145,8 @@ def _medir_clip(preparar_clip, concepto: str, segundos: int) -> dict:
     for rec in r.records:
         if rec.kind == "mask" and rec.frame is not None:
             px = sum(decode_mask_to_raster(rec.mask)) / max(rec.mask.width * rec.mask.height, 1)
-            por_cuadro[rec.frame.frame_index] = por_cuadro.get(rec.frame.frame_index, 0.0) + px
+            if px > 0:  # una máscara vacía no es que se vea
+                por_cuadro[rec.frame.frame_index] = por_cuadro.get(rec.frame.frame_index, 0.0) + px
     return {"concepto": concepto, "segundos_revisados": segundos,
             "aparece": bool(por_cuadro),
             "primer_segundo": round(min(por_cuadro) / FPS, 1) if por_cuadro else None,

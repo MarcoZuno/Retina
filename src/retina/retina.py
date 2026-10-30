@@ -211,6 +211,9 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         "licencia": licencia(pred, no_pude),
     }
 
+    if (salida / "apertura.json").exists():  # revisar otra vez el mismo video no pierde lo ya pagado
+        resultado["apertura"] = json.loads((salida / "apertura.json").read_text(encoding="utf-8"))
+
     def escribir() -> None:
         (salida / "resultado.json").write_text(json.dumps(resultado, ensure_ascii=False, indent=1), encoding="utf-8")
 

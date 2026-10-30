@@ -43,8 +43,11 @@ VACIAS = frozenset("""para como este esta esto estos estas pero porque cuando do
     just like than then been were does""".split())
 # Cifras con letra. Sin «uno», «one» ni «once»: en una frase casi nunca son una cantidad.
 LETRA = {"dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6, "siete": 7, "ocho": 8, "nueve": 9, "diez": 10, "doce": 12,
-         "quince": 15, "veinte": 20, "treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60, "setenta": 70, "ochenta": 80,
-         "noventa": 90, "cien": 100, "mil": 1000, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+         "trece": 13, "catorce": 14, "quince": 15, "dieciseis": 16, "diecisiete": 17, "dieciocho": 18, "diecinueve": 19,
+         "veinte": 20, "veintiuno": 21, "veintidos": 22, "veintitres": 23, "veinticuatro": 24, "veinticinco": 25,
+         "veintiseis": 26, "veintisiete": 27, "veintiocho": 28, "veintinueve": 29, "treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60, "setenta": 70, "ochenta": 80,
+         "noventa": 90, "cien": 100, "doscientos": 200, "trescientos": 300, "cuatrocientos": 400, "quinientos": 500,
+         "mil": 1000, "millon": 1e6, "millones": 1e6, "million": 1e6, "millions": 1e6, "billion": 1e9, "billions": 1e9, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
          "nine": 9, "ten": 10, "twelve": 12, "fifteen": 15, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
          "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100, "thousand": 1000}
 FORMATO = ("\n\nFORMATO DE RESPUESTA: devuelve solo un objeto JSON válido, sin texto antes ni después y sin bloques de "
@@ -92,7 +95,7 @@ def tema_llega_tarde(voz: str, titulo: str) -> bool:
 
 def revisar(s: dict, datos: dict) -> list[dict]:
     """Las reglas de texto, en código, después del modelo. Devuelve lo que falló, con el detalle para corregirlo."""
-    voz, cuadros = s.get("voz"), s.get("cuadros")
+    voz, cuadros = (s.get("voz"), s.get("cuadros")) if isinstance(s, dict) else (None, None)
     if not isinstance(voz, str) or not isinstance(cuadros, list) or not all(isinstance(c, str) for c in cuadros):
         return [{"id": "formato", "detalle": "la respuesta tiene que traer «voz» (texto) y «cuadros» (lista de textos)"}]
     problemas = []
@@ -108,9 +111,9 @@ def revisar(s: dict, datos: dict) -> list[dict]:
         fallo("intocables", f"toca algo intocable: {', '.join(t)}")
     if n := cifras_nuevas(voz, fuente):
         fallo("cifras", f"cifras que no vienen en los datos del video: {', '.join(n)}")
-    if n := nombres_nuevos(voz, fuente):
+    if n := nombres_nuevos(todo, fuente):
         fallo("nombres", f"nombres que no vienen en los datos del video: {', '.join(n)}")
-    if tema_llega_tarde(voz, titulo):
+    if datos.get("tema_obligatorio", True) and tema_llega_tarde(voz, titulo):
         fallo("tema", "la primera frase tiene que decir de qué trata el video con palabras del título")
     if not MIN_PALABRAS <= (n := len(voz.split())) <= MAX_PALABRAS:
         fallo("largo", f"la voz mide {n} palabras y tiene que medir de {MIN_PALABRAS} a {MAX_PALABRAS}")
@@ -137,7 +140,7 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
     """Escribe, revisa y corrige. `dibujar(i, cuadro, objeto)` deja el cuadro i y `medir(imagen, concepto)` lo busca
     con SAM; los dos cuestan, así que solo corren si el texto ya pasó. El primer cuadro se dibuja antes que los
     otros: si SAM no ve la promesa, los otros dos no se pagan."""
-    intentos, no_comprobe, aviso, s, primero, vista = [], [], "", None, None, None
+    intentos, no_comprobe, aviso, s, imagenes, vista = [], [], "", None, [], None
     for vuelta in range(MAX_CORRECCIONES + 1):
         avisar("corrigiendo" if vuelta else "escribiendo", vuelta)
         vista = None
@@ -148,17 +151,26 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
             raise
         except RuntimeError as e:
             s, problemas = None, [{"id": "formato", "detalle": f"no llegó una respuesta válida ({type(e).__name__})"}]
-        if not problemas and concepto:
-            avisar("dibujando", vuelta)
-            primero = dibujar(1, s["cuadros"][0], concepto)
-            avisar("buscando", vuelta)
-            vista = _sin_dato_falso(medir, primero, concepto)
-            if "error" in vista:
-                no_comprobe.append("promesa")
-                vista = None
-            elif not vista.get("aparece") or vista["primer_segundo"] >= 1:
-                problemas = [{"id": "promesa", "detalle": f"en el primer cuadro no se ve «{concepto}»: tiene que ser "
-                                                          "lo principal de la escena, grande y al centro"}]
+        if not problemas:
+            try:
+                avisar("dibujando", vuelta)
+                primero = dibujar(1, s["cuadros"][0], concepto)
+                if concepto:
+                    avisar("buscando", vuelta)
+                    vista = _sin_dato_falso(medir, primero, concepto)
+                    if "error" in vista:
+                        no_comprobe = ["promesa"]
+                        vista = None
+                    elif not vista.get("aparece") or vista["primer_segundo"] >= 1:
+                        problemas = [{"id": "promesa", "detalle": f"en el primer cuadro no se ve «{concepto}»: tiene que "
+                                                                  "ser lo principal de la escena, grande y al centro"}]
+                if not problemas:
+                    avisar("terminando", vuelta)
+                    imagenes = [primero, dibujar(2, s["cuadros"][1], None), dibujar(3, s["cuadros"][2], None)]
+            except meta_api.TopeAlcanzado:
+                raise
+            except Exception as e:  # noqa: BLE001 — Muse Image puede rechazar una escena: se pide otra
+                problemas = [{"id": "cuadros", "detalle": f"no se pudo dibujar un cuadro ({type(e).__name__}): describe otra escena"}]
         intentos.append({"vuelta": vuelta, "problemas": problemas})
         if not problemas:
             break
@@ -171,9 +183,6 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
     if fallos:
         return {"aprobada": False, "vueltas": len(intentos) - 1, "despues": None, "comprobaciones": comprobaciones,
                 "intentos": intentos, "no_comprobe": no_comprobe}
-    avisar("terminando", len(intentos) - 1)
-    imagenes = [primero if concepto else dibujar(1, s["cuadros"][0], None),
-                dibujar(2, s["cuadros"][1], None), dibujar(3, s["cuadros"][2], None)]
     return {"aprobada": True, "vueltas": len(intentos) - 1,
             "despues": {"voz": s["voz"], "cuadros": s["cuadros"], "imagenes": [p.name for p in imagenes]},
             "comprobaciones": comprobaciones, "intentos": intentos, "no_comprobe": no_comprobe}
@@ -243,12 +252,14 @@ def datos_de_apertura(carpeta: Path, titulo: str, idioma: str = "es") -> dict:
     pantalla = [str(t.get("texto_en_pantalla") or "") for t in tramos]
     lengua = transcribir.idioma_de(" ".join([titulo, *" ".join(dicho).split()[:60]])) or idioma
     return {**datos, "titulo": titulo, "resto_de_lo_que_se_dice": " ".join(resto.split()[:MAX_PALABRAS_RESTO]),
-            "idioma_de_la_apertura": IDIOMAS[lengua], "fuente": integridad.normalizar(" ".join([titulo, *dicho, *pantalla]))}
+            "idioma_de_la_apertura": IDIOMAS[lengua], "fuente": integridad.normalizar(" ".join([titulo, *dicho, *pantalla])),
+            # Con un título en otro idioma que el video, la apertura no puede usar sus palabras.
+            "tema_obligatorio": transcribir.idioma_de(titulo) in (None, lengua)}
 
 
 def antes_del_cambio(carpeta: Path, datos: dict) -> dict:
     """Lo que el borrador hace hoy: lo que dice en esos segundos, su primer cuadro y lo que vio SAM, si lo revisó."""
-    voz = " ".join(f["dice"] for f in datos.get("frases", []) if f["segundo"] < SEGUNDOS_ANTES)
+    voz = " ".join(f["dice"] for f in datos.get("frases", []) if f["segundo"] < SEGUNDOS_ANTES and f["dice"])
     if len(palabras := voz.split()) > MAX_PALABRAS:  # una frase larga se pasa de esos segundos
         voz = " ".join(palabras[:MAX_PALABRAS]) + "…"
     primero = next(iter(sorted((carpeta / "cuadros").glob("c*.jpg"))), None)
@@ -272,10 +283,13 @@ def prometido(carpeta: Path, titulo: str) -> str | None:
 
 def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", avisar=_nada_que_avisar) -> dict:
     datos = datos_de_apertura(carpeta, titulo, idioma)
-    medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o), sam.medir_imagen, avisar)
-    if not medido["aprobada"]:  # lo que no pasó no se queda en la carpeta del caso
-        for i in (1, 2, 3):
-            (carpeta / f"apertura-cuadro{i}-ilustracion-ia.png").unlink(missing_ok=True)
+    medido = None
+    try:
+        medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o), sam.medir_imagen, avisar)
+    finally:
+        if not (medido and medido["aprobada"]):  # lo que no pasó no se queda en la carpeta del caso
+            for i in (1, 2, 3):
+                (carpeta / f"apertura-cuadro{i}-ilustracion-ia.png").unlink(missing_ok=True)
     modelo, servido_por = quien_escribe()
     return {"version": VERSION, "titulo": titulo, "idioma": datos["idioma_de_la_apertura"], "objeto": concepto,
             "antes": antes_del_cambio(carpeta, datos), **medido,
@@ -283,18 +297,25 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
                          "instrucciones": f"skills/apertura.md ({VERSION})", "reglas": integridad.reglas()["version"]}}
 
 
+def _escribir(ruta: Path, datos: dict) -> None:
+    """Se escribe a un temporal y se reemplaza de un golpe: nadie lee un archivo a medias."""
+    temporal = ruta.with_suffix(".tmp")
+    temporal.write_text(json.dumps(datos, ensure_ascii=False, indent=1), encoding="utf-8")
+    os.replace(temporal, ruta)
+
+
 def rehacer(carpeta: Path, idioma: str = "es", avisar=_nada_que_avisar) -> dict:
     """La apertura de una revisión ya hecha. Una vez hecha no se vuelve a pagar: se regresa la misma."""
-    ruta = carpeta / "apertura.json"
-    if ruta.exists():
-        return json.loads(ruta.read_text(encoding="utf-8"))
-    archivo = carpeta / "resultado.json"
+    ruta, archivo = carpeta / "apertura.json", carpeta / "resultado.json"
     resultado = json.loads(archivo.read_text(encoding="utf-8"))
-    titulo = (resultado.get("video") or {}).get("titulo") or ""
-    salida = armar(carpeta, titulo, prometido(carpeta, titulo), idioma, avisar)
-    ruta.write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
+    if ruta.exists():
+        salida = json.loads(ruta.read_text(encoding="utf-8"))
+    else:
+        titulo = (resultado.get("video") or {}).get("titulo") or ""
+        salida = armar(carpeta, titulo, prometido(carpeta, titulo), idioma, avisar)
     resultado["apertura"] = salida
-    archivo.write_text(json.dumps(resultado, ensure_ascii=False, indent=1), encoding="utf-8")
+    _escribir(archivo, resultado)
+    _escribir(ruta, salida)  # al último: si existe, el resultado ya la trae
     return salida
 
 

@@ -435,6 +435,31 @@ class LlamadaPagadaSiempreQuedaAnotada(ConRegistro):
         self.assertEqual(salida["aparece"], False)
         self.assertAlmostEqual(self.filas()[0]["usd"], 0.01)
 
+    def test_el_gasto_de_sam_queda_anotado_aunque_no_se_pueda_borrar_el_archivo(self):
+        async def vacio(*_):
+            return types.SimpleNamespace(outcome=types.SimpleNamespace(status="completed"), records=[])
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(sam, "_correr"), \
+                mock.patch.object(meta_api, "subir_archivo", return_value="file-1"), \
+                mock.patch.object(meta_api, "borrar_archivo", side_effect=RuntimeError("sin red")), \
+                mock.patch.object(sam, "_segmentar", vacio), \
+                mock.patch.dict(sys.modules, {"meta_sam_parser": types.SimpleNamespace(decode_mask_to_raster=None)}):
+            with self.assertRaises(RuntimeError):
+                sam.medir_imagen(Path(d) / "cuadro.png", "bread")
+        self.assertEqual(self.filas()[0]["servicio"], "sam")
+        self.assertEqual(meta_api.reservado_usd(), 0)
+
+    def test_una_mascara_vacia_no_cuenta_como_que_se_ve(self):
+        mascara = types.SimpleNamespace(width=2, height=2)
+        registro = types.SimpleNamespace(kind="mask", frame=types.SimpleNamespace(frame_index=0), mask=mascara)
+
+        async def vacia(*_):
+            return types.SimpleNamespace(outcome=types.SimpleNamespace(status="completed"), records=[registro])
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(sam, "_correr"), \
+                mock.patch.object(meta_api, "subir_archivo", return_value="file-1"), \
+                mock.patch.object(meta_api, "borrar_archivo"), mock.patch.object(sam, "_segmentar", vacia), \
+                mock.patch.dict(sys.modules, {"meta_sam_parser": types.SimpleNamespace(decode_mask_to_raster=lambda m: [0, 0, 0, 0])}):
+            self.assertFalse(sam.medir_imagen(Path(d) / "cuadro.png", "bread")["aparece"])
+
     def test_una_imagen_tampoco_se_revisa_si_el_concepto_es_una_persona(self):
         with mock.patch.object(meta_api, "subir_archivo", side_effect=AssertionError("subió")):
             self.assertIn("error", sam.medir_imagen(Path(self.tmp.name) / "cuadro.png", "woman"))

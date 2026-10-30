@@ -5,6 +5,7 @@ Corren con:  python -m unittest discover -s tests   (desde la raíz del repo)
 """
 from __future__ import annotations
 
+import importlib.util
 import json
 import sys
 import tempfile
@@ -88,6 +89,19 @@ class ReglasDeTexto(unittest.TestCase):
 
     def test_una_respuesta_sin_el_formato_se_rechaza_sin_tronar(self):
         self.assertIn("formato", ids({"voz": 3}))
+        self.assertIn("formato", ids(["no es un objeto"]))
+        self.assertIn("formato", ids(None))
+
+    def test_un_millon_que_no_viene_del_video_se_rechaza(self):
+        self.assertIn("cifras", ids(buena(voz=VOZ.replace("2 horas", "un millón de horas"))))
+        self.assertIn("cifras", ids(buena(voz=VOZ.replace("2 horas", "trece horas"))))
+
+    def test_un_nombre_en_un_cuadro_que_no_viene_del_video_se_rechaza(self):
+        self.assertIn("nombres", ids(buena(cuadros=[CUADROS[0], "Un auto Tesla junto a la mesa.", CUADROS[2]])))
+
+    def test_un_titulo_en_otro_idioma_no_obliga_a_usar_sus_palabras(self):
+        datos = {**DATOS, "tema_obligatorio": False}
+        self.assertNotIn("tema", ids(buena(voz="Esto casi nadie lo hace bien. " + VOZ), datos))
 
 
 class Lazo(unittest.TestCase):
@@ -167,6 +181,28 @@ class Lazo(unittest.TestCase):
         self.assertNotIn("promesa", {c["id"] for c in r["comprobaciones"]})
         self.assertTrue(r["no_comprobe"])
 
+    def test_si_muse_image_falla_gasta_un_intento_y_sigue(self):
+        fallas = iter([RuntimeError("rechazó el dibujo")])
+
+        def dibujar(i, cuadro, objeto):
+            for e in fallas:
+                raise e
+            return Path(f"apertura-cuadro{i}-ilustracion-ia.png")
+
+        r = apertura.lazo(DATOS, None, lambda d, a: buena(), dibujar, mock.Mock())
+        self.assertTrue(r["aprobada"])
+        self.assertEqual((r["vueltas"], r["intentos"][0]["problemas"][0]["id"]), (1, "cuadros"))
+
+    def test_si_un_cuadro_no_se_puede_dibujar_nunca_no_sale_nada(self):
+        def dibujar(i, cuadro, objeto):
+            if i == 3:
+                raise OSError("sin red")
+            return Path(f"apertura-cuadro{i}-ilustracion-ia.png")
+
+        r = apertura.lazo(DATOS, None, lambda d, a: buena(), dibujar, mock.Mock())
+        self.assertFalse(r["aprobada"])
+        self.assertIsNone(r["despues"])
+
     def test_el_tope_de_gasto_detiene_todo(self):
         with self.assertRaises(meta_api.TopeAlcanzado):
             self.correr([meta_api.TopeAlcanzado("tope")])
@@ -209,6 +245,33 @@ class Rehacer(unittest.TestCase):
         self.assertIn("5 pasos", datos["fuente"])
         self.assertIn("Y dura 9 días.", datos["resto_de_lo_que_se_dice"])
         self.assertNotIn("nivel_de_riesgo", datos)
+
+    def test_un_titulo_en_otro_idioma_que_el_video_apaga_la_regla_del_tema(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t); self.preparar(d)
+            self.assertFalse(apertura.datos_de_apertura(d, "How to keep the bread from going stale at home", "es")["tema_obligatorio"])
+            self.assertTrue(apertura.datos_de_apertura(d, TITULO, "es")["tema_obligatorio"])
+
+    def test_un_turno_sin_texto_no_truena_el_antes(self):
+        with tempfile.TemporaryDirectory() as t:
+            antes = apertura.antes_del_cambio(Path(t), {"frases": [{"segundo": 1.0, "dice": None}, {"segundo": 2.0, "dice": "Hola"}]})
+        self.assertEqual(antes["voz"], "Hola")
+
+    def test_si_algo_truena_a_media_corrida_no_queda_ningun_dibujo_sin_aprobar(self):
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura, "lazo", side_effect=OSError("sin red")):
+            d = Path(t); self.preparar(d)
+            suelto = d / "apertura-cuadro1-ilustracion-ia.png"
+            suelto.write_bytes(b"x")
+            with self.assertRaises(OSError):
+                apertura.armar(d, TITULO, "bread")
+            self.assertFalse(suelto.exists())
+
+    def test_una_apertura_ya_hecha_vuelve_a_quedar_en_el_resultado(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t); self.preparar(d)
+            (d / "apertura.json").write_text(json.dumps({"aprobada": True}), encoding="utf-8")
+            apertura.rehacer(d)
+            self.assertEqual(json.loads((d / "resultado.json").read_text(encoding="utf-8"))["apertura"], {"aprobada": True})
 
     def test_el_idioma_sale_del_video_y_no_del_panel(self):
         with tempfile.TemporaryDirectory() as t:
@@ -273,6 +336,16 @@ class SinLlaveDeBaseten(unittest.TestCase):
     def test_con_llave_de_baseten_escribe_muse_spark_open(self):
         with mock.patch.dict(apertura.os.environ, {"BASETEN_API_KEY": "x"}), mock.patch.object(meta_api, "_cargar_env"):
             self.assertEqual(apertura.quien_escribe(), (apertura.baseten.MODELO, "Baseten"))
+
+
+class Medicion(unittest.TestCase):
+    def test_la_trampa_solo_pasa_con_sus_10_cuadros(self):
+        spec = importlib.util.spec_from_file_location("apertura_casos", RAIZ / "eval" / "apertura_casos.py")
+        modulo = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modulo)
+        self.assertTrue(modulo.trampa_pasa([{"rechazo": True}] * 9 + [{"rechazo": False}]))
+        self.assertFalse(modulo.trampa_pasa([{"rechazo": True}] * 9))
+        self.assertFalse(modulo.trampa_pasa([{"rechazo": True}] * 8 + [{"rechazo": False}] * 2))
 
 
 class DesdeLaApp(unittest.TestCase):
