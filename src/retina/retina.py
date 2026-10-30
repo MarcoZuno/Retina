@@ -230,7 +230,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             no_pude.append("La voz y los silencios: el video no trae audio. Lo de abajo sale solo de lo que se ve.")
         elif not (salida / "transcribir.json").exists():
             _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida,
-                  transcribir.idioma_de(titulo))
+                  transcribir.idioma_de(titulo), idioma)
         voz_json = salida / "transcribir.json"
         hasta_s = json.loads(voz_json.read_text(encoding="utf-8")).get("escucho_hasta_s") if voz_json.exists() else None
         if hasta_s:

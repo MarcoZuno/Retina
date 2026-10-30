@@ -63,13 +63,16 @@ def silencios(turnos: list[dict], duracion_ms: int, minimo_ms: int = 3000) -> li
     return huecos
 
 
-def transcribir(carpeta: Path, lengua: str | None = None) -> dict:
-    """`lengua`: «en» si el video parece hablar en inglés (por su título); si no, se le pide español."""
+def transcribir(carpeta: Path, lengua: str | None = None, idioma_panel: str = "es") -> dict:
+    """`lengua`: «en» o «es» si el título lo deja claro. Si no (None: «Sourdough Bread Recipe»), no se supone español:
+    se le dejan los dos idiomas al servicio, con primero el que la persona usa en el panel."""
     manifiesto = json.loads((carpeta / "manifiesto.json").read_text(encoding="utf-8"))
     if not manifiesto.get("audio"):
         raise ValueError("El video no trae audio.")
     wav, hasta_s = recortar(carpeta / manifiesto["audio"])
-    datos = meta_api.transcribir_wav(wav, idiomas=("English",) if lengua == "en" else ("Spanish",))
+    por_idioma = {"en": ("English",), "es": ("Spanish",)}
+    idiomas = por_idioma.get(lengua) or (("English", "Spanish") if idioma_panel == "en" else ("Spanish", "English"))
+    datos = meta_api.transcribir_wav(wav, idiomas=idiomas)
     turnos = datos.get("turns", [])
     dur_ms = datos.get("audioDurationMs") or int(manifiesto["duracion_s"] * 1000)
     salida = {

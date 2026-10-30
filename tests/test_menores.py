@@ -16,7 +16,7 @@ import re
 import tempfile
 from unittest import mock
 
-from retina import app, demo, meta_api, retina  # noqa: E402
+from retina import app, demo, meta_api, retina, transcribir  # noqa: E402
 
 
 class PuertoExclusivo(unittest.TestCase):
@@ -156,6 +156,38 @@ class ReinicioAMediaRevision(unittest.TestCase):
     def _ver(self, d):
         self.vista = json.loads((Path(d) / "estado.json").read_text(encoding="utf-8"))
         return {}
+
+
+class IdiomaDeLaVoz(unittest.TestCase):
+    """B14: un título sin palabras comunes («Sourdough Bread Recipe») no dice el idioma; no se puede suponer español."""
+
+    def _idiomas_pedidos(self, lengua, idioma_panel=None):
+        import wave
+        with tempfile.TemporaryDirectory() as d:
+            c = Path(d)
+            with wave.open(str(c / "audio.wav"), "wb") as w:
+                w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000); w.writeframes(bytes(4800))
+            (c / "manifiesto.json").write_text(json.dumps({"audio": "audio.wav", "duracion_s": 0.1}), encoding="utf-8")
+            with mock.patch.object(meta_api, "transcribir_wav", return_value={"turns": []}) as api:
+                if idioma_panel is None:
+                    transcribir.transcribir(c, lengua)
+                else:
+                    transcribir.transcribir(c, lengua, idioma_panel)
+            return api.call_args.kwargs["idiomas"]
+
+    def test_el_titulo_en_ingles_pide_ingles_y_el_claro_en_espanol_pide_espanol(self):
+        self.assertEqual(self._idiomas_pedidos("en"), ("English",))
+        self.assertEqual(self._idiomas_pedidos("es"), ("Spanish",))
+
+    def test_sin_pista_se_le_dejan_los_dos_idiomas_con_el_del_panel_primero(self):
+        self.assertEqual(self._idiomas_pedidos(None, "en"), ("English", "Spanish"))
+        self.assertEqual(self._idiomas_pedidos(None, "es"), ("Spanish", "English"))
+        self.assertEqual(self._idiomas_pedidos(None), ("Spanish", "English"))
+
+    def test_el_orquestador_le_pasa_el_idioma_del_panel(self):
+        self.assertIsNone(transcribir.idioma_de("Sourdough Bread Recipe"))
+        fuente = (RAIZ / "src" / "retina" / "retina.py").read_text(encoding="utf-8")
+        self.assertIn("transcribir.idioma_de(titulo), idioma)", fuente)
 
 
 if __name__ == "__main__":
