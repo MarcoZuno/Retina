@@ -3,7 +3,7 @@
 Toda llamada pasa por aquí: registra modelo, tokens, segundos y USD en el
 registro de costos (por omisión mis-revisiones/costos.jsonl, de quien corre Retina;
 RETINA_COSTOS lo cambia), respeta el tope y reintenta los 429 con espera
-exponencial. La llave sale del entorno o de un .env fuera del repo; nunca se
+exponencial. La llave sale del entorno o del .env de la raíz del repo (.gitignore lo deja fuera); nunca se
 imprime ni se escribe en los registros.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ from pathlib import Path
 import requests
 
 RAIZ = Path(__file__).resolve().parents[2]
-TOPE_MAXIMO_USD = 185.0  # subirlo es cambiar esto
+TOPE_MAXIMO_USD = 185.0  # techo duro: ni RETINA_TOPE_USD ni el .env lo suben
 TIEMPO = (10, 300)  # conectar, leer (s): una llamada colgada no detiene la corrida 50 min
 
 # USD por millón de tokens (entrada, entrada en caché, salida), según
@@ -48,12 +48,8 @@ def como_dato(nombre: str, contenido: str) -> str:
 
 
 def _cargar_env() -> None:
-    """Lee RETINA_ENV, o el .env de la raíz del repo (una copia recién bajada), o un .env fuera del repo,
-    sin pisar lo que ya exista."""
-    if os.environ.get("RETINA_ENV"):
-        ruta = Path(os.environ["RETINA_ENV"])
-    else:
-        ruta = next((r for r in (RAIZ / ".env", RAIZ.parent / "privado" / ".env") if r.exists()), RAIZ / ".env")
+    """Lee el archivo que diga RETINA_ENV o, si no, el .env de la raíz del repo, sin pisar lo que ya exista."""
+    ruta = Path(os.environ["RETINA_ENV"]) if os.environ.get("RETINA_ENV") else RAIZ / ".env"
     if not ruta.exists():
         return
     for linea in ruta.read_text(encoding="utf-8").splitlines():
@@ -69,8 +65,8 @@ def _llave() -> str:
     llave = os.environ.get("MODEL_API_KEY", "")
     if not llave:
         raise RuntimeError(
-            "Falta MODEL_API_KEY. Ponla en tu .env "
-            "(ver .env.example); nunca dentro del repo."
+            "Falta MODEL_API_KEY, la llave de la Meta Model API. Copia .env.example como .env en la raíz del repo, "
+            "escribe ahí MODEL_API_KEY=tu_llave (.gitignore deja ese archivo fuera de git) o define la variable de entorno."
         )
     return llave
 
@@ -193,7 +189,7 @@ def _comprobar(estimado_usd: float, prefijo: str = "", tope_prefijo: float | Non
     if gastado + estimado_usd > tope:
         raise TopeAlcanzado(
             f"Tope del proyecto: llevamos {gastado:.2f} USD (con lo reservado) y el tope es "
-            f"{tope:.2f}. Súbelo en tu .env si hace falta."
+            f"{tope:.2f}. Para seguir, sube RETINA_TOPE_USD en tu .env (Retina nunca acepta más de {TOPE_MAXIMO_USD:.0f})."
         )
     if prefijo and tope_prefijo is not None:
         propio = gastado_usd(prefijo) + sum(_usd_de(v) for v in pendientes.values()

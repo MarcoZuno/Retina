@@ -415,7 +415,7 @@ class ReglaDeParecidos(unittest.TestCase):
 
 
 class Tope(unittest.TestCase):
-    def test_el_env_no_sube_el_tope_autorizado(self):
+    def test_el_env_no_sube_el_tope_maximo(self):
         antes = os.environ.get("RETINA_TOPE_USD")
         os.environ["RETINA_TOPE_USD"] = "1000"
         try:

@@ -17,7 +17,7 @@ from . import meta_api
 
 BASE = "https://inference.baseten.co/v1"
 MODELO = os.environ.get("RETINA_SPARK_OPEN", "meta-models/muse-spark-open-1026")  # id de la guía del concurso
-TOPE_BASETEN_USD = 75.0  # de los USD 100 de créditos de Baseten
+TOPE_BASETEN_USD = 75.0  # tope propio de Baseten: deja margen en los USD 100 de créditos del concurso
 PRECIO = (1.25, 0.15, 4.25)  # USD por millón (entrada, entrada en caché, salida), igual que Spark en la API de Meta
 
 
@@ -25,7 +25,7 @@ def _llave() -> str:
     meta_api._cargar_env()
     llave = os.environ.get("BASETEN_API_KEY", "")
     if not llave:
-        raise RuntimeError("Falta BASETEN_API_KEY en tu .env (nunca dentro del repo).")
+        raise RuntimeError("Falta BASETEN_API_KEY. Ponla en el .env de la raíz del repo (ver .env.example) o define la variable de entorno.")
     return llave
 
 

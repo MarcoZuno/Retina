@@ -263,5 +263,79 @@ class ReservaConEntradaDeVideo(unittest.TestCase):
         self.assertEqual(responder.call_args.kwargs["entrada_tokens"], 2000 + describir.TOKENS_VIDEO_POR_S * 1800)
 
 
+PROHIBIDAS = (r"carpeta-vecina", 
+              r"autorizad[oa] por", r"aviso a ")
+
+
+class CodigoPublicoSinRastrosInternos(unittest.TestCase):
+    """D4: el código que se publica no nombra carpetas, áreas ni personas de la casa, ni quién autorizó qué."""
+
+    def _archivos(self):
+        for carpeta in ("src", "deploy", "eval", "tests"):
+            for ruta in (RAIZ / carpeta).rglob("*"):
+                if ruta.is_file() and "__pycache__" not in ruta.parts and ruta.name != Path(__file__).name:
+                    yield ruta
+        yield RAIZ / "CLAUDE.md"
+        yield RAIZ / ".env.example"
+
+    def test_ningun_archivo_los_menciona(self):
+        hallazgos = []
+        for ruta in self._archivos():
+            try:
+                texto = ruta.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                continue
+            for n, linea in enumerate(texto.splitlines(), 1):
+                for patron in PROHIBIDAS:
+                    if re.search(patron, linea):
+                        hallazgos.append(f"{ruta.relative_to(RAIZ)}:{n}: {patron}")
+        self.assertEqual(hallazgos, [])
+
+
+class LlaveYTopeParaQuienBajaElRepo(unittest.TestCase):
+    """D4 y B18: los mensajes le sirven a un desconocido, y hay un solo tope por omisión."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.raiz = Path(self.tmp.name) / "repo"
+        self.raiz.mkdir()
+        (Path(self.tmp.name) / "carpeta-vecina").mkdir()
+        (Path(self.tmp.name) / "carpeta-vecina" / ".env").write_text("MODEL_API_KEY=de-la-carpeta-vecina", encoding="utf-8")
+        entorno = {k: v for k, v in os.environ.items() if k not in ("MODEL_API_KEY", "RETINA_ENV", "RETINA_TOPE_USD")}
+        for parche in (mock.patch.object(meta_api, "RAIZ", self.raiz), mock.patch.dict(os.environ, entorno, clear=True)):
+            parche.start()
+            self.addCleanup(parche.stop)
+
+    def test_no_busca_llaves_en_carpetas_vecinas(self):
+        with self.assertRaises(RuntimeError):
+            meta_api._llave()
+
+    def test_el_mensaje_de_llave_faltante_dice_que_hacer(self):
+        with self.assertRaises(RuntimeError) as e:
+            meta_api._llave()
+        msg = str(e.exception)
+        self.assertIn(".env.example", msg)
+        self.assertIn("MODEL_API_KEY", msg)
+        self.assertNotIn("privado", msg)
+
+    def test_lee_el_env_de_la_raiz_del_repo(self):
+        (self.raiz / ".env").write_text("MODEL_API_KEY=la-del-repo", encoding="utf-8")
+        self.assertEqual(meta_api._llave(), "la-del-repo")
+
+    def test_el_tope_de_env_example_es_el_del_codigo(self):
+        ejemplo = (RAIZ / ".env.example").read_text(encoding="utf-8")
+        self.assertEqual(float(re.search(r"^RETINA_TOPE_USD=(\S+)", ejemplo, re.M).group(1)), meta_api.TOPE_POR_OMISION_USD)
+        self.assertEqual(meta_api.tope_usd(), meta_api.TOPE_POR_OMISION_USD)
+        self.assertEqual(meta_api.TOPE_MAXIMO_USD, 185.0)
+
+    def test_el_mensaje_del_tope_dice_como_seguir(self):
+        with mock.patch.object(meta_api, "gastado_usd", return_value=49.99), mock.patch.object(meta_api, "_leer_reservas", return_value={}):
+            with self.assertRaises(meta_api.TopeAlcanzado) as e:
+                meta_api._comprobar(1.0)
+        self.assertIn("RETINA_TOPE_USD", str(e.exception))
+        self.assertIn("TOPE", str(e.exception).upper())
+
+
 if __name__ == "__main__":
     unittest.main()
