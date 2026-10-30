@@ -40,7 +40,43 @@ docker stop retina-demo && docker rm retina-demo
 No queda nada guardado. Para el concurso conviene que siga viva hasta el 16 de noviembre (voto del
 público).
 
-## Lo que no es esto
+## La demo en línea para los jueces
 
-La Retina completa (subir un video, que Spark lo revise y escriba la tarjeta) necesita la llave de
-Meta, ffmpeg y una cola de trabajos. Eso es para después del concurso, en un servidor propio.
+La guía del concurso dice que el jurado también usa el producto en vivo. Esta versión deja que un juez suba su propio video, con
+un código de acceso. A diferencia de la demo de arriba, **sí recibe videos, sí llama a las API y sí gasta**. Los créditos del
+concurso vencen el 4 de noviembre; después se cobra a la tarjeta de la empresa.
+
+### Qué trae puesto
+
+- Solo responde a su dominio (`RETINA_SITIO`) y solo acepta pedidos de su propia página.
+- Código de acceso para subir un video y para arreglar el arranque, comparado en tiempo constante.
+- Tope duro: no arranca con `RETINA_TOPE_USD` arriba de 30. Antes de recibir un video revisa que quede presupuesto.
+- Videos de hasta 5 minutos y 200 MB, de uno en uno, y máximo 5 en la fila.
+- Cada revisión se borra a las 24 horas. Los videos van a la API de Meta y a Baseten para revisarlos.
+- Corre con un usuario sin permisos y solo escribe en `/datos`.
+
+### Qué necesita
+
+1. Un servidor con Docker, un dominio y su certificado.
+2. La llave de Meta y la de Baseten, con tarjeta si va a seguir viva después del 4 de noviembre.
+3. Un código de acceso de al menos 12 caracteres, que se les da a los jueces en el formulario de envío.
+4. `modelos/retina-publico.json`, que solo existe en la PC de desarrollo y entra con autorización. Sin él corre sin número.
+
+### Desplegar
+
+```bash
+docker build -f deploy/Dockerfile.en-linea -t retina-en-linea .
+docker run -d --name retina-en-linea --restart unless-stopped -p 127.0.0.1:8080:8080 \
+  --env-file deploy/en-linea.env --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
+  --memory 4g --pids-limit 256 -v datos-demo:/datos retina-en-linea
+```
+
+El puerto solo se abre a `127.0.0.1`: a internet se llega por el proxy con TLS (`deploy/proxy-en-linea.conf`). Copia
+`deploy/en-linea.env.ejemplo` a `deploy/en-linea.env` en el servidor. Ese archivo nunca se sube al repo.
+
+### Revisar y apagar
+
+- Lo gastado está en `/datos/costos.jsonl`, dentro del volumen.
+- Para apagarla: `docker stop retina-en-linea`. Para borrar lo que quedó: `docker volume rm datos-demo`.
+- ffmpeg lee videos de desconocidos: por eso el contenedor no tiene permisos extra ni memoria sin límite.
+

@@ -43,12 +43,13 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
 
     extensions_map = {**http.server.SimpleHTTPRequestHandler.extensions_map, ".webp": "image/webp"}
     casos: Path | None = None
+    hosts = ("127.0.0.1", "localhost")  # en línea se suma el dominio de la demo
     server_version, sys_version = "Retina", ""  # sin versión de Python en las respuestas
 
     def do_GET(self):  # noqa: N802 - nombre que pide http.server
         host = (self.headers.get("Host") or "").split(":")[0]
         ruta = self.path.split("?", 1)[0]
-        if ruta == "/api/salud" and host in ("127.0.0.1", "localhost"):
+        if ruta == "/api/salud" and host in self.hosts:
             # La demo no sube videos: el panel lo pregunta aquí y no deja errores en la consola.
             cuerpo = b'{"subir": false}'
             self.send_response(200)
@@ -57,7 +58,7 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(cuerpo)
             return
-        if host not in ("127.0.0.1", "localhost") or not PERMITIDO.match(ruta):
+        if host not in self.hosts or not PERMITIDO.match(ruta):
             self.send_error(404)
             return
         super().do_GET()

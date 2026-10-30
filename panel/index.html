@@ -400,6 +400,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
       </div>
       <form class="forma vidrio" id="forma" novalidate>
         <div class="campos">
+          <label class="ancho" id="campo-acceso" hidden><span data-t="campo_acceso">Código de acceso</span><input type="password" id="v-acceso" maxlength="120" autocomplete="off"></label>
           <label class="ancho"><span data-t="campo_titulo">Título del video (como saldría en Facebook)</span><input type="text" id="v-titulo" maxlength="300" autocomplete="off"></label>
           <label><span data-t="campo_talento">Quién sale a cuadro</span><select id="v-talento"><option value="" data-t="sin_talento">Nadie o no está en la lista</option></select></label>
           <label><span data-t="campo_fecha">Día y hora en que se publicaría</span><input type="datetime-local" id="v-fecha"></label>
@@ -623,7 +624,7 @@ const TEXTOS = {
     subir_titulo: "Revisa tu video antes de publicarlo",
     subir_p: "Elige o arrastra el video (MP4, MOV, WebM, MKV o AVI). Retina te dice si el inicio va a perder gente, por qué y qué cambiar.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · toca para cambiarlo`,
-    campo_titulo: "Título del video (como saldría en Facebook)", campo_talento: "Quién sale a cuadro",
+    campo_acceso: "Código de acceso", campo_titulo: "Título del video (como saldría en Facebook)", campo_talento: "Quién sale a cuadro",
     sin_talento: "Nadie o no está en la lista", campo_fecha: "Día y hora en que se publicaría",
     campo_codigo: "Código de producción (si tiene)", campo_publicado: "Este video ya está publicado",
     campo_publicado_nota: "Déjala sin marcar si es un borrador.", revisar: "Revisar este video", otro_video: "Revisar otro video",
@@ -819,7 +820,7 @@ const TEXTOS = {
     subir_titulo: "Check your video before you publish it",
     subir_p: "Choose or drop the video (MP4, MOV, WebM, MKV or AVI). Retina tells you if the start will lose people, why, and what to change.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · tap to change it`,
-    campo_titulo: "Video title (as it would appear on Facebook)", campo_talento: "Who is on camera",
+    campo_acceso: "Access code", campo_titulo: "Video title (as it would appear on Facebook)", campo_talento: "Who is on camera",
     sin_talento: "Nobody, or not on the list", campo_fecha: "Day and time it would be published",
     campo_codigo: "Production code (if any)", campo_publicado: "This video is already published",
     campo_publicado_nota: "Leave it unchecked for a draft.", revisar: "Review this video", otro_video: "Review another video",
@@ -1463,7 +1464,7 @@ $("arreglar").onclick = async () => {
   const pintar = (e) => { avance.textContent = de(tx().apertura_pasos, e.paso || e.estado) || tx().apertura_pasos.en_fila; };
   b.disabled = true; avance.classList.remove("oculto"); pintar({ paso: "en_fila" });
   try {
-    const r = await fetch(`/api/apertura/${id}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma } });
+    const r = await fetch(`/api/apertura/${id}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma, ...acceso() } });
     const pedido = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(pedido.error || t("apertura_error"));
     for (let fallas = 0; ;) {
@@ -1514,6 +1515,7 @@ $("legible").onclick = () => { const on = document.body.classList.toggle("legibl
 // ---- Subir un video: solo cuando Retina corre con la API en este equipo (python -m retina.app) ----
 // La demo sin llave (python -m retina.demo) no tiene /api/: ahí el panel solo abre revisiones ya hechas.
 let conSubida = false, video = null, talentos = [];
+const acceso = () => ($("v-acceso").value ? { "X-Retina-Acceso": $("v-acceso").value } : {});  // solo en la demo en línea
 const PASOS_AVANCE = ["subiendo", "cortando", "escuchando", "mirando", "escribiendo", "terminando"];
 const sinAcentos = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 
@@ -1542,6 +1544,7 @@ async function prepararSubida() {
   const ahora = new Date(); ahora.setMinutes(0, 0, 0); ahora.setHours(ahora.getHours() + 1);
   $("v-fecha").value = new Date(ahora - ahora.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
   $("otra").dataset.t = "otro_video";
+  $("campo-acceso").hidden = !salud.acceso;
   // Si falta algo, se dice al abrir, antes de que la persona elija un video.
   if (salud.ffmpeg === false) avisar("falta_ffmpeg");
   else if (salud.llave === false) avisar("falta_llave");
@@ -1595,6 +1598,7 @@ function subirVideo(archivo, extra, alSubir) {
       "X-Retina-Fecha": $("v-fecha").value.replace("T", " ").slice(0, 16),
       "X-Retina-Idioma": idioma,  // la tarjeta se escribe en el idioma del panel
       "X-Retina-Publicado": $("v-publicado").checked ? "1" : "0",  // el candado lo decide quien corre Retina
+      ...acceso(),
       ...extra,
     };
     for (const [k, v] of Object.entries(cabeceras)) x.setRequestHeader(k, v);

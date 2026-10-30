@@ -83,6 +83,12 @@ def _correr(args: list[str]) -> None:
         raise RuntimeError(p.stderr.strip()[-500:])
 
 
+def maximo_s() -> int:
+    """Hasta cuánto dura un video. RETINA_DURACION_MAXIMA_S solo lo baja: la demo en línea revisa videos cortos."""
+    valor = os.environ.get("RETINA_DURACION_MAXIMA_S", "").strip()
+    return min(int(valor), DURACION_MAXIMA_S) if valor.isdigit() and int(valor) > 0 else DURACION_MAXIMA_S
+
+
 def segmentar(video: Path, salida: Path, fps: float = 4.0, lado: int = 256) -> dict:
     salida.mkdir(parents=True, exist_ok=True)
     cuadros_dir = salida / "cuadros"
@@ -92,9 +98,8 @@ def segmentar(video: Path, salida: Path, fps: float = 4.0, lado: int = 256) -> d
     con_imagen, con_audio = pistas(info)
     if not con_imagen:  # un M4A o un MP3 con portada no es un video
         raise Aviso("sin_imagen", "Ese archivo no trae imagen: Retina revisa videos.")
-    if dur > DURACION_MAXIMA_S:
-        raise Aviso("muy_largo", f"El video dura más de {DURACION_MAXIMA_S // 60} minutos: Retina revisa videos "
-                                 "de hasta media hora.")
+    if dur > maximo_s():
+        raise Aviso("muy_largo", f"El video dura más de {maximo_s() // 60} minutos, que es lo que Retina revisa.")
 
     # Cuadros a fps fijo, lado corto = `lado` px (lo que espera V-JEPA 2).
     _correr(["-i", str(video), "-vf",

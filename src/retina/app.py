@@ -15,6 +15,10 @@ Guardas: solo responde en este equipo; solo acepta pedidos de su propia página 
 y mismo origen); solo MP4 y hasta MAX_MB; los datos se validan; el candado de «solo publicados»
 sigue igual que en la línea de comandos.
 
+Con --en-linea es la demo para los jueces, detrás del proxy con TLS de quien la despliega: responde solo a su dominio,
+pide el código de acceso para subir o arreglar, baja los límites, no acepta más de lo que el presupuesto alcanza y borra
+cada revisión a las 24 horas. Detalle en deploy/LEEME-DESPLIEGUE.md.
+
 Uso (desde la raíz del repo):
     python -m retina.app            # cerebro público y revisiones en mis-revisiones/
     python -m retina.app --casos CARPETA --modelo PREDECIR.pkl --arranque ARRANQUE.json --voz VOZ.jsonl  # la casa
@@ -23,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import functools
+import hmac
 import http.server
 import json
 import os
@@ -34,10 +39,11 @@ import threading
 import time
 import traceback
 import webbrowser
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import unquote, urlsplit
 
 from .demo import SoloElPanel
 from .esquemas import RAIZ
@@ -55,6 +61,14 @@ PASO_COMPARAR = ("comparacion.json", "comparando")
 # La A entró antes a la misma fila de un solo hilo: cuando corre la B, ya terminó. La espera solo cubre
 # el caso raro de que no (por ejemplo, si el servidor se reinició a media revisión de la A).
 ESPERA_A_S = 600
+# La demo en línea para jueces: lo que aguanta y hasta cuándo se guarda.
+MAX_MB_EN_LINEA = 200
+DURACION_EN_LINEA_S = 5 * 60
+MAX_EN_FILA = 5
+HORAS_DE_VIDA = 24
+MIN_LARGO_CODIGO = 12
+TOPE_EN_LINEA_USD = 30.0
+MARGEN_USD = 0.5  # lo que puede costar una revisión completa con su apertura
 
 # Lo que ve la persona cuando algo falla, en el idioma del panel. Los detalles técnicos van a error.txt.
 TEXTOS = {
@@ -69,7 +83,10 @@ TEXTOS = {
         "incompleto": "El video no llegó completo. Vuelve a intentarlo.",
         "no_lee": "No pude leer ese video. Prueba exportarlo como MP4 y súbelo otra vez.",
         "sin_imagen": "Ese archivo no trae imagen: Retina revisa videos.",
-        "muy_largo": "El video dura más de media hora: Retina revisa videos de hasta 30 minutos.",
+        "muy_largo": "El video es demasiado largo: Retina revisa videos de hasta {minutos} minutos.",
+        "sin_acceso": "Ese código de acceso no es válido. Revisa el que te dieron para la demo.",
+        "ocupado": "Retina está revisando otros videos. Intenta otra vez en unos minutos.",
+        "sin_presupuesto": "La demo ya usó todo su presupuesto. Puedes correr Retina con tu propia llave.",
         "ffmpeg_lento": "Cortar el video tardó demasiado y se detuvo. Prueba con un archivo más ligero.",
         "sin_ffmpeg": "A este equipo le falta ffmpeg, y Retina lo necesita para cortar el video. Instálalo "
                       "(Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) "
@@ -93,7 +110,10 @@ TEXTOS = {
         "incompleto": "The video didn't arrive complete. Try again.",
         "no_lee": "I couldn't read that video. Try exporting it as MP4 and upload it again.",
         "sin_imagen": "That file has no picture: Retina reviews videos.",
-        "muy_largo": "The video is longer than half an hour: Retina reviews videos up to 30 minutes.",
+        "muy_largo": "The video is too long: Retina reviews videos up to {minutos} minutes.",
+        "sin_acceso": "That access code isn't valid. Check the one you were given for the demo.",
+        "ocupado": "Retina is busy with other videos. Try again in a few minutes.",
+        "sin_presupuesto": "The demo has used up its budget. You can run Retina with your own key.",
         "ffmpeg_lento": "Cutting the video took too long and was stopped. Try a lighter file.",
         "sin_ffmpeg": "This computer is missing ffmpeg, which Retina needs to cut the video. Install it "
                       "(Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) "
@@ -246,11 +266,69 @@ def arreglar(carpeta: Path, idioma: str) -> None:
         _APERTURAS.pop(carpeta.name, None)
 
 
-def pedido_propio(cabeceras, puerto: int) -> bool:
+def config_en_linea(entorno: Mapping) -> dict:
+    """Lo que hace falta para abrir la demo a internet. Si algo falta, mejor no arrancar que arrancar sin candado."""
+    codigo = entorno.get("RETINA_CODIGO_ACCESO", "").strip()
+    sitio = entorno.get("RETINA_SITIO", "").strip().rstrip("/")
+    partes = urlsplit(sitio)
+    if len(codigo) < MIN_LARGO_CODIGO:
+        raise SystemExit(f"--en-linea: RETINA_CODIGO_ACCESO tiene que tener al menos {MIN_LARGO_CODIGO} caracteres.")
+    if partes.scheme != "https" or not partes.hostname:
+        raise SystemExit("--en-linea: RETINA_SITIO tiene que ser el dominio de la demo con https://")
+    try:
+        tope = float(entorno.get("RETINA_TOPE_USD", ""))
+    except ValueError:
+        tope = -1.0
+    if not 0 < tope <= TOPE_EN_LINEA_USD:
+        raise SystemExit(f"--en-linea: RETINA_TOPE_USD tiene que estar entre 0 y {TOPE_EN_LINEA_USD:.0f}.")
+    return {"codigo": codigo, "sitio": sitio, "host": partes.hostname}
+
+
+def acceso_valido(cabeceras, codigo: str) -> bool:
+    return hmac.compare_digest(str(cabeceras.get("X-Retina-Acceso") or "").encode(), codigo.encode())
+
+
+def queda_presupuesto() -> bool:
+    """Se pregunta antes de recibir el video: mejor avisar que dejar a alguien esperando una revisión vacía."""
+    from . import meta_api
+    return meta_api.gastado_usd() + meta_api.reservado_usd() + MARGEN_USD <= meta_api.tope_usd()
+
+
+def limpiar(casos: Path, horas: float = HORAS_DE_VIDA) -> None:
+    """Borra las revisiones viejas. Solo toca carpetas con nombre de revisión."""
+    limite = time.time() - horas * 3600
+    for carpeta in casos.iterdir():
+        if carpeta.is_dir() and ID.fullmatch(carpeta.name) and carpeta.stat().st_mtime < limite:
+            shutil.rmtree(carpeta, ignore_errors=True)
+
+
+class FilaContada:
+    """La fila de un solo hilo, sabiendo cuánto falta: en línea no se acepta más de lo que se alcanza a revisar."""
+
+    def __init__(self):
+        self.hilos, self.n, self.candado = ThreadPoolExecutor(max_workers=1), 0, threading.Lock()
+
+    def submit(self, funcion, *args):
+        with self.candado:
+            self.n += 1
+        futuro = self.hilos.submit(funcion, *args)
+        futuro.add_done_callback(self._termino)
+        return futuro
+
+    def _termino(self, _futuro) -> None:
+        with self.candado:
+            self.n -= 1
+
+    def pendientes(self) -> int:
+        with self.candado:
+            return self.n
+
+
+def pedido_propio(cabeceras, puerto: int, sitio: str | None = None) -> bool:
     """Otra página abierta en el navegador no puede mandar videos aquí: el pedido trae X-Retina
     (eso obliga al navegador a preguntar antes, y este servidor no lo permite) y, si trae origen, es este."""
     origen = cabeceras.get("Origin")
-    propios = {f"http://127.0.0.1:{puerto}", f"http://localhost:{puerto}"}
+    propios = {f"http://127.0.0.1:{puerto}", f"http://localhost:{puerto}"} | ({sitio} if sitio else set())
     return cabeceras.get("X-Retina") == "1" and (origen is None or origen in propios)
 
 
@@ -296,7 +374,9 @@ def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_
             return
     except ValueError as e:  # el candado y los datos que no cuadran se le explican a la persona, en su idioma
         clave, idioma = getattr(e, "clave", None), datos.get("idioma", "es")
-        _escribir_estado(carpeta, estado="error", mensaje=texto(idioma, clave) if clave in TEXTOS["es"] else str(e))
+        from .segmentar import maximo_s
+        _escribir_estado(carpeta, estado="error",
+                         mensaje=texto(idioma, clave, minutos=maximo_s() // 60) if clave in TEXTOS["es"] else str(e))
         return
     except Exception as e:  # noqa: BLE001 — cualquier otra falla se anota sin detalles internos
         (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
@@ -346,8 +426,9 @@ class ConSubida(SoloElPanel):
 
     timeout = 60  # una conexión que deja de mandar datos se corta en vez de dejar un hilo colgado
     modelos: dict = {}
-    fila: ThreadPoolExecutor | None = None
+    fila: FilaContada | None = None
     talentos: list[str] = []
+    en_linea: dict | None = None
 
     def _json(self, codigo: int, cuerpo: dict) -> None:
         datos = json.dumps(cuerpo, ensure_ascii=False).encode("utf-8")
@@ -359,7 +440,27 @@ class ConSubida(SoloElPanel):
         self.wfile.write(datos)
 
     def _local(self) -> bool:
-        return (self.headers.get("Host") or "").split(":")[0] in ("127.0.0.1", "localhost")
+        return (self.headers.get("Host") or "").split(":")[0] in self.hosts
+
+    def _propio(self) -> bool:
+        return pedido_propio(self.headers, self.server.server_port, (self.en_linea or {}).get("sitio"))
+
+    def _puerta(self, idioma: str) -> bool:
+        """En línea: código de acceso, lugar en la fila y presupuesto. Si algo falta, contesta y regresa False."""
+        if not self.en_linea:
+            return True
+        if not acceso_valido(self.headers, self.en_linea["codigo"]):
+            time.sleep(1)  # frena a quien prueba códigos
+            self.close_connection = True
+            self._json(401, {"error": texto(idioma, "sin_acceso")})
+            return False
+        problema = "ocupado" if self.fila.pendientes() >= MAX_EN_FILA else None if queda_presupuesto() else "sin_presupuesto"
+        if problema:
+            self.close_connection = True
+            self._json(503, {"error": texto(idioma, problema)})
+            return False
+        limpiar(self.casos)
+        return True
 
     def do_GET(self):  # noqa: N802
         ruta = self.path.split("?", 1)[0]
@@ -369,7 +470,8 @@ class ConSubida(SoloElPanel):
             if ruta == "/api/talentos":
                 return self._json(200, {"talentos": self.talentos})
             if ruta == "/api/salud":  # el panel avisa al abrir si falta algo, antes de que la persona suba nada
-                return self._json(200, {"subir": True, **salud(), "cerebro": self.modelos.get("modelo") is not None})
+                return self._json(200, {"subir": True, **salud(), "cerebro": self.modelos.get("modelo") is not None,
+                                        "acceso": self.en_linea is not None})
             m = re.match(r"^/api/estado/([0-9a-f]{12})$", ruta)
             if m and (self.casos / m.group(1)).is_dir():
                 return self._json(200, estado(self.casos / m.group(1)))
@@ -381,12 +483,15 @@ class ConSubida(SoloElPanel):
 
     def do_POST(self):  # noqa: N802
         m = re.match(r"^/api/apertura/([0-9a-f]{12})$", self.path)
-        if m and self._local() and pedido_propio(self.headers, self.server.server_port):
-            idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
-            return self._json(*pedir_apertura(self.casos / m.group(1), self.fila, idioma))
-        if self.path != "/api/revisar" or not self._local() or not pedido_propio(self.headers, self.server.server_port):
-            return self.send_error(404)
         idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
+        if m and self._local() and self._propio():
+            if not self._puerta(idioma):
+                return None
+            return self._json(*pedir_apertura(self.casos / m.group(1), self.fila, idioma))
+        if self.path != "/api/revisar" or not self._local() or not self._propio():
+            return self.send_error(404)
+        if not self._puerta(idioma):
+            return None
         try:
             datos = leer_datos(self.headers)
             version_a = comparar_con(self.headers, self.casos, idioma)
@@ -397,8 +502,10 @@ class ConSubida(SoloElPanel):
             if not listo[falta]:
                 return self._json(503, {"error": texto(idioma, f"sin_{falta}")})
         largo = largo_valido(self.headers.get("Content-Length"))
-        if largo is None or not 12 <= largo <= MAX_MB * 1024 * 1024:
-            return self._json(400, {"error": texto(idioma, "muy_pesado", mb=MAX_MB)})
+        tope_mb = MAX_MB_EN_LINEA if self.en_linea else MAX_MB
+        if largo is None or not 12 <= largo <= tope_mb * 1024 * 1024:
+            self.close_connection = True  # no se lee lo que no se va a usar
+            return self._json(400, {"error": texto(idioma, "muy_pesado", mb=tope_mb)})
         cabeza = self.rfile.read(12)
         tipo = tipo_de_video(cabeza)
         if tipo is None:
@@ -437,6 +544,7 @@ def main() -> None:
     ap.add_argument("--voz", type=Path, help="Transcripciones de la casa para el agente (privadas). Sin ellas, tarjeta de una vuelta.")
     ap.add_argument("--puerto", type=int, default=8790)
     ap.add_argument("--sin-navegador", action="store_true")
+    ap.add_argument("--en-linea", action="store_true", help="Demo para jueces detrás de un proxy con TLS (deploy/LEEME-DESPLIEGUE.md).")
     a = ap.parse_args()
     if not a.modelo.is_file():
         print(f"Aviso: no encuentro {a.modelo}. Retina revisará los videos sin número (solo con los modelos de Meta).")
@@ -448,6 +556,9 @@ def main() -> None:
     from . import meta_api
     from .publico import cargar_modelo
     meta_api._cargar_env()  # FFMPEG y RETINA_* del .env: el orquestador los necesita antes de la primera llamada
+    en_linea = config_en_linea(os.environ) if a.en_linea else None
+    if en_linea:
+        os.environ["RETINA_DURACION_MAXIMA_S"] = str(DURACION_EN_LINEA_S)
     talentos = sorted({f["talento"] for f in cargar_modelo(a.modelo).filas if f.get("talento")}) if a.modelo else []
     listo = salud()
     if not listo["ffmpeg"]:
@@ -456,12 +567,14 @@ def main() -> None:
     if not listo["llave"]:
         print("Aviso: falta MODEL_API_KEY en el .env. Sin ella Retina no puede ver ni oír los videos.")
     clase = type("Manejador", (ConSubida,), {
-        "casos": a.casos.resolve(), "talentos": talentos, "fila": ThreadPoolExecutor(max_workers=1),
+        "casos": a.casos.resolve(), "talentos": talentos, "fila": FilaContada(), "en_linea": en_linea,
+        "hosts": SoloElPanel.hosts + ((en_linea["host"],) if en_linea else ()),
         "modelos": {k: (r.resolve() if r else None) for k, r in (("modelo", a.modelo), ("arranque", a.arranque), ("voz", a.voz))}})
-    servidor = http.server.ThreadingHTTPServer(("127.0.0.1", a.puerto), functools.partial(clase, directory=str(RAIZ)))
+    interfaz = "0.0.0.0" if en_linea else "127.0.0.1"  # en línea, el proxy es lo único que llega a este puerto
+    servidor = http.server.ThreadingHTTPServer((interfaz, a.puerto), functools.partial(clase, directory=str(RAIZ)))
     url = f"http://127.0.0.1:{servidor.server_port}/panel/"
     print(f"Retina está en {url}  (Ctrl+C para cerrar)")
-    if not a.sin_navegador:
+    if not a.sin_navegador and not en_linea:
         webbrowser.open(url)
     try:
         servidor.serve_forever()
