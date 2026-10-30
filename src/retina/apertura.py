@@ -4,7 +4,7 @@ Retina no califica el arranque: lo devuelve arreglado. Muse Spark Open escribe d
 segundos y reglas fijas de código revisan el texto: sin anzuelos, sin tocar lo intocable, sin cifras ni nombres
 que no salgan del video, el tema del título en la primera frase y el largo. Muse Image dibuja el primer cuadro y
 SAM 3.1 busca en él lo que promete el título. Si algo falla, Spark Open lo corrige con la lista exacta de lo que
-falló, hasta MAX_CORRECCIONES veces. Nada que no pase llega a la persona. El título nunca se toca.
+falló, hasta MAX_CORRECCIONES veces. Cumple la promesa con su primera prueba, sin resumir el video. Nada que no pase llega a la persona. El título nunca se toca.
 
 Lo que Retina no sabe: si esta apertura retiene más gente. Eso nunca se midió y aquí no se promete.
 
@@ -26,7 +26,7 @@ from pathlib import Path
 from . import baseten, explicar, integridad, meta_api, sam, storyboard, transcribir
 from .esquemas import RAIZ
 
-VERSION = "apertura-v1"
+VERSION = "apertura-v2"
 MAX_CORRECCIONES = 2
 MIN_PALABRAS, MAX_PALABRAS = 18, 45  # de 10 a 15 segundos, hablando a unas 2.5 a 3 palabras por segundo
 MAX_CARACTERES_CUADRO = 400
@@ -153,9 +153,12 @@ def _nada_que_avisar(paso: str, vuelta: int) -> None:
 
 
 def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_que_avisar) -> dict:
-    """Escribe, revisa y corrige. `dibujar(i, cuadro, objeto)` deja el cuadro i y `medir(imagen, concepto)` lo busca
-    con SAM; los dos cuestan, así que solo corren si el texto ya pasó. El primer cuadro se dibuja antes que los
-    otros: si SAM no ve la promesa, los otros dos no se pagan."""
+    """Escribe, revisa y corrige. `dibujar(i, cuadro)` deja el cuadro i y `medir(imagen, concepto)` lo busca con SAM;
+    los dos cuestan, así que solo corren si el texto ya pasó. El primer cuadro se dibuja antes que los otros: si SAM no
+    ve la promesa, los otros dos no se pagan. El objeto prometido lo recibe quien escribe, nunca el dibujo: si el código
+    se lo ordenara a Muse Image, SAM estaría comprobando la orden y no lo que se escribió."""
+    if concepto:
+        datos = {**datos, "objeto_prometido": concepto}
     intentos, no_comprobe, aviso, s, imagenes, vista = [], [], "", None, [], None
     for vuelta in range(MAX_CORRECCIONES + 1):
         avisar("corrigiendo" if vuelta else "escribiendo", vuelta)
@@ -170,7 +173,7 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
         if not problemas:
             try:
                 avisar("dibujando", vuelta)
-                primero = dibujar(1, s["cuadros"][0], concepto)
+                primero = dibujar(1, s["cuadros"][0])
                 if concepto:
                     avisar("buscando", vuelta)
                     vista = _sin_dato_falso(medir, primero, concepto)
@@ -182,7 +185,7 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
                                                                   "ser lo principal de la escena, grande y al centro"}]
                 if not problemas:
                     avisar("terminando", vuelta)
-                    imagenes = [primero, dibujar(2, s["cuadros"][1], None), dibujar(3, s["cuadros"][2], None)]
+                    imagenes = [primero, dibujar(2, s["cuadros"][1]), dibujar(3, s["cuadros"][2])]
             except meta_api.TopeAlcanzado:
                 raise
             except Exception as e:  # noqa: BLE001 — Muse Image puede rechazar una escena: se pide otra
@@ -217,7 +220,7 @@ def esquema() -> dict:
 
 def _pedir_spark(sistema: str, texto: str) -> dict:
     cuerpo = {"model": explicar.MODELO, "reasoning": {"effort": "medium"}, "max_output_tokens": 8000, "store": False,
-              "text": {"format": {"type": "json_schema", "name": "apertura_v1", "strict": True, "schema": esquema()}},
+              "text": {"format": {"type": "json_schema", "name": "apertura_v2", "strict": True, "schema": esquema()}},
               "input": [{"type": "message", "role": "developer", "content": [{"type": "input_text", "text": sistema}]},
                         {"type": "message", "role": "user", "content": [{"type": "input_text", "text": texto}]}]}
     try:
@@ -246,8 +249,8 @@ def pedir(datos: dict, aviso: str = "") -> dict:
     raise RuntimeError("Spark Open no devolvió la apertura en JSON.")
 
 
-def dibujar_cuadro(carpeta: Path, i: int, cuadro: str, objeto: str | None) -> Path:
-    prompt = storyboard.ESTILO.format(i=i) + cuadro + (f" Main subject, large and centered: {objeto}." if objeto else "")
+def dibujar_cuadro(carpeta: Path, i: int, cuadro: str) -> Path:
+    prompt = storyboard.ESTILO.format(i=i) + cuadro
     destino = carpeta / f"apertura-cuadro{i}-ilustracion-ia.png"
     meta_api._revisar_tope(meta_api.PRECIO_IMAGEN[storyboard.MODELO])
     storyboard.dibujar_uno(prompt, destino, servicio="apertura")
@@ -306,7 +309,7 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
             medido = {"aprobada": False, "otro_alfabeto": True, "vueltas": 0, "despues": None, "comprobaciones": [],
                       "intentos": [], "no_comprobe": []}
         else:
-            medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o),
+            medido = lazo(datos, concepto, pedir, lambda i, c: dibujar_cuadro(carpeta, i, c),
                           lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar)
     finally:
         if not (medido and medido["aprobada"]):  # lo que no pasó no se queda en la carpeta del caso

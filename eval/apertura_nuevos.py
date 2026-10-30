@@ -73,7 +73,7 @@ def un_caso(v: dict, tramos: list, objeto: str, carpeta: Path) -> dict:
         return leer(ruta)
     carpeta.mkdir(parents=True, exist_ok=True)
     s = apertura.lazo(datos_sin_video(v.get("titulo") or v["archivo"], tramos, v["dur"]), objeto, apertura.pedir,
-                      lambda i, c, o: apertura.dibujar_cuadro(carpeta, i, c, o),
+                      lambda i, c: apertura.dibujar_cuadro(carpeta, i, c),
                       lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c))
     ruta.write_text(json.dumps(s, ensure_ascii=False, indent=1), encoding="utf-8")
     return s

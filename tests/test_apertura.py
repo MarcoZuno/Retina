@@ -129,12 +129,18 @@ class Lazo(unittest.TestCase):
                 raise r
             return r
 
-        def dibujar(i, cuadro, objeto):
-            self.dibujos.append((i, objeto))
+        def dibujar(i, cuadro):
+            self.dibujos.append(i)
             return Path(f"apertura-cuadro{i}-ilustracion-ia.png")
 
+        self.datos_que_recibio = []
+
+        def pedir_y_anotar(datos, aviso):
+            self.datos_que_recibio.append(datos)
+            return pedir(datos, aviso)
+
         self.medir = mock.Mock(side_effect=lambda imagen, c: next(medidas))
-        return apertura.lazo(DATOS, concepto, pedir, dibujar, self.medir)
+        return apertura.lazo(DATOS, concepto, pedir_y_anotar, dibujar, self.medir)
 
     SE_VE = {"concepto": "bread", "aparece": True, "primer_segundo": 0.0}
     NO_SE_VE = {"concepto": "bread", "aparece": False, "primer_segundo": None}
@@ -143,8 +149,7 @@ class Lazo(unittest.TestCase):
         r = self.correr([buena()], [self.SE_VE])
         self.assertTrue(r["aprobada"])
         self.assertEqual(r["vueltas"], 0)
-        self.assertEqual([i for i, _ in self.dibujos], [1, 2, 3])
-        self.assertEqual(self.dibujos[0][1], "bread")
+        self.assertEqual(self.dibujos, [1, 2, 3])
         self.assertEqual(len(r["despues"]["imagenes"]), 3)
         self.assertEqual({c["id"]: c["paso"] for c in r["comprobaciones"]}["promesa"], True)
 
@@ -163,7 +168,7 @@ class Lazo(unittest.TestCase):
     def test_si_el_texto_falla_no_se_gasta_en_dibujar(self):
         r = self.correr([buena(voz=VOZ + " Comenta si te pasó."), buena()], [self.SE_VE])
         self.assertTrue(r["aprobada"])
-        self.assertEqual([i for i, _ in self.dibujos], [1, 2, 3])
+        self.assertEqual(self.dibujos, [1, 2, 3])
         self.medir.assert_called_once()
 
     def test_con_dos_correcciones_sin_exito_nada_del_modelo_llega_a_la_persona(self):
@@ -180,7 +185,7 @@ class Lazo(unittest.TestCase):
         r = self.correr([buena()], concepto=None)
         self.assertTrue(r["aprobada"])
         self.medir.assert_not_called()
-        self.assertIsNone(self.dibujos[0][1])
+        self.assertNotIn("objeto_prometido", self.datos_que_recibio[0])
         self.assertNotIn("promesa", {c["id"] for c in r["comprobaciones"]})
 
     def test_una_respuesta_rota_gasta_un_intento_y_sigue(self):
@@ -194,10 +199,14 @@ class Lazo(unittest.TestCase):
         self.assertNotIn("promesa", {c["id"] for c in r["comprobaciones"]})
         self.assertTrue(r["no_comprobe"])
 
+    def test_quien_escribe_recibe_el_objeto_prometido(self):
+        self.correr([buena()], [self.SE_VE])
+        self.assertEqual(self.datos_que_recibio[0]["objeto_prometido"], "bread")
+
     def test_si_muse_image_falla_gasta_un_intento_y_sigue(self):
         fallas = iter([RuntimeError("rechazó el dibujo")])
 
-        def dibujar(i, cuadro, objeto):
+        def dibujar(i, cuadro):
             for e in fallas:
                 raise e
             return Path(f"apertura-cuadro{i}-ilustracion-ia.png")
@@ -207,7 +216,7 @@ class Lazo(unittest.TestCase):
         self.assertEqual((r["vueltas"], r["intentos"][0]["problemas"][0]["id"]), (1, "cuadros"))
 
     def test_si_un_cuadro_no_se_puede_dibujar_nunca_no_sale_nada(self):
-        def dibujar(i, cuadro, objeto):
+        def dibujar(i, cuadro):
             if i == 3:
                 raise OSError("sin red")
             return Path(f"apertura-cuadro{i}-ilustracion-ia.png")
@@ -300,7 +309,7 @@ class Rehacer(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura.sam, "objeto_del_titulo", return_value=None), \
                 mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))), \
                 mock.patch.object(apertura, "dibujar_cuadro",
-                                  side_effect=lambda c, i, texto, o: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
+                                  side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
             d = Path(t); self.preparar(d)
             salida = apertura.rehacer(d)
             r = json.loads((d / "resultado.json").read_text(encoding="utf-8"))
@@ -328,7 +337,7 @@ class Rehacer(unittest.TestCase):
 
     def test_una_apertura_que_no_paso_se_puede_volver_a_intentar(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura.sam, "objeto_del_titulo", return_value=None),                 mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))),                 mock.patch.object(apertura, "dibujar_cuadro",
-                                  side_effect=lambda c, i, texto, o: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
+                                  side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
             d = Path(t); self.preparar(d)
             (d / "apertura.json").write_text(json.dumps({"aprobada": False}), encoding="utf-8")
             self.assertTrue(apertura.rehacer(d)["aprobada"])
@@ -347,13 +356,10 @@ class Rehacer(unittest.TestCase):
             (d / "apertura.json").write_text(json.dumps({"aprobada": True}), encoding="utf-8")
             self.assertEqual(apertura.rehacer(d), {"aprobada": True})
 
-    def test_el_primer_cuadro_le_pide_a_muse_image_el_objeto_prometido(self):
+    def test_el_dibujo_sale_solo_de_lo_que_se_escribio(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(storyboard, "dibujar_uno") as dibujar:
-            apertura.dibujar_cuadro(Path(t), 1, "Una mesa de cocina.", "bread")
-            apertura.dibujar_cuadro(Path(t), 2, "Una bolsa.", None)
-        primero, segundo = dibujar.call_args_list[0].args[0], dibujar.call_args_list[1].args[0]
-        self.assertIn("bread", primero)
-        self.assertNotIn("bread", segundo)
+            apertura.dibujar_cuadro(Path(t), 1, "Una mesa de cocina.")
+        self.assertTrue(dibujar.call_args.args[0].endswith("Una mesa de cocina."))
 
 
 class VocabularioDeSam(unittest.TestCase):
@@ -372,17 +378,16 @@ class VocabularioDeSam(unittest.TestCase):
         opciones = cuerpo["text"]["format"]["schema"]["properties"]["objeto"]["enum"]
         self.assertEqual(sorted(opciones), ["dog", "ninguno", "tortilla"])
 
-    def test_se_dibuja_la_palabra_prometida_y_se_busca_la_que_sam_reconoce(self):
+    def test_se_escribe_la_palabra_prometida_y_se_busca_la_que_sam_reconoce(self):
         with tempfile.TemporaryDirectory() as t, \
-                mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))), \
+                mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))) as pedir, \
                 mock.patch.object(apertura, "dibujar_cuadro",
-                                  side_effect=lambda c, i, texto, o: (c / f"apertura-cuadro{i}-ilustracion-ia.png", dibujados.append(o))[0]), \
+                                  side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"), \
                 mock.patch.object(apertura.sam, "medir_imagen",
                                   return_value={"concepto": "food", "aparece": True, "primer_segundo": 0.0}) as medir:
-            dibujados = []
             d = Path(t); Rehacer().preparar(d)
             s = apertura.armar(d, TITULO, "tortilla")
-        self.assertEqual(dibujados[0], "tortilla")
+        self.assertEqual(pedir.call_args.args[0]["objeto_prometido"], "tortilla")
         self.assertEqual(medir.call_args.args[1], "food")
         self.assertEqual(s["objeto"], "tortilla")
         self.assertEqual({c["id"]: c.get("objeto") for c in s["comprobaciones"]}["promesa"], "food")
@@ -420,6 +425,44 @@ class Medicion(unittest.TestCase):
         self.assertTrue(modulo.trampa_pasa([{"rechazo": True}] * 9 + [{"rechazo": False}]))
         self.assertFalse(modulo.trampa_pasa([{"rechazo": True}] * 9))
         self.assertFalse(modulo.trampa_pasa([{"rechazo": True}] * 8 + [{"rechazo": False}] * 2))
+
+
+class MedicionNueva(unittest.TestCase):
+    def modulo(self, nombre):
+        sys.path.insert(0, str(RAIZ / "eval"))
+        spec = importlib.util.spec_from_file_location(nombre, RAIZ / "eval" / f"{nombre}.py")
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        return m
+
+    def test_la_trampa_lejana_no_usa_palabras_generales_ni_de_la_misma_familia(self):
+        m = self.modulo("apertura_v2")
+        self.assertEqual(m.lejano("dog", ["cat", "food", "bread"], 0), "food")
+        self.assertIsNone(m.lejano("dog", ["cat", "rabbit"], 0))
+
+    def test_la_trampa_cercana_es_otro_objeto_de_la_familia(self):
+        m = self.modulo("apertura_v2")
+        self.assertEqual(m.cercano("dog"), "cat")
+        self.assertIsNone(m.cercano("trophy"))
+
+    def test_el_juez_solo_cuenta_lo_que_elige_en_los_dos_ordenes(self):
+        m = self.modulo("juez_aperturas")
+        filas = [{"fiel": True, "queda_algo": True, "NR": "nueva", "RN": "nueva"}] * 15 + [{"fiel": True, "queda_algo": True, "NR": "real", "RN": "real"}] * 5
+        filas += [{"fiel": False, "queda_algo": False, "NR": "real", "RN": "nueva"}] * 5
+        r = m.resumir(filas, False)
+        self.assertEqual((r["firmes"], r["gana_nueva"], r["pct_nueva"], r["cambia_con_el_orden"]), (20, 15, 75, 5))
+        self.assertTrue(r["pasa_par"])
+        self.assertEqual((r["fieles"], r["pasa_fieles"]), (20, True))
+
+    def test_el_juez_no_pasa_con_pocos_pares_decididos(self):
+        m = self.modulo("juez_aperturas")
+        r = m.resumir([{"fiel": True, "queda_algo": True, "NR": "nueva", "RN": "nueva"}] * 19, False)
+        self.assertFalse(r["pasa_par"])
+
+    def test_el_arranque_real_del_juez_se_mide_como_en_el_panel(self):
+        m = self.modulo("juez_aperturas")
+        todo, real = m.del_video([[0, "hola"], [14, "que tal"], [16, "adios"], [20, None]])
+        self.assertEqual((todo, real), ("hola que tal adios", "hola que tal"))
 
 
 class DesdeLaApp(unittest.TestCase):
