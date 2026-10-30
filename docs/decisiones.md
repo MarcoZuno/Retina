@@ -388,3 +388,8 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   «alto» que de verdad perdió de más le gana a la tasa base con intervalos de Wilson que no se tocan; y los
   «bajo» quedan debajo de la base. Si pasa, el modo público vuelve a mostrar semáforo, con estos cortes por
   duración. Si no, se queda sin semáforo.
+- **Resultado (29-oct, noche; corrida con el commit d809422, el de la regla).** Pasa en las dos pruebas: «alto»
+  sale en entre 15 % y 35 % de los videos, los «alto» perdieron de más bastante más seguido que la tasa base con
+  intervalos que no se tocan, y los «bajo» quedaron debajo. **Se decide:** el modo público vuelve a mostrar
+  semáforo con la v2. Las duraciones sin videos suficientes para calibrar (menos de 30 s y más de 4 min) quedan sin
+  semáforo y con el aviso de formato poco conocido. Cifras en la carpeta privada.
