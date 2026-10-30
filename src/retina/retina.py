@@ -24,6 +24,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import time
 from datetime import datetime
 from pathlib import Path
@@ -59,6 +60,7 @@ def preparar_carpeta(video: Path, salida: Path) -> None:
     if archivo.exists() and archivo.read_text(encoding="utf-8").strip() != nueva:
         for nombre in PAGADO:
             (salida / nombre).unlink(missing_ok=True)
+        shutil.rmtree(salida / "cuadros", ignore_errors=True)  # si el video nuevo es más corto, sobrarían cuadros del anterior
     archivo.write_text(nueva, encoding="utf-8")
 
 

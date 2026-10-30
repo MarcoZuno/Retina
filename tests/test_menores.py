@@ -190,5 +190,23 @@ class IdiomaDeLaVoz(unittest.TestCase):
         self.assertIn("transcribir.idioma_de(titulo), idioma)", fuente)
 
 
+class CarpetaDeOtroVideo(unittest.TestCase):
+    """B15: si la carpeta se reusa con otro video, los cuadros del video anterior no se pueden quedar."""
+
+    def test_cambiar_de_video_borra_los_cuadros_y_lo_pagado(self):
+        with tempfile.TemporaryDirectory() as d:
+            salida, video = Path(d) / "caso", Path(d) / "v.mp4"
+            video.write_bytes(b"uno")
+            retina.preparar_carpeta(video, salida)
+            (salida / "cuadros").mkdir()
+            (salida / "cuadros" / "c00099.jpg").write_bytes(b"x")
+            (salida / "describir.json").write_text("{}", encoding="utf-8")
+            retina.preparar_carpeta(video, salida)  # el mismo video: se conserva todo
+            self.assertTrue((salida / "cuadros" / "c00099.jpg").exists() and (salida / "describir.json").exists())
+            video.write_bytes(b"otro")
+            retina.preparar_carpeta(video, salida)
+            self.assertFalse((salida / "cuadros").exists() or (salida / "describir.json").exists())
+
+
 if __name__ == "__main__":
     unittest.main()
