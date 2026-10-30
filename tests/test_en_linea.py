@@ -266,6 +266,14 @@ class EnVivo(unittest.TestCase):
         except ValueError:
             return r.status, {}
 
+    def lugares_devueltos(self, n: int) -> None:
+        """El servidor suelta el lugar en un `finally`, DESPUÉS de mandar la respuesta: el cliente puede contar antes de que
+        ocurra (falló 6 de 150 corridas). Se espera hasta 3 s. Ojo: time.sleep está parchado en estas pruebas, por eso Event."""
+        for _ in range(300):
+            if self.fila.soltar.call_count >= n:
+                break
+            threading.Event().wait(0.01)
+
     def datos(self, **cambios) -> dict:
         return {"X-Retina-Titulo": "Prueba", "X-Retina-Fecha": "2026-11-05 10:00", "X-Retina-Publicado": "0", **cambios}
 
@@ -305,6 +313,7 @@ class EnVivo(unittest.TestCase):
     def test_cada_pedido_suelta_el_lugar_que_aparto_aunque_falle(self):
         self.assertEqual(self.pedir("POST", "/api/revisar", {**self.datos(), "X-Retina-Fecha": "ayer", "X-Retina-Acceso": CODIGO})[0], 400)
         self.assertEqual(self.pedir("POST", "/api/apertura/a1b2c3d4e5f6", {"X-Retina-Acceso": CODIGO})[0], 202)
+        self.lugares_devueltos(2)
         self.assertEqual(self.fila.apartar.call_count, self.fila.soltar.call_count)
         self.assertEqual(self.fila.soltar.call_count, 2)
 
@@ -325,6 +334,7 @@ class EnVivo(unittest.TestCase):
             estado, cuerpo = self.pedir("POST", "/api/revisar", {**self.datos(), "X-Retina-Acceso": CODIGO})
         self.assertEqual(estado, 503)
         self.assertIn("presupuesto", cuerpo["error"])
+        self.lugares_devueltos(self.fila.apartar.call_count)
         self.assertEqual(self.fila.apartar.call_count, self.fila.soltar.call_count)
 
 
