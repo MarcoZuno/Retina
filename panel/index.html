@@ -263,6 +263,24 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .balance-lista .vacio { color: var(--tenue); padding-left: 0; } .balance-lista .vacio::before { display: none; }
 .mejoras { margin-top: 18px; padding-top: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
 @media (max-width: 640px) { .balance { grid-template-columns: 1fr; } }
+.lema-apertura { margin: 0 0 14px; color: var(--suave); }
+.avance-apertura { margin: 14px 0 0; font-size: 15px; color: var(--suave); }
+.antes-despues { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lado { min-width: 0; }
+.lado h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--tenue); }
+.lado.nuevo h3 { color: var(--verde); }
+.lado img { display: block; width: 100%; aspect-ratio: 9 / 16; object-fit: contain; border-radius: 12px; background: rgba(0,0,0,.28); }
+.lado .sin-imagen { display: grid; place-items: center; aspect-ratio: 9 / 16; border-radius: 12px; background: rgba(0,0,0,.28); color: var(--tenue); font-size: 14px; padding: 12px; text-align: center; }
+.miniaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.lado .voz { margin: 12px 0 0; font-size: 15px; }
+.lado .promesa { margin: 8px 0 0; font-size: 14px; color: var(--suave); }
+.lado.nuevo .promesa { color: var(--verde-letra); }
+.resumen-apertura { margin: 16px 0 0; font-size: 15px; color: var(--suave); }
+.lista-comprobada { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+.lista-comprobada li { display: grid; grid-template-columns: 20px 1fr; }
+.lista-comprobada li::before { content: "✓"; color: var(--verde); font-weight: 700; }
+.lista-comprobada li.no::before { content: "✕"; color: var(--rojo); }
+@media (max-width: 640px) { .antes-despues { grid-template-columns: 1fr; } }
 .acciones { display: flex; gap: 10px; flex-wrap: wrap; }
 .decision { margin: 12px 0 0; color: var(--suave); }
 .linea-bloque { padding: 18px 22px 16px; }
@@ -444,6 +462,17 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <p class="titulo-video" id="titulo-video"></p>
         </div>
 
+        <div class="bloque vidrio oculto" id="bloque-apertura">
+          <h2 data-t="apertura_t">Tu arranque, arreglado</h2>
+          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema">Retina reescribe tus primeros 10 a 15 segundos, los dibuja y comprueba que cumplan lo que promete el título. El título no se toca.</p>
+          <button class="boton" id="arreglar" type="button" data-t="arreglar">Arreglar mi arranque (unos USD 0.10)</button>
+          <p class="avance-apertura oculto" id="apertura-avance" aria-live="polite"></p>
+          <div class="antes-despues oculto" id="antes-despues"></div>
+          <p class="resumen-apertura oculto" id="apertura-resumen"></p>
+          <ul class="lista-comprobada oculto" id="apertura-comprobada"></ul>
+          <p class="nota oculto" id="apertura-nota" data-t="apertura_nota">Es un boceto: voz y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si esta apertura hará que se quede más gente: eso no se ha medido.</p>
+        </div>
+
         <div class="cifras" id="cifras"></div>
 
         <div class="linea-bloque vidrio">
@@ -495,7 +524,6 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           </div>
           <p class="funciona oculto" id="funciona"></p>
           <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
-          <button class="boton vidrio oculto" id="dibujar-storyboard" type="button">Dibujarlo con Muse Image (3 imágenes, unos USD 0.03)</button>
           <div id="storyboard" class="storyboard oculto"></div>
         </div>
 
@@ -661,8 +689,27 @@ const TEXTOS = {
     franjas: " Abajo, en verde lo que funciona y en ámbar lo flojo, según lo que vio Retina.",
     no_copio: "No se pudo copiar: selecciona el texto",
     ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
-    dibujar_storyboard: "Dibujarlo con Muse Image (3 imágenes, unos USD 0.03)", dibujando: "Dibujando con Muse Image…",
-    no_se_dibujo: "No se pudo dibujar. Intenta otra vez.",
+    apertura_t: "Tu arranque, arreglado",
+    apertura_lema: "Retina reescribe tus primeros 10 a 15 segundos, los dibuja y comprueba que cumplan lo que promete el título. El título no se toca.",
+    arreglar: "Arreglar mi arranque (unos USD 0.10)",
+    apertura_pasos: { en_fila: "En fila…", escribiendo: "Muse Spark Open está escribiendo tu arranque…", dibujando: "Muse Image está dibujando el primer cuadro…",
+      buscando: "SAM 3.1 está buscando lo que promete el título…", corrigiendo: "Algo no pasó las comprobaciones. Muse Spark Open lo está corrigiendo…",
+      terminando: "Pasó todo. Muse Image está dibujando los otros dos cuadros…" },
+    antes: "Antes", despues: "Después", sin_voz_antes: "Tu borrador no trae voz en esos segundos.", sin_imagen_antes: "Tu video",
+    alt_antes: "Primer cuadro de tu video",
+    promesa_no: (o) => `En tus primeros 3 segundos no se ve «${o}».`,
+    promesa_si: (o, s) => `«${o}» se ve desde el segundo ${s}.`,
+    promesa_nueva: (o) => `«${o}» se ve desde el primer cuadro.`,
+    apertura_vueltas: (n) => (n ? `Retina la corrigió ${n === 1 ? "1 vez" : `${n} veces`} antes de enseñártela. El título no se tocó.`
+      : "Pasó todas las comprobaciones a la primera. El título no se tocó."),
+    apertura_no: "No logré una apertura que pasara todas las comprobaciones, así que no te enseño ninguna. Esto fue lo que falló:",
+    apertura_quien: (m) => `Escribió ${m} · dibujó Muse Image · revisaron SAM 3.1 y reglas fijas de código.`,
+    apertura_nota: "Es un boceto: voz y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si esta apertura hará que se quede más gente: eso no se ha medido.",
+    apertura_error: "No se pudo terminar. Intenta otra vez.",
+    apertura_editor: "Arranque nuevo (lo que se dice): ",
+    comprobada: { anzuelos: "Sin los anzuelos que Meta castiga", intocables: "No toca logos, avisos legales ni créditos", cifras: "Cada cifra sale de tu video",
+      nombres: "Cada nombre sale de tu video", tema: "El tema del título llega en la primera frase", largo: "Cabe en 10 a 15 segundos",
+      cuadros: "Tres cuadros listos", promesa: (o) => `SAM 3.1 encontró «${o}» en el primer cuadro`, promesa_falta: "SAM 3.1 no pudo revisar el primer cuadro esta vez" },
     que_vas: "¿Qué vas a hacer?", cortar: "Cortar como dice Retina", regrabar: "Regrabar", publicar: "Publicar así",
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
@@ -839,8 +886,27 @@ const TEXTOS = {
     franjas: " Below, green is what works and amber what is weak, according to what Retina saw.",
     no_copio: "Couldn't copy: select the text instead",
     ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
-    dibujar_storyboard: "Draw it with Muse Image (3 images, about USD 0.03)", dibujando: "Drawing with Muse Image…",
-    no_se_dibujo: "It couldn't be drawn. Try again.",
+    apertura_t: "Your opening, fixed",
+    apertura_lema: "Retina rewrites your first 10 to 15 seconds, draws them and checks that they deliver what the title promises. Your title stays as it is.",
+    arreglar: "Fix my opening (about USD 0.10)",
+    apertura_pasos: { en_fila: "In line…", escribiendo: "Muse Spark Open is writing your opening…", dibujando: "Muse Image is drawing the first frame…",
+      buscando: "SAM 3.1 is looking for what the title promises…", corrigiendo: "Something didn't pass the checks. Muse Spark Open is fixing it…",
+      terminando: "Everything passed. Muse Image is drawing the other two frames…" },
+    antes: "Before", despues: "After", sin_voz_antes: "Your draft has no voice in those seconds.", sin_imagen_antes: "Your video",
+    alt_antes: "First frame of your video",
+    promesa_no: (o) => `“${o}” doesn't show in your first 3 seconds.`,
+    promesa_si: (o, s) => `“${o}” shows from second ${s}.`,
+    promesa_nueva: (o) => `“${o}” shows from the first frame.`,
+    apertura_vueltas: (n) => (n ? `Retina fixed it ${n === 1 ? "once" : `${n} times`} before showing it to you. Your title wasn't touched.`
+      : "It passed every check on the first try. Your title wasn't touched."),
+    apertura_no: "I couldn't get an opening to pass every check, so I'm not showing you one. This is what failed:",
+    apertura_quien: (m) => `Written by ${m} · drawn by Muse Image · checked by SAM 3.1 and fixed code rules.`,
+    apertura_nota: "This is a sketch: voice and drawings, not a filmed video. Retina checks that numbers and names come from your video, not that they are true. And it doesn't know whether this opening keeps more people watching: that hasn't been measured.",
+    apertura_error: "It couldn't be finished. Try again.",
+    apertura_editor: "New opening (what is said): ",
+    comprobada: { anzuelos: "None of the bait Meta penalizes", intocables: "Doesn't touch logos, legal notices or credits", cifras: "Every number comes from your video",
+      nombres: "Every name comes from your video", tema: "The title's topic arrives in the first sentence", largo: "Fits in 10 to 15 seconds",
+      cuadros: "Three frames ready", promesa: (o) => `SAM 3.1 found “${o}” in the first frame`, promesa_falta: "SAM 3.1 couldn't check the first frame this time" },
     que_vas: "What will you do?", cortar: "Cut as Retina suggests", regrabar: "Reshoot", publicar: "Publish as is",
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
@@ -1122,16 +1188,14 @@ function segunMeta(r) {  // revision_meta: buenas prácticas de Meta por ventana
 
 function item(padre, texto) { padre.append(nodo("li", "", texto)); }
 
-// Las ilustraciones del storyboard (Muse Image) solo se cargan si el caso vino de casos/ en este mismo sitio
-// y cada nombre es un archivo suelto «…-ilustracion-ia.png|webp» de esa misma carpeta.
-function ilustraciones(e) {
-  if (!carpeta || !e || !Array.isArray(e.storyboard_imagenes)) return [];
-  return e.storyboard_imagenes.map((n) => {
-    if (typeof n !== "string" || !/^[\w-]+-ilustracion-ia\.(png|webp)$/.test(n)) return null;
-    const u = new URL(n, carpeta);
-    return u.origin === location.origin && /^\/casos\/[\w-]+\/[\w-]+-ilustracion-ia\.(png|webp)$/.test(u.pathname) ? u.href : null;
-  });
+// Las imágenes solo se cargan si el caso vino de casos/ en este mismo sitio y cada nombre es un archivo suelto
+// de esa misma carpeta: lo dibujado con Muse Image («…-ilustracion-ia.png|webp») o el primer cuadro del borrador.
+function delCaso(n) {
+  if (!carpeta || typeof n !== "string" || !/^(?:[\w-]+-ilustracion-ia\.(?:png|webp)|apertura-antes\.(?:jpg|webp))$/.test(n)) return null;
+  const u = new URL(n, carpeta);
+  return u.origin === location.origin && /^\/casos\/[\w-]+\/[\w.-]+$/.test(u.pathname) ? u.href : null;
 }
+const ilustraciones = (e) => (e && Array.isArray(e.storyboard_imagenes) ? e.storyboard_imagenes.map(delCaso) : []);
 
 // «Lo que no revisé» llega en español desde el orquestador; en inglés se traducen sus piezas fijas.
 const NO_REVISE_EN = [
@@ -1178,11 +1242,6 @@ function revisado(r) {
   const cuadros = (e && e.storyboard) || [], dibujos = ilustraciones(e);
   $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
   $("ver-storyboard").textContent = t(dibujos.some(Boolean) ? "ver_storyboard_ia" : "ver_storyboard");
-  // En la app (no en la demo sin llave), el storyboard se dibuja solo si la persona lo pide: cuesta.
-  const idCaso = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname);
-  $("dibujar-storyboard").classList.toggle("oculto", !(conSubida && idCaso && cuadros.length && !dibujos.some(Boolean)));
-  $("dibujar-storyboard").dataset.id = idCaso ? idCaso[1] : "";
-  $("dibujar-storyboard").textContent = t("dibujar_storyboard");
   $("storyboard").replaceChildren(...cuadros.map((c, i) => {
     const d = nodo("div");
     if (dibujos[i]) {
@@ -1192,6 +1251,55 @@ function revisado(r) {
     d.append(nodo("span", "", `${i + 1}. ${c}`));
     return d;
   }));
+}
+
+function ladoApertura(clase, titulo, hijos) {
+  const lado = nodo("div", `lado ${clase}`);
+  lado.append(nodo("h3", "", titulo), ...hijos);
+  return lado;
+}
+
+function pintarApertura(r) {
+  const a = r.apertura, idCaso = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname);
+  const puede = !!(conSubida && idCaso && r.explicacion), hecha = !!(a && a.despues && a.aprobada);
+  $("bloque-apertura").classList.toggle("oculto", !a && !puede);
+  $("arreglar").classList.toggle("oculto", !!a || !puede);
+  $("arreglar").dataset.id = idCaso ? idCaso[1] : "";
+  $("apertura-lema").classList.toggle("oculto", !!a);
+  $("apertura-avance").classList.add("oculto");
+  $("antes-despues").classList.toggle("oculto", !hecha);
+  $("apertura-resumen").classList.toggle("oculto", !a);
+  $("apertura-nota").classList.toggle("oculto", !hecha);
+  const lista = $("apertura-comprobada");
+  lista.classList.toggle("oculto", !a);
+  if (!a) return;
+  const objeto = a.objeto, antes = a.antes || {}, promesa = antes.promesa;
+  const fotoAntes = delCaso(antes.imagen);
+  const imgAntes = fotoAntes ? nodo("img") : nodo("div", "sin-imagen", t("sin_imagen_antes"));
+  if (fotoAntes) { imgAntes.src = fotoAntes; imgAntes.alt = t("alt_antes"); }
+  const hijosAntes = [imgAntes, nodo("p", "voz", antes.voz || t("sin_voz_antes"))];
+  if (promesa) hijosAntes.push(nodo("p", "promesa", promesa.aparece ? t("promesa_si", promesa.concepto, promesa.primer_segundo) : t("promesa_no", promesa.concepto)));
+  if (hecha) {
+    const [primera, ...otras] = (a.despues.imagenes || []).map(delCaso).map((u, i) => {
+      if (!u) return nodo("div", "sin-imagen", a.despues.cuadros[i] || "");
+      const img = nodo("img"); img.src = u; img.alt = t("alt_ia", a.despues.cuadros[i] || ""); img.title = a.despues.cuadros[i] || "";
+      return img;
+    });
+    const miniaturas = nodo("div", "miniaturas");
+    miniaturas.append(...otras);
+    const hijosDespues = [primera, miniaturas, nodo("p", "voz", a.despues.voz)];
+    if ((a.comprobaciones || []).some((c) => c.id === "promesa" && c.paso)) hijosDespues.push(nodo("p", "promesa", t("promesa_nueva", objeto)));
+    $("antes-despues").replaceChildren(ladoApertura("", t("antes"), hijosAntes), ladoApertura("nuevo", t("despues"), hijosDespues));
+  }
+  const modelo = a.licencia && /open/i.test(a.licencia.escribio || "") ? "Muse Spark Open" : "Muse Spark 1.3";
+  $("apertura-resumen").textContent = hecha ? `${t("apertura_vueltas", a.vueltas || 0)} ${t("apertura_quien", modelo)}` : t("apertura_no");
+  const C = tx().comprobada;
+  const filas = (a.comprobaciones || []).filter((c) => c.id !== "promesa" || objeto).map((c) => {
+    const texto = c.id === "promesa" ? C.promesa(objeto) : de(C, c.id);
+    return texto ? nodo("li", c.paso ? "" : "no", texto) : null;
+  }).filter(Boolean);
+  if ((a.no_comprobe || []).includes("promesa")) filas.push(nodo("li", "no", C.promesa_falta));
+  lista.replaceChildren(...filas);
 }
 
 function pasos(e) {
@@ -1260,7 +1368,7 @@ function mostrar(r) {
     $("porque").textContent = t("sin_api_porque");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  pasos(e); balance(e); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r);
+  pasos(e); balance(e); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r); pintarApertura(r);
   $("decision").textContent = "";
   $("error").classList.add("oculto");
   estado("resultado");
@@ -1295,6 +1403,8 @@ function textoParaEditor() {
   if (e.que_cambiar) lineas.push(`${t("para_editor")}${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`));
   const mejoras = lista_(e, "mejoras_opcionales");
   if (mejoras.length) lineas.push(t("opcional_editor"), ...mejoras.map((m) => `- ${reloj(m)}`));
+  const a = actual.apertura;
+  if (a && a.aprobada && a.despues) lineas.push(`${t("apertura_editor")}${a.despues.voz}`, ...a.despues.cuadros.map((c, i) => `${i + 1}. ${c}`));
   return lineas.join("\n");
 }
 
@@ -1340,16 +1450,34 @@ async function abrir(ruta, ejemplo = false) {  // ejemplo: es el caso de muestra
   porOmision = ejemplo;
 }
 
-$("dibujar-storyboard").onclick = async () => {
-  const b = $("dibujar-storyboard"), id = b.dataset.id;
+$("arreglar").onclick = async () => {
+  const b = $("arreglar"), id = b.dataset.id, avance = $("apertura-avance");
   if (!id || b.disabled) return;
-  b.disabled = true; b.textContent = t("dibujando");
+  const pintar = (e) => { avance.textContent = de(tx().apertura_pasos, e.paso || e.estado) || tx().apertura_pasos.en_fila; };
+  b.disabled = true; avance.classList.remove("oculto"); pintar({ paso: "en_fila" });
   try {
-    const r = await fetch(`/api/storyboard/${id}`, { method: "POST", headers: { "X-Retina": "1" } });
-    if (!r.ok) throw new Error(String(r.status));
-    await abrir(`/casos/${id}/resultado.json`);
-    $("storyboard").classList.remove("oculto"); $("ver-storyboard").setAttribute("aria-expanded", "true");
-  } catch (_) { b.textContent = t("no_se_dibujo"); }
+    const r = await fetch(`/api/apertura/${id}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma } });
+    const pedido = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(pedido.error || t("apertura_error"));
+    for (let fallas = 0; ;) {
+      await new Promise((listo) => setTimeout(listo, 1200));
+      let e;
+      try {
+        const x = await fetch(`/api/apertura/${id}`, { cache: "no-store" });
+        if (!x.ok) throw new Error(String(x.status));
+        e = await x.json(); fallas = 0;
+      } catch (_) {
+        if (++fallas >= 10) throw new Error(t("apertura_error"));
+        continue;
+      }
+      if (e.estado === "error") throw new Error(e.mensaje || t("apertura_error"));
+      if (e.estado === "listo") break;
+      pintar(e);
+    }
+    const hecha = await (await fetch(`/casos/${id}/resultado.json`, { cache: "no-store" })).json();
+    actual.apertura = hecha.apertura;
+    pintarApertura(actual);
+  } catch (x) { avance.textContent = x.message; }
   finally { b.disabled = false; }
 };
 

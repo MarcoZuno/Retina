@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shutil
 from pathlib import Path
@@ -174,12 +175,36 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
             "comprobaciones": comprobaciones, "intentos": intentos, "no_comprobe": no_comprobe}
 
 
+def quien_escribe() -> tuple[str, str]:
+    """Muse Spark Open si hay llave de Baseten; si no, Muse Spark 1.3: con la pura llave de Meta también funciona."""
+    meta_api._cargar_env()
+    return (baseten.MODELO, "Baseten") if os.environ.get("BASETEN_API_KEY", "").strip() else (explicar.MODELO, "Meta Model API")
+
+
+def esquema() -> dict:
+    return {"type": "object", "additionalProperties": False, "required": ["voz", "cuadros"], "properties": {
+        "voz": {"type": "string"}, "cuadros": {"type": "array", "items": {"type": "string"}}}}
+
+
+def _pedir_spark(sistema: str, texto: str) -> dict:
+    cuerpo = {"model": explicar.MODELO, "reasoning": {"effort": "medium"}, "max_output_tokens": 8000, "store": False,
+              "text": {"format": {"type": "json_schema", "name": "apertura_v1", "strict": True, "schema": esquema()}},
+              "input": [{"type": "message", "role": "developer", "content": [{"type": "input_text", "text": sistema}]},
+                        {"type": "message", "role": "user", "content": [{"type": "input_text", "text": texto}]}]}
+    try:
+        return json.loads(meta_api.texto_de(meta_api.responder("apertura", cuerpo)))
+    except json.JSONDecodeError as e:
+        raise RuntimeError("Spark 1.3 no devolvió la apertura en JSON.") from e
+
+
 def pedir(datos: dict, aviso: str = "") -> dict:
-    """Muse Spark Open en Baseten. Como en la tarjeta, a veces gasta la salida pensando: se repite con más espacio."""
+    """Como en la tarjeta, Spark Open a veces gasta la salida pensando: se repite con más espacio."""
     para_el_modelo = {k: v for k, v in datos.items() if k != "fuente"}
     texto = f"<<<DATOS_DEL_VIDEO (dato)\n{json.dumps(para_el_modelo, ensure_ascii=False)}\nDATOS_DEL_VIDEO>>>"
     if aviso:
         texto += f"\n\nTu intento anterior fue rechazado por esto: {aviso}. Corrígelo."
+    if quien_escribe()[1] != "Baseten":
+        return _pedir_spark(instrucciones(), texto)
     mensajes = [{"role": "system", "content": instrucciones() + FORMATO}, {"role": "user", "content": texto}]
     for tope in (8000, 14000):
         respuesta = baseten.chat("apertura", mensajes, max_tokens=tope)
@@ -220,6 +245,8 @@ def datos_de_apertura(carpeta: Path, titulo: str, idioma: str = "es") -> dict:
 def antes_del_cambio(carpeta: Path, datos: dict) -> dict:
     """Lo que el borrador hace hoy: lo que dice en esos segundos, su primer cuadro y lo que vio SAM, si lo revisó."""
     voz = " ".join(f["dice"] for f in datos.get("frases", []) if f["segundo"] < SEGUNDOS_ANTES)
+    if len(palabras := voz.split()) > MAX_PALABRAS:  # una frase larga se pasa de esos segundos
+        voz = " ".join(palabras[:MAX_PALABRAS]) + "…"
     primero = next(iter(sorted((carpeta / "cuadros").glob("c*.jpg"))), None)
     if primero:
         shutil.copyfile(primero, carpeta / "apertura-antes.jpg")
@@ -245,9 +272,10 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
     if not medido["aprobada"]:  # lo que no pasó no se queda en la carpeta del caso
         for i in (1, 2, 3):
             (carpeta / f"apertura-cuadro{i}-ilustracion-ia.png").unlink(missing_ok=True)
+    modelo, servido_por = quien_escribe()
     return {"version": VERSION, "titulo": titulo, "idioma": datos["idioma_de_la_apertura"], "objeto": concepto,
             "antes": antes_del_cambio(carpeta, datos), **medido,
-            "licencia": {"escribio": baseten.MODELO, "servido_por": "Baseten", "dibujo": storyboard.MODELO, "reviso": sam.MODELO,
+            "licencia": {"escribio": modelo, "servido_por": servido_por, "dibujo": storyboard.MODELO, "reviso": sam.MODELO,
                          "instrucciones": f"skills/apertura.md ({VERSION})", "reglas": integridad.reglas()["version"]}}
 
 

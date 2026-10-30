@@ -15,7 +15,7 @@ from unittest import mock
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-from retina import apertura, meta_api, storyboard  # noqa: E402
+from retina import apertura, app, meta_api, storyboard  # noqa: E402
 
 TITULO = "Tres trucos para que el pan dulce no se endurezca"
 DATOS = {"titulo": TITULO, "fuente": "tres trucos para que el pan dulce no se endurezca lleva 2 horas en bolsa de tela con Doña Rosa"}
@@ -221,6 +221,13 @@ class Rehacer(unittest.TestCase):
         self.assertIn("Hola, soy Rosa", r["apertura"]["antes"]["voz"])
         self.assertEqual(r["apertura"]["licencia"]["dibujo"], storyboard.MODELO)
 
+    def test_el_antes_no_se_alarga_mas_que_el_despues(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = Path(t)
+            antes = apertura.antes_del_cambio(d, {"frases": [{"segundo": 1.0, "dice": " ".join(["palabra"] * 100)}]})
+        self.assertEqual(len(antes["voz"].split()), apertura.MAX_PALABRAS)
+        self.assertTrue(antes["voz"].endswith("…"))
+
     def test_no_se_paga_dos_veces_por_la_misma_revision(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura, "pedir", side_effect=AssertionError("pagó")):
             d = Path(t); self.preparar(d)
@@ -234,6 +241,91 @@ class Rehacer(unittest.TestCase):
         primero, segundo = dibujar.call_args_list[0].args[0], dibujar.call_args_list[1].args[0]
         self.assertIn("bread", primero)
         self.assertNotIn("bread", segundo)
+
+
+class SinLlaveDeBaseten(unittest.TestCase):
+    def test_con_solo_la_llave_de_meta_escribe_muse_spark_1_3(self):
+        respuesta = {"output": [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(buena())}]}]}
+        with mock.patch.dict(apertura.os.environ, {"BASETEN_API_KEY": ""}), mock.patch.object(meta_api, "_cargar_env"), \
+                mock.patch.object(apertura.baseten, "chat", side_effect=AssertionError("usó Baseten")), \
+                mock.patch.object(meta_api, "responder", return_value=respuesta) as responder:
+            self.assertEqual(apertura.pedir(DATOS), buena())
+            self.assertEqual(apertura.quien_escribe(), (apertura.explicar.MODELO, "Meta Model API"))
+        self.assertNotIn("fuente", json.dumps(responder.call_args.args[1]["input"][1], ensure_ascii=False))
+
+    def test_con_llave_de_baseten_escribe_muse_spark_open(self):
+        with mock.patch.dict(apertura.os.environ, {"BASETEN_API_KEY": "x"}), mock.patch.object(meta_api, "_cargar_env"):
+            self.assertEqual(apertura.quien_escribe(), (apertura.baseten.MODELO, "Baseten"))
+
+
+class DesdeLaApp(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.carpeta = Path(self.tmp.name) / "abcdef123456"
+        self.carpeta.mkdir()
+        (self.carpeta / "resultado.json").write_text("{}", encoding="utf-8")
+        self.fila = mock.Mock()
+        self.addCleanup(app._APERTURAS.clear)
+        lista = {"ffmpeg": True, "llave": True}
+        for parche in (mock.patch.object(app, "salud", return_value=lista),):
+            parche.start()
+            self.addCleanup(parche.stop)
+
+    def test_sin_revision_no_hay_nada_que_arreglar(self):
+        codigo, _ = app.pedir_apertura(self.carpeta.parent / "no-existe", self.fila, "es")
+        self.assertEqual(codigo, 404)
+        self.fila.submit.assert_not_called()
+
+    def test_dos_clics_forman_una_sola_apertura(self):
+        self.assertEqual(app.pedir_apertura(self.carpeta, self.fila, "es")[0], 202)
+        self.assertEqual(app.pedir_apertura(self.carpeta, self.fila, "es")[0], 202)
+        self.fila.submit.assert_called_once()
+
+    def test_la_que_ya_esta_hecha_no_se_vuelve_a_pagar(self):
+        (self.carpeta / "apertura.json").write_text("{}", encoding="utf-8")
+        self.assertEqual(app.pedir_apertura(self.carpeta, self.fila, "es"), (200, {"estado": "listo"}))
+        self.fila.submit.assert_not_called()
+
+    def test_sin_llave_se_avisa_en_el_idioma_del_panel(self):
+        with mock.patch.object(app, "salud", return_value={"ffmpeg": True, "llave": False}):
+            codigo, cuerpo = app.pedir_apertura(self.carpeta, self.fila, "en")
+        self.assertEqual(codigo, 503)
+        self.assertIn("key is missing", cuerpo["error"])
+
+    def test_el_avance_se_ve_mientras_corre_y_se_limpia_al_terminar(self):
+        visto = []
+
+        def rehacer(carpeta, idioma, avisar):
+            avisar("buscando", 1)
+            visto.append(app.estado_apertura(carpeta))
+            (carpeta / "apertura.json").write_text("{}", encoding="utf-8")
+
+        with mock.patch.object(apertura, "rehacer", rehacer):
+            app.arreglar(self.carpeta, "es")
+        self.assertEqual(visto, [{"estado": "procesando", "paso": "buscando", "vuelta": 1}])
+        self.assertEqual(app.estado_apertura(self.carpeta), {"estado": "listo"})
+
+    def test_el_tope_se_explica_y_se_puede_reintentar(self):
+        with mock.patch.object(apertura, "rehacer", side_effect=meta_api.TopeAlcanzado("tope de 50")):
+            app.arreglar(self.carpeta, "es")
+        e = app.estado_apertura(self.carpeta)
+        self.assertEqual(e["estado"], "error")
+        self.assertIn("tope", e["mensaje"])
+        self.assertEqual(app.pedir_apertura(self.carpeta, self.fila, "es")[0], 202)
+
+    def test_otra_falla_va_a_un_archivo_sin_detalles_para_la_persona(self):
+        with mock.patch.object(apertura, "rehacer", side_effect=ValueError("ruta/secreta")):
+            app.arreglar(self.carpeta, "es")
+        self.assertNotIn("ruta/secreta", app.estado_apertura(self.carpeta)["mensaje"])
+        self.assertIn("ruta/secreta", (self.carpeta / "error.txt").read_text(encoding="utf-8"))
+
+    def test_el_panel_puede_ver_el_antes_y_los_cuadros_pero_nada_mas(self):
+        from retina.demo import PERMITIDO
+        self.assertTrue(PERMITIDO.match("/casos/abcdef123456/apertura-antes.jpg"))
+        self.assertTrue(PERMITIDO.match("/casos/abcdef123456/apertura-cuadro1-ilustracion-ia.png"))
+        self.assertFalse(PERMITIDO.match("/casos/abcdef123456/apertura.json"))
+        self.assertFalse(PERMITIDO.match("/casos/abcdef123456/video.mp4"))
 
 
 if __name__ == "__main__":

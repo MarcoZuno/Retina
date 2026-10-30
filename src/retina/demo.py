@@ -24,7 +24,8 @@ from .esquemas import RAIZ
 CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
 PERMITIDO = re.compile(r"^/(panel/(index\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp"
                        r"|casos/[\w-]+/(?:resultado|comparacion)\.json"  # comparacion.json: versión A contra B
-                       r"|casos/[\w-]+/[\w-]+-ilustracion-ia\.(?:png|webp))$")  # el storyboard dibujado con Muse Image
+                       r"|casos/[\w-]+/apertura-antes\.(?:jpg|webp)"  # el primer cuadro del borrador
+                       r"|casos/[\w-]+/[\w-]+-ilustracion-ia\.(?:png|webp))$")  # lo dibujado con Muse Image
 
 
 def ruta_local(ruta: str, raiz: Path, casos: Path | None) -> Path | None:

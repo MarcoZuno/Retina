@@ -79,6 +79,8 @@ TEXTOS = {
         "candado": "El candado está encendido: a la API de Meta solo van videos ya publicados. Marca «ya "
                    "publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.",
         "falla": "La revisión no terminó ({tipo}). El detalle quedó en error.txt, en la carpeta de la revisión.",
+        "apertura_falla": "No se pudo terminar la apertura ({tipo}). Intenta otra vez; el detalle quedó en error.txt.",
+        "tope": "Se llegó al tope de gasto que pusiste en RETINA_TOPE_USD.",
     },
     "en": {
         "falta_titulo": "Type the video's title (300 characters at most).",
@@ -101,6 +103,8 @@ TEXTOS = {
         "candado": "The lock is on: only already-published videos go to Meta's API. Tick «already published», "
                    "or turn it off with RETINA_SOLO_PUBLICADOS=0 if the video is yours.",
         "falla": "The review didn't finish ({tipo}). The details are in error.txt, in the review's folder.",
+        "apertura_falla": "The opening could not be finished ({tipo}). Try again; the details are in error.txt.",
+        "tope": "You reached the spending limit you set in RETINA_TOPE_USD.",
     },
 }
 
@@ -192,30 +196,54 @@ def convertir_a_mp4(origen: Path, destino: Path) -> None:
     os.replace(temporal, destino)
 
 
-_DIBUJANDO = threading.Lock()
+# Lo que va pasando con cada apertura. Vive en memoria: si Retina se reinicia a media corrida, se puede pedir otra vez.
+_APERTURAS: dict[str, dict] = {}
+_PIDIENDO_APERTURA = threading.Lock()
 
 
-def dibujar(carpeta: Path) -> tuple[int, dict]:
-    """El storyboard del cambio con Muse Image, solo cuando la persona aprieta el botón (cuesta unos
-    USD 0.03). Una vez dibujado, no se vuelve a pagar: se regresan las mismas imágenes."""
-    ruta = carpeta / "resultado.json"
-    if not ruta.is_file():
+def estado_apertura(carpeta: Path) -> dict:
+    if e := _APERTURAS.get(carpeta.name):
+        return e
+    return {"estado": "listo" if (carpeta / "apertura.json").exists() else "sin_pedir"}
+
+
+def pedir_apertura(carpeta: Path, fila, idioma: str) -> tuple[int, dict]:
+    """La apertura solo corre cuando la persona aprieta el botón: cuesta unos centavos. Una vez hecha no se vuelve
+    a pagar, y dos clics seguidos forman una sola."""
+    if not (carpeta / "resultado.json").is_file():
         return 404, {"error": "No encuentro esa revisión."}
-    e = json.loads(ruta.read_text(encoding="utf-8")).get("explicacion") or {}
-    if e.get("storyboard_imagenes"):
-        return 200, {"imagenes": e["storyboard_imagenes"]}
-    if not e.get("storyboard"):
-        return 400, {"error": "Esta tarjeta no trae un cambio que dibujar."}
-    if not _DIBUJANDO.acquire(blocking=False):
-        return 409, {"error": "Ya se está dibujando otro storyboard. Espera un momento."}
+    with _PIDIENDO_APERTURA:
+        e = estado_apertura(carpeta)
+        if e["estado"] == "listo":
+            return 200, e
+        if e["estado"] in ("en_fila", "procesando"):
+            return 202, e
+        listo = salud()
+        for falta in ("ffmpeg", "llave"):
+            if not listo[falta]:
+                return 503, {"error": texto(idioma, f"sin_{falta}")}
+        _APERTURAS[carpeta.name] = {"estado": "en_fila"}
+    fila.submit(arreglar, carpeta, idioma)
+    return 202, {"estado": "en_fila"}
+
+
+def arreglar(carpeta: Path, idioma: str) -> None:
+    """Corre la apertura en la misma fila que las revisiones y deja el avance a la vista del panel."""
+    from . import apertura, meta_api
+
+    def avisar(paso: str, vuelta: int) -> None:
+        _APERTURAS[carpeta.name] = {"estado": "procesando", "paso": paso, "vuelta": vuelta}
+
+    avisar("escribiendo", 0)
     try:
-        from .storyboard import generar
-        rutas = generar(ruta, [], aprobar=True)
-    except Exception as x:  # noqa: BLE001 — se le dice a la persona; el tope de gasto también cae aquí
-        return 502, {"error": f"Muse Image no pudo dibujarlo ({type(x).__name__})."}
-    finally:
-        _DIBUJANDO.release()
-    return 200, {"imagenes": [p.name for p in rutas]}
+        apertura.rehacer(carpeta, idioma, avisar)
+    except meta_api.TopeAlcanzado:
+        _APERTURAS[carpeta.name] = {"estado": "error", "mensaje": texto(idioma, "tope")}
+    except Exception as e:  # noqa: BLE001 — se le dice a la persona; el detalle queda en error.txt
+        (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
+        _APERTURAS[carpeta.name] = {"estado": "error", "mensaje": texto(idioma, "apertura_falla", tipo=type(e).__name__)}
+    else:
+        _APERTURAS.pop(carpeta.name, None)
 
 
 def pedido_propio(cabeceras, puerto: int) -> bool:
@@ -345,13 +373,17 @@ class ConSubida(SoloElPanel):
             m = re.match(r"^/api/estado/([0-9a-f]{12})$", ruta)
             if m and (self.casos / m.group(1)).is_dir():
                 return self._json(200, estado(self.casos / m.group(1)))
+            m = re.match(r"^/api/apertura/([0-9a-f]{12})$", ruta)
+            if m and (self.casos / m.group(1)).is_dir():
+                return self._json(200, estado_apertura(self.casos / m.group(1)))
             return self.send_error(404)
         return super().do_GET()
 
     def do_POST(self):  # noqa: N802
-        m = re.match(r"^/api/storyboard/([0-9a-f]{12})$", self.path)
+        m = re.match(r"^/api/apertura/([0-9a-f]{12})$", self.path)
         if m and self._local() and pedido_propio(self.headers, self.server.server_port):
-            return self._json(*dibujar(self.casos / m.group(1)))
+            idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
+            return self._json(*pedir_apertura(self.casos / m.group(1), self.fila, idioma))
         if self.path != "/api/revisar" or not self._local() or not pedido_propio(self.headers, self.server.server_port):
             return self.send_error(404)
         idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
