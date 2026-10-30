@@ -1,19 +1,19 @@
 # Retina
 
-**Retina doesn't stop at a score: it rewrites your video's opening, draws it and checks the fix before you publish.**
+**Retina estimates how many people will stay, then rewrites your opening and checks the fix before you publish.**
 
 ![Retina's before and after for a made-up example video: the draft opens with a greeting and no bread in sight; the new opening shows the bread from the first frame, with the list of checks it passed](docs/img/retina-example-card.jpg)
 
 *The picture above is a made-up example (no real video), with drawings by Muse Image. Open it yourself in one
 minute, with no key: see "Try it in one minute" below.*
 
-**What makes it different.** A tool that only reads a video stops at a description or a grade. Retina's output is a new opening,
+**What makes it different.** Retina starts from retention, using what about 30,000 real videos taught it about when people leave. Then
+it acts: a tool that only reads a video stops at a description or a grade, and Retina's output is a new opening you can watch and hear,
 and its core is a rule engine and a verification loop around Meta's models: the rules run in code, after the model, and send the
 work back with the exact list of what failed. SAM 3.1 then has to find what the title promises inside the frame Muse Image drew. One
 prompt to one model cannot do this.
 
-It also estimates how many of 100 people may still be watching, compared with videos like yours, and checks the whole video
-against Facebook's public rules, with the second and the words behind each warning.
+It also checks the whole video against Facebook's public rules, with the second and the words behind each warning.
 
 How the opening gets fixed:
 
@@ -28,7 +28,8 @@ How the opening gets fixed:
    closed list of objects and places, never people.
 6. **Correct.** If anything fails, Spark Open receives the exact list of failures and tries again, up to twice. What does
    not pass never reaches you.
-7. **Before and after.** You see your opening next to the new one, with the two remaining frames and every check it passed.
+7. **Before and after.** You see your opening next to the new one, press play to watch the frames and hear the new words in your
+   browser's voice, and see every check it passed.
 
 Three limits we say out loud. **The number is a modest reference**, not a promise: it barely beats the average for videos
 of the same length, and it cannot compare two versions of one video, so Retina shows no number for the new opening. **The
