@@ -469,7 +469,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 
         <div class="bloque vidrio oculto" id="bloque-apertura">
           <h2 data-t="apertura_t">Tu arranque, arreglado</h2>
-          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema">Retina reescribe tus primeros 10 a 15 segundos, los dibuja y comprueba que cumplan lo que promete el título. El título no se toca.</p>
+          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema">Retina reescribe tus primeros 10 a 15 segundos, los dibuja y los comprueba con reglas fijas y SAM 3.1. El título no se toca.</p>
           <button class="boton" id="arreglar" type="button" data-t="arreglar">Arreglar mi arranque (unos USD 0.10)</button>
           <p class="avance-apertura oculto" id="apertura-avance" aria-live="polite"></p>
           <div class="antes-despues oculto" id="antes-despues"></div>
@@ -660,7 +660,7 @@ const TEXTOS = {
     sin_comparar: "Aquí están las dos revisiones", sin_comparar_p: "Spark no pudo comparar las dos versiones; abajo está lo que Retina vio en cada una.",
     aviso_ab: "Es la opinión de Spark viendo cómo arranca cada versión (la revisó en los dos órdenes), no una predicción de retención medida.",
     fila_semaforo: "Semáforo", fila_duracion: "Duración", fila_cambio: "Lo principal a cambiar", nada_urgente: "Nada urgente.",
-    numeros_ab: (s, a, b) => `A los ${s} segundos, Retina calcula que de cada 100 personas siguen ${a} con la A y ${b} con la B. Casi no cambia entre versiones porque ese número sale del tipo de video (talento, duración, día y título), no de lo que se ve: para elegir, guíate por la tabla y por lo que ve Spark.`,
+    numeros_ab: (s, a, b) => `A los ${s} segundos, Retina calcula que de cada 100 que pasan los primeros 3 segundos siguen ${a} con la A y ${b} con la B. Casi no cambia entre versiones porque ese número sale del tipo de video (talento, duración, día y título), no de lo que se ve: para elegir, guíate por la tabla y por lo que ve Spark.`,
     mejor_en: (v) => `Mejor en la ${v.replace(/^V/, "v")}`, igual_ab: "Igual en las dos",
     vacio_titulo: "Abre la revisión de tu video", vacio_p1: "Retina deja un archivo ",
     vacio_p2: " en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.",
@@ -691,10 +691,12 @@ const TEXTOS = {
     normas_sin: (n) => `No encontré riesgos claros en las ${n} normas que revisé.`,
     normas_con: (n) => (n === 1 ? "Encontré 1 punto que conviene revisar antes de publicar:" : `Encontré ${n} puntos que conviene revisar antes de publicar:`),
     empieza_aqui: "Empieza por este.",
-    por_que_importa: "Por qué importa: en 30 mil videos de una página grande de Facebook, los que mejor retuvieron su primer cuarto llegaron a unas 3.5 veces más gente. Es una relación, no una promesa.",
+    por_que_importa: "Por qué importa: en los videos pasados de una página grande de Facebook, el tercio que mejor retuvo su primer cuarto llegó a unas 3.5 veces más gente que el tercio que peor lo retuvo. Eso es con la retención real, ya publicada; con lo que se predijo antes de publicar la diferencia fue de unas 1.5 veces. Es una relación, no una promesa.",
+    margen_nota: (m) => `Este número es una referencia: suele fallar por unas ${m} personas de cada 100.`,
+    nota_3s: "Retina no ve a quien se va en los primeros 3 segundos: los datos de Facebook parecen empezar a contar desde ahí.",
     ver_arranque: "▶ Ver y oír el arranque nuevo", parar_arranque: "■ Parar",
-    apertura_t: "Tu arranque, arreglado",
-    apertura_lema: "Retina reescribe tus primeros 10 a 15 segundos, los dibuja y comprueba que cumplan lo que promete el título. El título no se toca.",
+    apertura_t: "Tu arranque, reescrito y comprobado",
+    apertura_lema: "Retina reescribe tus primeros 10 a 15 segundos, los dibuja y los comprueba con reglas fijas y SAM 3.1. El título no se toca.",
     arreglar: "Arreglar mi arranque (unos USD 0.10)",
     apertura_pasos: { en_fila: "En fila…", escribiendo: "Muse Spark Open está escribiendo tu arranque…", dibujando: "Muse Image está dibujando el primer cuadro…",
       buscando: "SAM 3.1 está buscando lo que promete el título…", corrigiendo: "Algo no pasó las comprobaciones. Muse Spark Open lo está corrigiendo…",
@@ -719,21 +721,20 @@ const TEXTOS = {
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
     como_reviso: "Cómo lo revisó Retina", ver_detalle: "Ver detalle", otra: "Abrir otra revisión",
-    gente_intro: "De cada 100 personas que empiecen tu video,",
-    gente_siguen: (s) => `seguirán viéndolo a los ${s} segundos.`,
+    gente_intro: "De cada 100 personas que pasen los primeros 3 segundos,",
+    gente_siguen: (s, m) => `más o menos ${m}, seguirán viéndolo a los ${s} segundos.`,
     gente_otros: (n) => `En videos como el tuyo, siguen ${n}.`,
     gente_menos: (n) => `Perderías a ${n} ${n === 1 ? "persona" : "personas"} más de cada 100.`,
     gente_mas: (n) => `Se quedarían ${n} ${n === 1 ? "persona" : "personas"} más que en videos como el tuyo.`,
-    gente_igual: "Casi igual que en videos como el tuyo.",
-    gente_ejemplo_menos: (n, s) => `Por ejemplo, si lo empiezan 10,000 personas, a los ${s} segundos serían ${n} menos.`,
-    gente_ejemplo_mas: (n, s) => `Por ejemplo, si lo empiezan 10,000 personas, a los ${s} segundos serían ${n} más.`,
+    gente_igual: "Parecido a videos como el tuyo: la diferencia es menor que el margen.",
+    gente_ejemplo_menos: (n, s) => `Por ejemplo, si 10,000 personas pasan los primeros 3 segundos, a los ${s} segundos serían ${n} menos.`,
+    gente_ejemplo_mas: (n, s) => `Por ejemplo, si 10,000 personas pasan los primeros 3 segundos, a los ${s} segundos serían ${n} más.`,
     gente_real: (n) => `Ya está publicado: de verdad siguieron ${n} de cada 100.`,
     ley_siguen: "siguen viendo", ley_normal: "se van (como en videos como el tuyo)",
     ley_de_mas: "se irían de más", ley_gana: "se quedarían de más",
-    momento_a: (s) => `A los ${s} segundos, de cada 100 personas siguen viendo:`,
-    momento_fin: (t) => `Al terminar el inicio (${t}), de cada 100 personas siguen viendo:`,
+    momento_fin: (t) => `Al terminar el inicio (${t}), de cada 100 que pasaron los primeros 3 segundos siguen viendo:`,
     barra_tuyo: "Tu video", barra_otros: "Videos como el tuyo", barra_real: "De verdad",
-    momento_igual: "Casi igual que videos como el tuyo.",
+    momento_igual: "Parecido a videos como el tuyo.",
     momento_menos: (n) => `Tu video pierde ${n} ${n === 1 ? "persona" : "personas"} más.`,
     momento_mas: (n) => `Tu video retiene ${n} ${n === 1 ? "persona" : "personas"} más.`,
     como_tuyo_es: (x) => `«Videos como el tuyo» son ${x}.`,
@@ -860,7 +861,7 @@ const TEXTOS = {
     sin_comparar: "Here are both reviews", sin_comparar_p: "Spark couldn't compare both versions; below is what Retina saw in each one.",
     aviso_ab: "This is Spark's opinion after watching how each version starts (it judged them in both orders), not a measured retention prediction.",
     fila_semaforo: "Traffic light", fila_duracion: "Length", fila_cambio: "Main thing to change", nada_urgente: "Nothing urgent.",
-    numeros_ab: (s, a, b) => `At ${s} seconds, Retina estimates that out of 100 people ${a} keep watching version A and ${b} version B. It barely changes between versions because that number comes from the kind of video (talent, length, day and title), not from what is on screen: to choose, go by the table and by what Spark sees.`,
+    numeros_ab: (s, a, b) => `At ${s} seconds, Retina estimates that out of 100 people who get past the first 3 seconds, ${a} keep watching version A and ${b} version B. It barely changes between versions because that number comes from the kind of video (talent, length, day and title), not from what is on screen: to choose, go by the table and by what Spark sees.`,
     mejor_en: (v) => `Better in ${v}`, igual_ab: "Same in both",
     vacio_titulo: "Open your video's review", vacio_p1: "Retina saves a ",
     vacio_p2: " file in the folder of every video it reviews. Open it here to see if the opening will lose viewers, why, and what to cut.",
@@ -891,10 +892,12 @@ const TEXTOS = {
     normas_sin: (n) => `I found no clear risks in the ${n} rules I checked.`,
     normas_con: (n) => (n === 1 ? "I found 1 point worth checking before you publish:" : `I found ${n} points worth checking before you publish:`),
     empieza_aqui: "Start here.",
-    por_que_importa: "Why it matters: across 30,000 videos from a large Facebook page, the ones that best held their first quarter reached about 3.5 times more people. That's a relation, not a promise.",
+    por_que_importa: "Why it matters: among past videos of a large Facebook page, the third that best held its first quarter reached about 3.5 times more people than the third that held it worst. That's with real retention, after publishing; with what was predicted before publishing, the gap was about 1.5 times. It's a relation, not a promise.",
+    margen_nota: (m) => `This number is a reference: it's usually off by about ${m} people out of 100.`,
+    nota_3s: "Retina can't see people who leave in the first 3 seconds: Facebook's data seems to start counting from there.",
     ver_arranque: "▶ Watch and hear the new opening", parar_arranque: "■ Stop",
-    apertura_t: "Your opening, fixed",
-    apertura_lema: "Retina rewrites your first 10 to 15 seconds, draws them and checks that they deliver what the title promises. Your title stays as it is.",
+    apertura_t: "Your opening, rewritten and checked",
+    apertura_lema: "Retina rewrites your first 10 to 15 seconds, draws them and checks them with fixed rules and SAM 3.1. Your title stays as it is.",
     arreglar: "Fix my opening (about USD 0.10)",
     apertura_pasos: { en_fila: "In line…", escribiendo: "Muse Spark Open is writing your opening…", dibujando: "Muse Image is drawing the first frame…",
       buscando: "SAM 3.1 is looking for what the title promises…", corrigiendo: "Something didn't pass the checks. Muse Spark Open is fixing it…",
@@ -919,21 +922,20 @@ const TEXTOS = {
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
     como_reviso: "How Retina reviewed it", ver_detalle: "See details", otra: "Open another review",
-    gente_intro: "Out of every 100 people who start your video,",
-    gente_siguen: (s) => `will still be watching at ${s} seconds.`,
+    gente_intro: "Out of every 100 people who get past the first 3 seconds,",
+    gente_siguen: (s, m) => `give or take ${m}, will still be watching at ${s} seconds.`,
     gente_otros: (n) => `In videos like yours, ${n} are still watching.`,
     gente_menos: (n) => `You'd lose ${n} more ${n === 1 ? "person" : "people"} out of every 100.`,
     gente_mas: (n) => `${n} more ${n === 1 ? "person" : "people"} would stay than in videos like yours.`,
-    gente_igual: "About the same as videos like yours.",
-    gente_ejemplo_menos: (n, s) => `For example, if 10,000 people start it, ${n} fewer would still be watching at ${s} seconds.`,
-    gente_ejemplo_mas: (n, s) => `For example, if 10,000 people start it, ${n} more would still be watching at ${s} seconds.`,
+    gente_igual: "Similar to videos like yours: the difference is smaller than the margin.",
+    gente_ejemplo_menos: (n, s) => `For example, if 10,000 people get past the first 3 seconds, ${n} fewer would still be watching at ${s} seconds.`,
+    gente_ejemplo_mas: (n, s) => `For example, if 10,000 people get past the first 3 seconds, ${n} more would still be watching at ${s} seconds.`,
     gente_real: (n) => `Already published: ${n} out of 100 actually stayed.`,
     ley_siguen: "still watching", ley_normal: "leave (as in videos like yours)",
     ley_de_mas: "extra people lost", ley_gana: "extra people kept",
-    momento_a: (s) => `At ${s} seconds, out of every 100 people, still watching:`,
-    momento_fin: (t) => `At the end of the opening (${t}), out of every 100 people, still watching:`,
+    momento_fin: (t) => `At the end of the opening (${t}), out of every 100 who got past the first 3 seconds, still watching:`,
     barra_tuyo: "Your video", barra_otros: "Videos like yours", barra_real: "Actual",
-    momento_igual: "About the same as videos like yours.",
+    momento_igual: "Similar to videos like yours.",
     momento_menos: (n) => `Your video loses ${n} more ${n === 1 ? "person" : "people"}.`,
     momento_mas: (n) => `Your video keeps ${n} more ${n === 1 ? "person" : "people"}.`,
     como_tuyo_es: (x) => `“Videos like yours” means ${x}.`,
@@ -952,7 +954,7 @@ const TEXTOS = {
     t_linea_seg: (n) => `The first ${n} seconds`, t_linea_mm: (t) => `The opening: 0:00 to ${t}`,
     linea_texto: (t) => `Your video's opening, from 0:00 to ${t}.`, partes: (l) => ` Parts to check: ${l}.`,
     tramo: (a, b) => `${a} to ${b}`, castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
-    grafica_aria: (d) => `Out of every 100 people who start, how many are still watching at each moment of a ${d} video, according to Retina and to similar videos.`,
+    grafica_aria: (d) => `Out of every 100 people who get past the first 3 seconds, how many are still watching at each moment of a ${d} video, according to Retina and to similar videos.`,
     cumple: "Meets it", no_cumple: "Doesn't meet it", sin_dato: "No data", fuente_meta: "Meta source",
     confianza_txt: (c) => `How sure Retina is about this explanation: ${c}.`,
     sin_api: "This review was done without the Meta API.",
@@ -1037,20 +1039,22 @@ function en(curva, dur, s) {  // la curva tiene 41 puntos repartidos en toda la 
   return i >= 40 ? curva[40] : curva[i] * (1 - f) + curva[i + 1] * f;
 }
 
+const MARGEN_POR_OMISION = 11;  // eval/margen_numero.py; las revisiones viejas no lo traen
 const conReal = (r) => r.realidad && Array.isArray(r.realidad.curva) && r.realidad.curva.length === 41;
 
-// En un video corto casi nadie se va en los primeros segundos: «100 de 100 a los 3 segundos» no diría nada.
+// La curva marca casi 100 hasta los 3 segundos en todas las duraciones: Facebook parece contar desde ahí, así que antes no hay nada que decir.
 const momentoPrincipal = (dur) => (dur >= 30 ? 15 : Math.max(3, Math.round(dur / 2)));
 
 function cifras(r) {
   // Lo principal en una frase, con 100 personas dibujadas; los otros dos momentos, con barras.
   const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, s = momentoPrincipal(dur);
   const en100 = (c, x) => Math.round(100 * en(c, dur, x));
-  const tuyo = en100(p.curva_predicha, s), otros = en100(p.curva_parecidos, s), dif = tuyo - otros;
+  const tuyo = en100(p.curva_predicha, s), otros = en100(p.curva_parecidos, s), margen = p.margen_personas ?? MARGEN_POR_OMISION;
+  const dif = Math.abs(tuyo - otros) < margen ? 0 : tuyo - otros;  // lo que queda dentro del margen no es una diferencia
   const miles = (n) => (n * 100).toLocaleString(idioma === "en" ? "en-US" : "es-MX");
 
   const gente = nodo("div", "gente"); gente.setAttribute("aria-hidden", "true");
-  const [siguen, extra, claseExtra] = dif < 0 ? [tuyo, -dif, "de-mas"] : [otros, dif, "gana"];
+  const [siguen, extra, claseExtra] = dif < 0 ? [tuyo, -dif, "de-mas"] : dif > 0 ? [otros, dif, "gana"] : [tuyo, 0, "gana"];
   for (let i = 0; i < 100; i++) gente.append(nodo("i", i < siguen ? "sigue" : i < siguen + extra ? claseExtra : "va"));
   const leyenda = nodo("div", "leyenda-gente");
   const punto = (clase, texto) => { const x = nodo("span"); x.append(nodo("i", clase), texto); return x; };
@@ -1059,17 +1063,17 @@ function cifras(r) {
 
   const texto = nodo("div", "texto-gente");
   const frase = nodo("p", "frase");
-  frase.append(nodo("span", "intro", t("gente_intro")), " ", nodo("b", "num", String(tuyo)), " ", t("gente_siguen", s));
+  frase.append(nodo("span", "intro", t("gente_intro")), " ", nodo("b", "num", String(tuyo)), ", ", t("gente_siguen", s, margen));
   const comparo = nodo("p", "comparo", t("gente_otros", otros));
   const sinFormula = !!(r.licencia && r.licencia.sin_formula);
-  const veredicto = sinFormula ? nodo("p", "dif igual", t("sin_formula_gente")) : Math.abs(dif) <= 1 ? nodo("p", "dif igual", t("gente_igual"))
+  const veredicto = sinFormula ? nodo("p", "dif igual", t("sin_formula_gente")) : dif === 0 ? nodo("p", "dif igual", t("gente_igual"))
     : nodo("p", `dif ${dif < 0 ? "menos" : "mas"}`, t(dif < 0 ? "gente_menos" : "gente_mas", Math.abs(dif)));
   texto.append(frase, comparo, veredicto);
-  if (!sinFormula && Math.abs(dif) > 1) texto.append(nodo("p", "ejemplo-gente", t(dif < 0 ? "gente_ejemplo_menos" : "gente_ejemplo_mas", miles(Math.abs(dif)), s)));
+  if (!sinFormula && dif !== 0) texto.append(nodo("p", "ejemplo-gente", t(dif < 0 ? "gente_ejemplo_menos" : "gente_ejemplo_mas", miles(Math.abs(dif)), s)));
   if (conReal(r)) texto.append(nodo("p", "real-gente", t("gente_real", en100(r.realidad.curva, s))));
   const principal = nodo("div", "cifra vidrio grande personas");
   const fila = nodo("div", "fila-gente"); fila.append(gente, texto);
-  principal.append(fila, leyenda, nodo("p", "nota-gente", t("por_que_importa")));
+  principal.append(fila, leyenda, nodo("p", "nota-gente", t("margen_nota", margen)), nodo("p", "nota-gente", t("nota_3s")), nodo("p", "nota-gente", t("por_que_importa")));
   const l = r.licencia || {};
   if (comparadoCon(l)) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
   if (l.formato_poco_conocido) principal.append(nodo("p", "nota-gente", t("formato_poco")));
@@ -1091,11 +1095,12 @@ function cifras(r) {
     }
     const d = barras[0][1] - barras[1][1];
     if (sinFormula) return caja;  // sin fórmula las dos barras son iguales por definición: no hay veredicto
-    caja.append(nodo("p", `dif-momento ${Math.abs(d) <= 1 ? "igual" : d < 0 ? "menos" : "mas"}`,
-      Math.abs(d) <= 1 ? t("momento_igual") : t(d < 0 ? "momento_menos" : "momento_mas", Math.abs(d))));
+    const dentro = Math.abs(d) < margen;
+    caja.append(nodo("p", `dif-momento ${dentro ? "igual" : d < 0 ? "menos" : "mas"}`,
+      dentro ? t("momento_igual") : t(d < 0 ? "momento_menos" : "momento_mas", Math.abs(d))));
     return caja;
   };
-  const otrosMomentos = [...(dur >= 30 ? [momento(3, t("momento_a", 3))] : []), momento(fin, t("momento_fin", mmss(fin)))];
+  const otrosMomentos = fin > 3 ? [momento(fin, t("momento_fin", mmss(fin)))] : [];
   $("cifras").className = "cifras";
   $("cifras").replaceChildren(principal, ...otrosMomentos);
 }

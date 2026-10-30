@@ -518,3 +518,32 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   Retina. Publicar `modelos/retina-publico.json` depende de la empresa. Sin ese archivo Retina corre sin número.
 - **Lo que no cambia.** No hay número para la apertura nueva, el semáforo sigue fuera y Retina no promete retener más gente.
 
+## 30-oct-2026 · Lo que corrigió la auditoría estricta
+
+Cinco revisiones independientes rechazaron la entrega como estaba. Las entradas anteriores se quedan como se escribieron, porque varias
+están selladas; lo que estaba mal se corrige aquí.
+
+- **Erratas de entradas anteriores.**
+  - «Unas 2 personas de cada 1,000» era solo lo que aporta la ficha (2.0 y 1.4). La fórmula completa contra la curva fija gana de 5 a 8
+    de cada 1,000 en toda la curva.
+  - «Unos 30 mil videos» son 23,710 de 32,906: fuera, el resto queda fuera por elegibilidad o temas. De los
+    que entraron, 9,003 no tienen ficha y 974 no tienen voz.
+  - λ = 300 no se eligió con 10 grupos de creadores escondidos: se eligió con el último 20 % por fecha, en la variante C, no elegibles y
+    sin ficha, y no se volvió a elegir para el archivo publicado.
+  - «3.5 veces» es el mejor tercio contra el peor en retención real. Con lo predicho fue 1.49 veces (intervalo de 95 %: 1.19 a 1.98), con
+    el modelo de la casa; el público no se midió. «Predicho antes de publicar» fue una corrida del 29-oct sobre videos ya publicados.
+  - La segunda medición de la apertura es una regresión, no una validación, por lo que dice `docs/results.md`.
+  - En el «10 de 10» de la primera trampa, 3 usaron palabras que SAM casi no reconoce: informa 7 de 7.
+- **La curva cuenta desde los 3 segundos.** Marca casi 100 hasta unos 3 s en todas las duraciones y cae justo después: en 2,953 videos de
+  un minuto, 99.8 a los 2.9 s y 79.8 a los 4.4 s. La forma está medida y la causa es nuestra lectura. El panel dice «de cada 100 que pasan
+  los primeros 3 segundos», ya no enseña el cuadro de los 3 segundos y avisa que no ve a quien se va antes.
+- **El margen se midió y se enseña** (`eval/margen_numero.py`). Con creadores escondidos falla por 8.9 de cada 100, y por 10.2 si además se
+  entrena solo con lo anterior a 2026; la curva fija falla por 10.4 y 11.7. El panel dice «más o menos 11». Una diferencia menor que el
+  margen se muestra como «parecido», y eso pasa en unos 9 de cada 10 videos. La auditoría había estimado 7.6; esta cuenta sustituye a esa.
+- **La prueba hacia adelante del 3-nov no se corre.** La regla pide 100 videos y en 4 días salen 52 de mediana y 67 como máximo, antes de
+  filtros: por su propia regla no concluye nada. El semáforo sigue fuera y nadie tiene que juntar esos datos. No se había leído ninguna
+  retención de esos videos.
+- **Normas de Facebook.** No tienen regla ni medición, y ahora se dice. Lee lo que Spark describió y lo que se transcribió, no el archivo
+  de video. Una cita ya tiene que estar en ese segundo y en los valores, no en los nombres de los campos.
+- **Comparar dos versiones.** Es la lectura de Spark sobre dos arranques, no una predicción de cuál pierde menos gente: en eso Spark no le
+  ganó a una moneda.

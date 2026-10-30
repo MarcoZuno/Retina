@@ -1,0 +1,47 @@
+# What happened, in order
+
+An English summary of [`decisiones.md`](decisiones.md) and [`../BUILD-LOG.md`](../BUILD-LOG.md), which are the full record in Spanish.
+Commit hashes in those two files refer to the history before it was recreated; [`hash-map.md`](hash-map.md) gives the new ones.
+
+**26-27 Oct: from a list of curves to a first prediction.** We built the API wrapper with a spending cap, the video cutter, the
+transcription and description services, and a first model of the 41-point retention curve. V-JEPA 2 frame features were tested and did
+not help. The data set the limits: retention comes in whole points, so past the opening it cannot show where people leave. That promise
+was dropped.
+
+**28 Oct: Retina becomes an agent, and the judges say no twice.** The card became an agent with tools, a validator and rescue by Muse Spark
+1.3, running on Muse Spark Open. A blind judge preferred one-pass cards over the agent's (27 to 12 in firm pairs), so the public version
+writes the card in one pass. Spark watching two openings could not tell which loses more people. Looking at the video did not improve the
+risk level, in either period.
+
+**29 Oct: for any creator.** We asked whether Retina works for creators it has never seen. The first period failed; we changed the
+comparison and said so; a second period passed with a small improvement. The public brain was trained without eligibility, out-of-scope topics,
+out-of-scope topics or creator names. Reading the opening with a fixed sheet improved it a little. The traffic light failed its rule and left
+the public version. A second version passed only after seeing the first fail, on periods already used, so it stays out as exploratory.
+
+**30 Oct: from grading to fixing.** A grade is close to "simple image analyzers", so the core moved to producing and checking: Spark Open
+rewrites the opening, Muse Image draws it, fixed rules and SAM 3.1 check it, and failures go back to Spark Open.
+
+- The first test failed: 10 of 18. SAM did not know some words even when the drawing showed the object.
+- We calibrated SAM's vocabulary on made-up drawings: 104 words work as they are, 10 through a general word, 53 can no longer be checked.
+- The second test passed, 29 of 30. An audit later showed it is a regression test, not a validation: see [`results.md`](results.md).
+- The organizers ruled that a small ridge layer is acceptable if the README explains it and the fitting details and weights are in the
+  repo, and that an idea close to "simple image analyzers" is fine if the README and demo open with what makes it different. The number came
+  back on by default.
+
+**30 Oct, audit.** Five independent reviews rejected the entry as it stood. What came out of it:
+
+- The training set is 23,710 videos, not "about 30,000". The exact breakdown is now published.
+- Facebook's curve seems to count only people past the first 3 seconds, so "out of every 100 people who start" was wrong.
+- A difference smaller than the error was being shown as a difference. The margin is now measured and shown.
+- The rule "bring the promise to the start" was emptying the video. Rule 3 changed to giving the first proof.
+- The code was ordering the drawing to contain what SAM would look for. That order is gone.
+- Nobody had judged the openings. A blind judge was added, with a sealed rule, on new videos.
+
+PENDIENTE_TERCERA
+
+## How to read the record
+
+- A rule written first means written in `decisiones.md` before the run. From 29-Oct, sealed by a commit before measuring.
+- What fails stays published and is not re-tuned on the same cases.
+- Each test uses videos the previous ones did not touch. The second measurement's numbers are kept as they came out, including a trap
+  frame that was badly set up.

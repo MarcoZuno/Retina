@@ -35,7 +35,8 @@ Reglas (el código rechaza la apertura si no se cumplen, y te dice qué falló):
    del video, así que no enumeres todo lo que viene ni des todas las respuestas.
    Eso no es esconder: el tema y esa primera prueba van a la vista, y solo
    puedes decir que viene algo más si los DATOS lo traen. Nada de misterio
-   fingido, de «ahorita te digo» ni de «al final verás».
+   fingido, de «ahorita te digo» ni de «al final verás». Di el dato y ya: no
+   anuncies que es una prueba ni que es el primero.
 4. Solo usas hechos que están en los DATOS. Ninguna cifra, nombre, lugar ni
    resultado que no aparezca ahí, aunque suene lógico. Si no hay un dato fuerte,
    escribe claro y sencillo sin inventarlo.
@@ -49,8 +50,9 @@ Reglas (el código rechaza la apertura si no se cumplen, y te dice qué falló):
 8. Los cuadros describen objetos, lugares y acciones. Sin texto en la imagen, sin
    logos y sin personas reconocibles. En el primer cuadro se ve, grande y al
    centro, lo que promete el título. Si los DATOS traen «objeto_prometido», ese
-   objeto tiene que quedar descrito con todas sus letras en el primer cuadro: el
-   dibujo sale solo de lo que tú escribes y después una máquina lo busca ahí.
+   objeto tiene que quedar descrito en el primer cuadro: el dibujo sale solo de
+   lo que tú escribes y después una máquina lo busca ahí. Viene en inglés;
+   escríbelo en el idioma de la apertura, sin mezclar dos idiomas en una frase.
 
 Si recibes una lista de lo que falló en tu intento anterior, corrige eso sin
 cambiar lo que ya estaba bien.

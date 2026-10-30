@@ -1,9 +1,10 @@
 # Retina — guía para quien trabaje en este repo (personas o agentes)
 
 Retina toma el borrador de un video y devuelve sus primeros 10 a 15 segundos reescritos, dibujados y
-comprobados, junto con una tarjeta de qué funciona y qué está flojo. No califica ni promete retener más
-gente. De fábrica solo corren modelos de Meta (`RETINA_SOLO_MODELOS_META=0` prende la fórmula ajustada).
-Código y textos de interfaz en español de México; README en inglés para el jurado.
+comprobados, junto con una tarjeta de qué funciona y qué está flojo, y un número de referencia con su margen.
+No promete retener más gente. El número sale de una fórmula ajustada, prendida de fábrica y documentada en
+`docs/numero.md`; `RETINA_SOLO_MODELOS_META=1` la apaga.
+Código y textos de interfaz en español de México; README y anexos en inglés para el jurado.
 
 ## Cómo correr
 
@@ -17,7 +18,7 @@ Código y textos de interfaz en español de México; README en inglés para el j
 - `src/retina/`: el motor. `retina.py` orquesta la revisión; `apertura.py` reescribe, dibuja y comprueba
   el arranque; `agente.py` y `explicar.py` escriben la tarjeta; `integridad.py` y los validadores de
   `apertura.py` y `explicar.py` revisan lo que escribe el modelo; `meta_api.py` llama a Meta con tope de
-  gasto. `arranque.py`, `predecir.py` y `publico.py` son la fórmula: investigación, apagada de fábrica.
+  gasto. `publico.py` es el número; `arranque.py` y `predecir.py` son investigación y capa privada.
 - `skills/`: instrucciones de Spark, con versión. Si cambias una, sube la versión.
 - `reglas/`: anzuelos que Meta castiga, intocables (logo, pixelados, título, avisos) y lo que SAM
   puede buscar (nunca personas).

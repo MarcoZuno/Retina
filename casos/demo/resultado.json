@@ -8,6 +8,7 @@
   "talento": ""
  },
  "prediccion": {
+    "margen_personas": 11,
   "curva_predicha": [
    1.0,
    0.8829,

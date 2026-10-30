@@ -35,6 +35,9 @@ from .predecir import (LAMBDA_UNIVERSAL, N_ARRANQUE, N_PALABRAS, Rasgos, ajustar
 RAIZ = Path(__file__).resolve().parents[2]
 TEMAS = RAIZ / "reglas" / "alcance-v1.json"
 VERSION = "retina-publico-v1"
+# Personas de cada 100 por las que suele fallar, en creadores escondidos y videos posteriores al entrenamiento: el número, y
+# el promedio de su duración cuando no hay voz para ajustarlo (eval/margen_numero.py, docs/numero.md).
+MARGEN_PERSONAS, MARGEN_PROMEDIO = 11, 12
 N_CUBETAS = len(CUBETAS) - 1
 
 
@@ -129,8 +132,8 @@ class ModeloPublico:
 
     filas: list = []  # sin historia: no hay talentos que listar
     # El semáforo no pasó su regla sellada con videos de fuera (eval/semaforo_publico.py, 29-oct) y la v2
-    # (eval/semaforo_publico_v2.py) es un reajuste en los mismos periodos: el modo público no lo muestra hasta que
-    # pase la prueba hacia adelante (docs/decisiones.md). El número se queda como referencia.
+    # (eval/semaforo_publico_v2.py) es un reajuste en los mismos periodos: el modo público no lo muestra
+    # (docs/decisiones.md). El número se queda como referencia.
     semaforo = False
 
     def __init__(self, d: dict):
@@ -162,6 +165,7 @@ class ModeloPublico:
         return {
             "curva_predicha": [round(float(x), 4) for x in p],
             "curva_parecidos": [round(float(x), 4) for x in base],
+            "margen_personas": MARGEN_PERSONAS if tramos else MARGEN_PROMEDIO,
             "tramo_riesgo": t,
             "caida_predicha_pp": round(float((p[t] - p[t + 1]) * 100), 1),
             "caida_parecidos_pp": round(float((base[t] - base[t + 1]) * 100), 1),

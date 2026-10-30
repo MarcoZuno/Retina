@@ -21,6 +21,7 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 | `apertura.vueltas` | Cuántas correcciones necesitó (máximo 2). | Resumen |
 | `apertura.comprobaciones` | Lista de `{id, paso}`: anzuelos, intocables, cifras, nombres, tema, largo, cuadros y promesa. | Lista con palomitas |
 | `apertura.intentos` | Qué falló en cada intento. Nunca trae el texto rechazado. | No se muestra |
+| `apertura.otro_alfabeto` | Solo si el video no está en alfabeto latino: Retina no gastó y lo dice. | Resumen |
 | `apertura.no_comprobe` | Lo que no se pudo revisar (por ejemplo, si SAM no contestó). | Lista |
 | `apertura.licencia` | Qué modelo escribió, dibujó y revisó. | Resumen |
 
@@ -60,6 +61,8 @@ Textos del titular, en el lenguaje de quien publica:
 
 ## La línea de tiempo
 
+- `prediccion.margen_personas`: por cuántas personas de cada 100 suele fallar el número (`eval/margen_numero.py`). Una diferencia menor que
+  esto se muestra como «parecido».
 - `prediccion.curva_predicha` y `prediccion.curva_parecidos`: 41 puntos, del 0 al
   100 % del video (punto *k* = `k / 40 × video.duracion_s` segundos). Gris la
   predicha, punteada la de parecidos.
