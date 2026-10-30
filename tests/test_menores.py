@@ -104,5 +104,59 @@ class ProxyEnLinea(unittest.TestCase):
             self.assertIn("proxy_set_header " + cabecera, self.conf)
 
 
+class ReinicioAMediaRevision(unittest.TestCase):
+    """B13: si Retina se cierra a media revisión, estado.json se queda en «procesando» y el panel espera sin fin."""
+
+    def _caso(self, d, nombre, estado=None, archivos=()):
+        c = Path(d) / nombre
+        c.mkdir()
+        if estado is not None:
+            (c / "estado.json").write_text(json.dumps(estado), encoding="utf-8")
+        for a in archivos:
+            (c / a).write_text("x", encoding="utf-8")
+        return c
+
+    def _estado(self, carpeta):
+        return app.estado(carpeta)
+
+    def test_lo_que_estaba_procesando_queda_como_interrumpido_en_su_idioma(self):
+        with tempfile.TemporaryDirectory() as d:
+            es = self._caso(d, "a" * 12, {"estado": "procesando", "idioma": "es"})
+            en = self._caso(d, "b" * 12, {"estado": "procesando", "idioma": "en"})
+            self.assertEqual(app.marcar_interrumpidas(Path(d)), 2)
+            self.assertEqual(self._estado(es), {"estado": "error", "mensaje": app.texto("es", "interrumpida")})
+            self.assertEqual(self._estado(en), {"estado": "error", "mensaje": app.texto("en", "interrumpida")})
+            self.assertNotEqual(app.texto("es", "interrumpida"), app.texto("en", "interrumpida"))
+
+    def test_lo_que_esperaba_turno_en_la_fila_tambien(self):
+        with tempfile.TemporaryDirectory() as d:
+            c = self._caso(d, "c" * 12, None, ("video.mp4",))
+            self.assertEqual(app.marcar_interrumpidas(Path(d)), 1)
+            self.assertEqual(self._estado(c)["estado"], "error")
+
+    def test_no_toca_lo_terminado_ni_carpetas_ajenas(self):
+        with tempfile.TemporaryDirectory() as d:
+            listo = self._caso(d, "d" * 12, {"estado": "listo"})
+            con_error = self._caso(d, "e" * 12, {"estado": "error", "mensaje": "otra cosa"})
+            cli = self._caso(d, "corrida-por-linea", {"estado": "procesando"})  # no la creó el panel: no es de este programa
+            hecha = self._caso(d, "f" * 12, None, ("video.mp4", "resultado.json"))  # corrida de línea de comandos ya terminada
+            self.assertEqual(app.marcar_interrumpidas(Path(d)), 0)
+            self.assertEqual(self._estado(listo), {"estado": "listo"})
+            self.assertEqual(self._estado(con_error)["mensaje"], "otra cosa")
+            self.assertEqual(json.loads((cli / "estado.json").read_text(encoding="utf-8")), {"estado": "procesando"})
+            self.assertFalse((hecha / "estado.json").exists())
+
+    def test_la_revision_guarda_su_idioma_sin_mostrarlo_en_el_estado(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(retina, "correr", side_effect=lambda *a, **k: self._ver(d)):
+            datos = {"codigo": "A", "talento": "", "fecha": "2026-01-01 10:00", "titulo": "t", "publicado": True, "idioma": "en"}
+            self.vista = None
+            app.revisar(Path(d), datos, {"modelo": None, "arranque": None, "voz": None})
+            self.assertEqual(self.vista, {"estado": "procesando", "idioma": "en"})
+
+    def _ver(self, d):
+        self.vista = json.loads((Path(d) / "estado.json").read_text(encoding="utf-8"))
+        return {}
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -101,6 +101,8 @@ TEXTOS = {
         "falla": "La revisión no terminó ({tipo}). El detalle quedó en error.txt, en la carpeta de la revisión.",
         "apertura_falla": "No se pudo terminar la apertura ({tipo}). Intenta otra vez; el detalle quedó en error.txt.",
         "tope": "Se llegó al tope de gasto que pusiste en RETINA_TOPE_USD.",
+        "interrumpida": "Esta revisión se interrumpió porque Retina se cerró o se reinició antes de terminarla. "
+                        "Sube el video otra vez.",
     },
     "en": {
         "falta_titulo": "Type the video's title (300 characters at most).",
@@ -128,6 +130,8 @@ TEXTOS = {
         "falla": "The review didn't finish ({tipo}). The details are in error.txt, in the review's folder.",
         "apertura_falla": "The opening could not be finished ({tipo}). Try again; the details are in error.txt.",
         "tope": "You reached the spending limit you set in RETINA_TOPE_USD.",
+        "interrumpida": "This review was interrupted because Retina was closed or restarted before it finished. "
+                        "Upload the video again.",
     },
 }
 
@@ -389,12 +393,35 @@ def _escribir_estado(carpeta: Path, **e) -> None:
     os.replace(temporal, carpeta / "estado.json")
 
 
+def marcar_interrumpidas(casos: Path) -> int:
+    """Al arrancar, nada se está revisando todavía: lo que quedó «procesando» (o esperando turno sin estado) es de una
+    corrida que se cerró, y el panel esperaría sin fin. Se marca como error con su explicación. Devuelve cuántas son."""
+    n = 0
+    for carpeta in casos.iterdir() if casos.is_dir() else ():
+        if not (ID.fullmatch(carpeta.name) and carpeta.is_dir()):  # solo las que creó el panel
+            continue
+        ruta, idioma = carpeta / "estado.json", "es"
+        if ruta.exists():
+            try:
+                previo = json.loads(ruta.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if not isinstance(previo, dict) or previo.get("estado") != "procesando":
+                continue
+            idioma = previo.get("idioma") if previo.get("idioma") in TEXTOS else "es"
+        elif (carpeta / "resultado.json").exists() or not ((carpeta / "video.mp4").is_file() or (carpeta / SUBIDA).is_file()):
+            continue  # una corrida de línea de comandos, ya terminada, o una carpeta sin video
+        _escribir_estado(carpeta, estado="error", mensaje=texto(idioma, "interrumpida"))
+        n += 1
+    return n
+
+
 def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_A_S) -> None:
     """Corre el orquestador de punta a punta sobre el video subido (en segundo plano). Si es la versión B
     de una comparación, al terminar su tarjeta compara las dos antes de marcarla lista."""
     from . import meta_api
     from .retina import correr
-    _escribir_estado(carpeta, estado="procesando")
+    _escribir_estado(carpeta, estado="procesando", idioma=datos.get("idioma", "es"))  # el idioma, por si Retina se cierra a media revisión
     try:
         if (carpeta / SUBIDA).is_file():  # WebM, MKV, AVI…: primero a MP4, pero antes se mide: convertir cuesta
             if duracion_s(carpeta / SUBIDA) > maximo_s():
@@ -602,6 +629,8 @@ def main() -> None:
         if ruta is not None and not ruta.is_file():
             raise SystemExit(f"No encuentro {ruta}.")
     a.casos.mkdir(parents=True, exist_ok=True)
+    if (n := marcar_interrumpidas(a.casos)):
+        print(f"Aviso: {n} revisión(es) quedaron a medias la última vez que se cerró Retina; el panel las marca como interrumpidas.")
     from . import meta_api
     from .publico import cargar_modelo
     meta_api._cargar_env()  # FFMPEG y RETINA_* del .env: el orquestador los necesita antes de la primera llamada
