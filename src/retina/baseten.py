@@ -17,7 +17,7 @@ from . import meta_api
 
 BASE = "https://inference.baseten.co/v1"
 MODELO = os.environ.get("RETINA_SPARK_OPEN", "meta-models/muse-spark-open-1026")  # id de la guía del concurso
-TOPE_BASETEN_USD = 30.0  # de los USD 100 de créditos de Baseten; subirlo es cambiar esto
+TOPE_BASETEN_USD = 75.0  # de los USD 100 de créditos de Baseten
 PRECIO = (1.25, 0.15, 4.25)  # USD por millón (entrada, entrada en caché, salida), igual que Spark en la API de Meta
 
 

@@ -268,6 +268,12 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .linea { position: relative; height: 104px; border-radius: 16px; overflow: hidden; background: rgba(0,0,0,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.15); }
 body[data-tema="claro"] .linea { background: rgba(255,255,255,.28); }
 .linea svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.franja { position: absolute; bottom: 3px; height: 7px; border-radius: 4px; opacity: .95; }
+.franja.buena { background: var(--verde); } .franja.floja { background: var(--ambar); }
+.ficha { padding: 22px 26px; border-radius: var(--radio); margin-top: 18px; }
+.ficha-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ficha-chips span { padding: 6px 12px; border-radius: 99px; background: rgba(255,255,255,.10); font-size: 14px; }
+body[data-tema="claro"] .ficha-chips span { background: rgba(14,26,51,.08); }
 .zona { position: absolute; top: 0; bottom: 0; background: var(--nivel-zona); box-shadow: inset 2px 0 0 var(--nivel), inset -2px 0 0 var(--nivel); }
 .punto { position: absolute; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; background: var(--rojo); box-shadow: 0 0 10px var(--rojo); }
 .escala { display: flex; justify-content: space-between; font-size: 12px; color: var(--tenue); margin-top: 6px; font-variant-numeric: tabular-nums; }
@@ -445,6 +451,11 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <p class="texto-linea" id="texto-linea"></p>
         </div>
 
+        <div class="vidrio ficha oculto" id="ficha">
+          <h2 class="cabeza" data-t="ficha_t">Cómo arranca tu video, según Muse Spark Open</h2>
+          <div class="ficha-chips" id="ficha-chips"></div>
+        </div>
+
         <div class="bloque vidrio">
           <h2 data-t="por_que">Por qué</h2>
           <p class="porque" id="porque"></p>
@@ -470,6 +481,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           </div>
           <div class="pie-pasos" id="pie-pasos"><span id="progreso"></span>
             <button class="boton vidrio" id="copiar" type="button" data-t="copiar">Copiar para el editor</button>
+            <button class="boton vidrio" id="bajar" type="button" data-t="bajar">Bajar para el editor</button>
           </div>
           <p class="funciona oculto" id="funciona"></p>
           <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
@@ -615,7 +627,16 @@ const TEXTOS = {
     elegir: "Elegir archivo", ver_ejemplo: "Ver el ejemplo", nota_vacio: "El archivo no sale de tu computadora: el panel solo lo lee.",
     tu_video: "Tu video", parecidos: "Videos como el tuyo", lo_que_paso: "Lo que pasó",
     tu_video_pred: "Tu video (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
-    por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado",
+    por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado", bajar: "Bajar para el editor",
+    ficha_t: "Cómo arranca tu video, según Muse Spark Open",
+    ficha: { gancho: "Gancho", si: "sí", no: "no", presenta: "Se presenta antes del tema", tema: "El tema llega en la primera frase",
+      promete: "Promete algo que se verá", cifra: "Cifra al inicio", interaccion: "Pide interacción", claridad: "Claridad", curiosidad: "Curiosidad",
+      emocion: "Emoción", de5: (n) => `${n} de 5`,
+      ganchos: { pregunta: "pregunta", dato_o_cifra: "dato o cifra", promesa: "promesa", conflicto: "conflicto", presentacion: "presentación",
+        saludo: "saludo", historia: "historia", tutorial: "tutorial", otro: "otro", sin_voz: "sin voz" },
+      emociones: { neutra: "neutra", sorpresa: "sorpresa", humor: "humor", indignacion: "indignación", ternura: "ternura", miedo: "miedo",
+        tristeza: "tristeza", alegria: "alegría" } },
+    franjas: " Abajo, en verde lo que funciona y en ámbar lo flojo, según lo que vio Retina.",
     no_copio: "No se pudo copiar: selecciona el texto",
     ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
     dibujar_storyboard: "Dibujarlo con Muse Image (3 imágenes, unos USD 0.03)", dibujando: "Dibujando con Muse Image…",
@@ -772,7 +793,16 @@ const TEXTOS = {
     elegir: "Choose file", ver_ejemplo: "See the example", nota_vacio: "The file never leaves your computer: the panel only reads it.",
     tu_video: "Your video", parecidos: "Videos like yours", lo_que_paso: "What happened",
     tu_video_pred: "Your video (Retina's prediction)", lo_que_paso_real: "What actually happened",
-    por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied",
+    por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied", bajar: "Download for the editor",
+    ficha_t: "How your video opens, according to Muse Spark Open",
+    ficha: { gancho: "Hook", si: "yes", no: "no", presenta: "Introduces themselves before the topic", tema: "Topic in the first sentence",
+      promete: "Promises something you'll see", cifra: "Number at the start", interaccion: "Asks for engagement", claridad: "Clarity",
+      curiosidad: "Curiosity", emocion: "Emotion", de5: (n) => `${n} of 5`,
+      ganchos: { pregunta: "question", dato_o_cifra: "fact or number", promesa: "promise", conflicto: "conflict", presentacion: "introduction",
+        saludo: "greeting", historia: "story", tutorial: "how-to", otro: "other", sin_voz: "no voice" },
+      emociones: { neutra: "neutral", sorpresa: "surprise", humor: "humor", indignacion: "outrage", ternura: "tenderness", miedo: "fear",
+        tristeza: "sadness", alegria: "joy" } },
+    franjas: " Below, green is what works and amber what is weak, according to what Retina saw.",
     no_copio: "Couldn't copy: select the text instead",
     ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
     dibujar_storyboard: "Draw it with Muse Image (3 images, about USD 0.03)", dibujando: "Drawing with Muse Image…",
@@ -970,7 +1000,7 @@ function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos)
   $("leyenda-real-linea").classList.toggle("oculto", !conReal(r));
   svg.replaceChildren(...curvas.map(([c, clase, guion, ancho]) => el("path", { d: ruta(c), class: clase, fill: "none", "stroke-width": ancho,
     "vector-effect": "non-scaling-stroke", "stroke-linecap": "round", ...(guion ? { "stroke-dasharray": guion } : {}) })));
-  caja.querySelectorAll(".zona, .punto").forEach((x) => x.remove());
+  caja.querySelectorAll(".zona, .punto, .franja").forEach((x) => x.remove());
   const pct = (s) => `${Math.max(0, Math.min(100, (s / fin) * 100))}%`;
   let texto = t("linea_texto", mmss(fin));
   if (e && e.que_cambiar && r.arranque.nivel !== "bajo") {
@@ -987,6 +1017,25 @@ function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos)
     }
     texto += t("partes", zonas.map(([i, f]) => t("tramo", mmss(i), mmss(Math.min(f, fin)))).join(", "));
   }
+  // Franjas de lo bueno (verde) y lo flojo (ámbar): el primer tramo o segundo que cita cada punto de la tarjeta.
+  let hayFranja = false;
+  const tramoDe = (x) => {
+    const n = (s) => parseFloat(s.replace(",", "."));
+    const r2 = /(?:del segundo|from second) (\d+(?:[.,]\d+)?) (?:al|to) (?:segundo |second )?(\d+(?:[.,]\d+)?)/i.exec(x || "");
+    if (r2) return [n(r2[1]), n(r2[2])];
+    const r1 = /(?:segundo|second) (\d+(?:[.,]\d+)?)/i.exec(x || "");
+    return r1 ? [n(r1[1]), n(r1[1]) + Math.max(0.6, fin / 25)] : null;
+  };
+  if (e) for (const [k, clase] of [["lo_bueno", "buena"], ["lo_flojo", "floja"]]) {
+    for (const x of lista_(e, k)) {
+      const z = tramoDe(x);
+      if (!z || z[0] >= fin) continue;
+      const m = nodo("div", `franja ${clase}`);
+      m.style.left = pct(z[0]); m.style.width = `calc(${pct(Math.min(z[1], fin))} - ${pct(z[0])})`;
+      caja.append(m); hayFranja = true;
+    }
+  }
+  if (hayFranja) texto += t("franjas");
   if (e && e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno" && e.anzuelo_momento_s >= 0 && e.anzuelo_momento_s <= fin) {
     const pnt = nodo("div", "punto"); pnt.style.left = pct(e.anzuelo_momento_s); caja.append(pnt);
     texto += t("castiga_en", mmss(e.anzuelo_momento_s));
@@ -1057,6 +1106,7 @@ const NO_REVISE_EN = [
   ["Por qué y qué cambiar en el arranque", "Why, and what to change in the opening"],
   ["Las recomendaciones de Meta para el inicio", "Meta's recommendations for the opening"],
   ["Si lo que promete el título se ve al inicio (SAM 3.1)", "Whether what the title promises shows at the start (SAM 3.1)"],
+  ["Cómo arranca (ficha de Muse Spark Open)", "How it opens (Muse Spark Open sheet)"],
   ["Lo que se ve tramo a tramo", "What is on screen, segment by segment"],
   ["La voz y los silencios", "The voice and the silences"],
   ["se corrió sin la API de Meta", "run without Meta's API"],
@@ -1175,10 +1225,23 @@ function mostrar(r) {
     $("porque").textContent = t("sin_api_porque");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  pasos(e); balance(e); segunMeta(r); if (conNumero) grafica(r); revisado(r);
+  pasos(e); balance(e); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r);
   $("decision").textContent = "";
   $("error").classList.add("oculto");
   estado("resultado");
+}
+
+function fichaArranque(r) {  // cómo arranca, según Muse Spark Open: descripción, no predicción
+  const f = r.ficha, F = tx().ficha;
+  $("ficha").classList.toggle("oculto", !f || !f.gancho);
+  if (!f || !f.gancho) return;
+  const sn = (b) => (b ? F.si : F.no);
+  $("ficha-chips").replaceChildren(...[
+    `${F.gancho}: ${de(F.ganchos, f.gancho) || f.gancho}`, `${F.claridad}: ${F.de5(f.claridad)}`, `${F.curiosidad}: ${F.de5(f.curiosidad)}`,
+    `${F.tema}: ${sn(f.tema_en_la_primera_frase)}`, `${F.presenta}: ${sn(f.presenta_antes_del_tema)}`,
+    `${F.promete}: ${sn(f.promete_algo_visible)}`, `${F.emocion}: ${de(F.emociones, f.emocion) || f.emocion}`,
+    ...(f.pide_interaccion ? [`${F.interaccion}: ${F.si}`] : []),
+  ].map((x) => nodo("span", "", x)));
 }
 
 function textoParaEditor() {
@@ -1189,6 +1252,12 @@ function textoParaEditor() {
   if (mejoras.length) lineas.push(t("opcional_editor"), ...mejoras.map((m) => `- ${reloj(m)}`));
   return lineas.join("\n");
 }
+
+$("bajar").onclick = () => {  // el resumen para el editor como archivo de texto
+  const url = URL.createObjectURL(new Blob([textoParaEditor()], { type: "text/plain;charset=utf-8" }));
+  const a = document.createElement("a"); a.href = url; a.download = "retina-para-el-editor.txt"; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
 
 $("copiar").onclick = async () => {
   try { await navigator.clipboard.writeText(textoParaEditor()); $("copiar").textContent = t("copiado"); }

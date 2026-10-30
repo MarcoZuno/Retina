@@ -237,6 +237,10 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
                 resultado["explicacion"] = _paso("agente", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
                                                  correr_agente, salida, m, cargar_voz(voz), motor)
             else:
+                # Cómo arranca, según Muse Spark Open (la táctica del gancho, claridad, curiosidad): descripción.
+                from .ficha import ficha_de
+                resultado["ficha"] = _paso("ficha", tiempos, no_pude, "Cómo arranca (ficha de Muse Spark Open)",
+                                           ficha_de, titulo, tramos_de_voz(salida))
                 # Sin agente, SAM revisa igual si lo que promete el título se ve en los primeros 3 segundos.
                 from .sam import medir_promesa
                 _paso("sam", tiempos, no_pude, "Si lo que promete el título se ve al inicio (SAM 3.1)",

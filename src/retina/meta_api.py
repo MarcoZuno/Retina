@@ -19,7 +19,7 @@ from pathlib import Path
 import requests
 
 RAIZ = Path(__file__).resolve().parents[2]
-TOPE_MAXIMO_USD = 50.0  # subirlo es cambiar esto 
+TOPE_MAXIMO_USD = 185.0  # subirlo es cambiar esto
 TIEMPO = (10, 300)  # conectar, leer (s): una llamada colgada no detiene la corrida 50 min
 
 # USD por millón de tokens (entrada, entrada en caché, salida), según
