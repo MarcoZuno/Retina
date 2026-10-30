@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import sys
 import time
@@ -34,6 +35,7 @@ from retina.predecir import Modelo, caidas  # noqa: E402
 from retina.retina import correr  # noqa: E402
 from retina.voz import bloques  # noqa: E402
 
+os.environ.setdefault("RETINA_SOLO_MODELOS_META", "0")  # esta medición es de la fórmula
 DESDE = datetime(2025, 1, 1)  # la curva aprende de los años recientes (eval/escala.py)
 SEMILLA = 20261028
 

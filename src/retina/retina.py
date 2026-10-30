@@ -63,11 +63,11 @@ def preparar_carpeta(video: Path, salida: Path) -> None:
 
 
 def solo_modelos_meta() -> bool:
-    """Plan B (29-oct): si los organizadores dicen que una fórmula ajustada (la ridge) cuenta como modelo
-    que no es de Meta, RETINA_SOLO_MODELOS_META=1 la apaga. La curva queda en el promedio de videos de su
-    duración, no hay nivel de riesgo y la tarjeta sale solo de lo que ven los modelos de Meta."""
+    """De fábrica (30-oct) solo corren modelos de Meta: la curva queda en el promedio de videos de su duración,
+    no hay nivel de riesgo y la tarjeta sale de lo que ven y oyen. RETINA_SOLO_MODELOS_META=0 prende la fórmula
+    ajustada (la ridge) para quien tenga su propio modelo; por qué, en docs/decisiones.md."""
     meta_api._cargar_env()
-    return os.environ.get("RETINA_SOLO_MODELOS_META", "0").strip() == "1"
+    return os.environ.get("RETINA_SOLO_MODELOS_META", "1").strip() != "0"
 
 
 def sin_formula(pred: dict) -> dict:
@@ -162,7 +162,8 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
 
     emb = audio = None
-    if ver_video:
+    solo_meta = solo_modelos_meta()
+    if ver_video and not solo_meta:  # V-JEPA 2 solo alimenta la fórmula
         try:
             from .embeber import Embebedor, cuadros_y_audio
             t = time.time()
@@ -180,18 +181,17 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     v["cubeta"] = cubeta(v["dur"])
     # .json = cerebro público (sin datos de nadie); .pkl = modelo privado de la casa; sin archivo = sin número
     m = cargar_modelo(modelo) if modelo and Path(modelo).is_file() else None
-    plan_b = solo_modelos_meta()
     pred = None
     if m is not None:
         t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
-        if plan_b:
+        if solo_meta:
             pred = sin_formula(pred)
     else:
         no_pude.append("El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).")
 
     if m is None:
         riesgo_arranque = dict(SIN_NIVEL_NI_NUMERO)
-    elif plan_b:
+    elif solo_meta:
         riesgo_arranque = sin_nivel(pred)
     else:
         from .arranque import Arranque
@@ -237,7 +237,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         from .ficha import ficha_de
         resultado["ficha"] = _paso("ficha", tiempos, no_pude, "Cómo arranca (ficha de Muse Spark Open)",
                                    ficha_de, titulo, tramos)
-        if tramos and m is not None and not m.de_la_casa(v) and not plan_b:
+        if tramos and m is not None and not m.de_la_casa(v) and not solo_meta:
             # Video de fuera: con la voz ya se puede usar el cerebro para cualquier video.
             pred = m.predecir(v, emb, audio, tramos, resultado["ficha"])
             # Retina aprendió las palabras en español: con otro idioma el número es una referencia más débil.
