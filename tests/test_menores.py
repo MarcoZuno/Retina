@@ -12,6 +12,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
 import json
+import re
 import tempfile
 from unittest import mock
 
@@ -62,6 +63,28 @@ class TopeEnMedioDeLaRevision(unittest.TestCase):
                 e = json.loads((carpeta / "estado.json").read_text(encoding="utf-8"))
                 self.assertEqual((e["estado"], e["mensaje"]), ("error", app.texto(idioma, "tope")))
                 self.assertFalse((carpeta / "error.txt").exists())  # no es una falla del programa: no hay traceback
+
+
+class DemoEstaticaConNginx(unittest.TestCase):
+    """B11: lo que el servidor de Python deja ver (demo.PERMITIDO), nginx también; si no, la demo estática sale sin imágenes."""
+
+    def _regex_de_nginx(self) -> list:
+        conf = (RAIZ / "deploy" / "nginx.conf").read_text(encoding="utf-8")
+        return [re.compile(r) for r in re.findall(r"location ~ (\S+) \{", conf)]
+
+    def test_cada_archivo_de_casos_que_el_panel_pide_lo_sirve_nginx(self):
+        archivos = ["/casos/demo/" + p.name for p in (RAIZ / "casos" / "demo").iterdir()]
+        archivos += ["/casos/abc-123/comparacion.json", "/casos/abc-123/apertura-antes.jpg", "/casos/abc-123/apertura-cuadro2-ilustracion-ia.png"]
+        reglas = self._regex_de_nginx()
+        for ruta in archivos:
+            if demo.PERMITIDO.match(ruta):
+                self.assertTrue(any(r.match(ruta) for r in reglas), f"nginx no sirve {ruta}")
+
+    def test_nginx_no_abre_mas_que_el_servidor_de_python(self):
+        reglas = self._regex_de_nginx()
+        for ruta in ("/casos/demo/video.mp4", "/casos/demo/error.txt", "/casos/demo/estado.json", "/casos/../etc/passwd",
+                     "/casos/demo/x-ilustracion-ia.svg"):
+            self.assertFalse(any(r.match(ruta) for r in reglas), f"nginx sirve {ruta}")
 
 
 if __name__ == "__main__":
