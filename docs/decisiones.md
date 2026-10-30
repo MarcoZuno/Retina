@@ -496,3 +496,17 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
 - **Si no pasa.** Se publica igual, junto con la primera, y no se reajusta en estos 30 casos. Lo que esto no mide es lo mismo que
   antes: si la apertura nueva retiene más gente.
 
+## 30-oct-2026 · El número regresa, con la respuesta completa de los organizadores
+
+- **Por qué se cambia.** Jossafat vio la tarjeta sin número y dijo que predecir la retención es lo importante y lo llamativo.
+  Tiene razón: la decisión anterior miró solo cuánto mejora el acierto, no lo que el número hace por el producto. Esta entrada
+  sustituye a «Se decide» de la entrada anterior sobre la fórmula.
+- **Qué contestaron en office hours (30-oct, 13:14, hora de Tijuana).** Los coeficientes ridge se aceptan si el README explica qué
+  hace la capa, con los detalles del ajuste y los pesos fijos en el repo. Una tabla de promedios por duración es código determinista
+  y se vale. Apagarla sigue siendo lo más seguro. Sobre la categoría: «simple image analyzers» está en la lista, y las ideas cercanas
+  se valen si el centro es una versión nueva y no genérica, así que hay que abrir el README y la demo con lo que hace distinto al
+  proyecto.
+- **Se decide.** El número vuelve prendido de fábrica, documentado en `docs/numero.md`, y el README abre con lo que hace distinta a
+  Retina. Publicar `modelos/retina-publico.json` depende de la empresa. Sin ese archivo Retina corre sin número.
+- **Lo que no cambia.** No hay número para la apertura nueva, el semáforo sigue fuera y Retina no promete retener más gente.
+

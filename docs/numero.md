@@ -2,8 +2,8 @@
 
 Retina shows how many of 100 people may still be watching. That number comes from one small layer that is not a Meta model:
 a ridge regression fitted offline on our own data. On 30-Oct-2026 the organizers ruled that a small self-trained layer like
-this is acceptable as long as the repo documents the full training method, the data and the fixed weights, the README says
-what the layer does, and Meta models clearly do the real work. This page is that documentation.
+this is acceptable as long as the README explains what the layer does, with its fitting details, the fixed weights are in the repo,
+and Meta models clearly do the real work. This page is that documentation.
 
 ## What the layer does
 
