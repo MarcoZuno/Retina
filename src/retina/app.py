@@ -45,7 +45,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from .demo import SoloElPanel
+from .demo import ServidorExclusivo, SoloElPanel
 from .esquemas import RAIZ
 from .segmentar import Aviso, duracion_s, maximo_s
 
@@ -618,7 +618,7 @@ def main() -> None:
     interfaz = "0.0.0.0" if en_linea else "127.0.0.1"  # en línea, el proxy es lo único que llega a este puerto
     if en_linea:
         threading.Thread(target=limpiar_siempre, args=(a.casos.resolve(),), daemon=True).start()
-    servidor = http.server.ThreadingHTTPServer((interfaz, a.puerto), functools.partial(clase, directory=str(RAIZ)))
+    servidor = ServidorExclusivo((interfaz, a.puerto), functools.partial(clase, directory=str(RAIZ)))
     url = f"http://127.0.0.1:{servidor.server_port}/panel/"
     print(f"Retina está en {url}  (Ctrl+C para cerrar)")
     if not a.sin_navegador and not en_linea:
