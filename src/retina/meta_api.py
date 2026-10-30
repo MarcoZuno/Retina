@@ -129,10 +129,14 @@ def gastado_usd(prefijo: str = "") -> float:
         return 0.0
     total = 0.0
     for linea in costos().read_text(encoding="utf-8").splitlines():
-        if linea.strip():
+        if not linea.strip():
+            continue
+        try:
             fila = json.loads(linea)
-            if str(fila.get("servicio", "")).startswith(prefijo):
-                total += _usd_de(fila)
+        except ValueError:  # una línea cortada por una caída: sin esto, cada llamada a la API se caía con ella
+            continue
+        if isinstance(fila, dict) and str(fila.get("servicio", "")).startswith(prefijo):
+            total += _usd_de(fila)
     return total
 
 
@@ -232,6 +236,15 @@ def peor_caso_usd(cuerpo: dict) -> float:
     return cuerpo.get("max_output_tokens", 0) * salida / 1e6
 
 
+def _sin_salto_final(ruta: Path) -> bool:
+    try:
+        with ruta.open("rb") as f:
+            f.seek(-1, os.SEEK_END)
+            return f.read(1) != bytes([10])
+    except OSError:  # no existe o está vacío
+        return False
+
+
 def _registrar(servicio: str, modelo: str, segundos: float, usd: float, reserva: str | None = None, **extra) -> None:
     """Anota el gasto real. Con `reserva`, en el mismo paso con candado suelta lo apartado. La fila se
     escribe con flush y fsync: una llamada pagada no se pierde aunque la corrida se caiga."""
@@ -246,6 +259,8 @@ def _registrar(servicio: str, modelo: str, segundos: float, usd: float, reserva:
     costos().parent.mkdir(parents=True, exist_ok=True)
     with _candado():
         with costos().open("a", encoding="utf-8") as f:
+            if _sin_salto_final(costos()):  # el registro quedó cortado a medias: la fila nueva no se le pega
+                f.write(chr(10))
             f.write(json.dumps(fila, ensure_ascii=False) + chr(10))
             f.flush()
             os.fsync(f.fileno())

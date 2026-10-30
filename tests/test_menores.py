@@ -12,6 +12,7 @@ RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
 import json
+import os
 import re
 import tempfile
 from unittest import mock
@@ -206,6 +207,32 @@ class CarpetaDeOtroVideo(unittest.TestCase):
             video.write_bytes(b"otro")
             retina.preparar_carpeta(video, salida)
             self.assertFalse((salida / "cuadros").exists() or (salida / "describir.json").exists())
+
+
+class RegistroDeCostosTruncado(unittest.TestCase):
+    """B16: una línea cortada a medias en costos.jsonl (corrida o disco caídos) tumbaba cada llamada a la API."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.costos = Path(self.tmp.name) / "costos.jsonl"
+        env = mock.patch.dict(os.environ, {"RETINA_COSTOS": str(self.costos), "RETINA_ENV": str(Path(self.tmp.name) / "no-hay.env")})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_una_linea_cortada_no_tumba_el_conteo(self):
+        self.costos.write_text('{"servicio": "a", "usd": 1.5}\n{"servicio": "b", "us', encoding="utf-8")
+        self.assertEqual(meta_api.gastado_usd(), 1.5)
+        meta_api._revisar_tope(0.1)  # antes de arreglarlo, esto lanzaba JSONDecodeError
+
+    def test_lo_que_se_anota_despues_no_se_pega_a_la_linea_cortada(self):
+        self.costos.write_text('{"servicio": "a", "usd": 1.5}\n{"servicio": "b", "us', encoding="utf-8")
+        meta_api._registrar("c", "m", 1.0, 2.0)
+        self.assertEqual(meta_api.gastado_usd(), 3.5)
+
+    def test_una_linea_que_no_es_un_objeto_tampoco_estorba(self):
+        self.costos.write_text('[1, 2]\n"suelta"\n{"servicio": "a", "usd": 2}\n', encoding="utf-8")
+        self.assertEqual(meta_api.gastado_usd(), 2.0)
 
 
 if __name__ == "__main__":
