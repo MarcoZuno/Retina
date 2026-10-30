@@ -230,10 +230,11 @@ def liberar(reserva: str | None) -> None:
                 _guardar_reservas(reservas)
 
 
-def peor_caso_usd(cuerpo: dict) -> float:
-    """Lo máximo que puede costar una llamada: toda la salida permitida (la entrada es menor)."""
-    _, _, salida = PRECIOS_TOKENS.get(cuerpo.get("model", ""), (0.0, 0.0, 0.0))
-    return cuerpo.get("max_output_tokens", 0) * salida / 1e6
+def peor_caso_usd(cuerpo: dict, entrada_tokens: int = 0) -> float:
+    """Lo máximo que puede costar una llamada: toda la salida permitida más la entrada que quien llama sepa estimar.
+    La del texto es chica; la de un video no (≈200 tokens por segundo: media hora son ~USD 0.45), y no sale en `cuerpo`."""
+    entrada, _, salida = PRECIOS_TOKENS.get(cuerpo.get("model", ""), (0.0, 0.0, 0.0))
+    return (cuerpo.get("max_output_tokens", 0) * salida + max(entrada_tokens, 0) * entrada) / 1e6
 
 
 def _sin_salto_final(ruta: Path) -> bool:
@@ -326,9 +327,10 @@ def _error(r: requests.Response) -> RuntimeError:
     return RuntimeError(f"HTTP {r.status_code}: {msg}")
 
 
-def responder(servicio: str, cuerpo: dict) -> dict:
-    """POST /v1/responses. Devuelve el JSON y registra el costo real (usage)."""
-    reserva = reservar(servicio, peor_caso_usd(cuerpo))  # aparta el peor caso antes de llamar
+def responder(servicio: str, cuerpo: dict, entrada_tokens: int = 0) -> dict:
+    """POST /v1/responses. Devuelve el JSON y registra el costo real (usage). `entrada_tokens`: la entrada que se
+    sabe de más (un video adjunto), para que la reserva la cuente."""
+    reserva = reservar(servicio, peor_caso_usd(cuerpo, entrada_tokens))  # aparta el peor caso antes de llamar
     t0 = time.time()
     # Si _pedir lanza (red, tiempo agotado) no sabemos si la API cobró: la reserva se queda apartada.
     # 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble.

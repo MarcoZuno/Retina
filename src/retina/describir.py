@@ -82,7 +82,7 @@ def describir(carpeta: Path, solo_contar: bool = False, idioma: str = "es") -> d
         if solo_contar:
             return {"tokens_entrada": entrada, "tokens_entrada_estimados": real, "usd_estimado": estimado}
         meta_api._revisar_tope(estimado)
-        respuesta = meta_api.responder("describir", c)
+        respuesta = meta_api.responder("describir", c, entrada_tokens=int(real))
     finally:
         meta_api.borrar_archivo(file_id)
 

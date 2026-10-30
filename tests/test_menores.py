@@ -235,5 +235,33 @@ class RegistroDeCostosTruncado(unittest.TestCase):
         self.assertEqual(meta_api.gastado_usd(), 2.0)
 
 
+class ReservaConEntradaDeVideo(unittest.TestCase):
+    """B17: la reserva solo contaba la salida; un video de 30 minutos son ~360 mil tokens de entrada (~USD 0.45)."""
+
+    def test_el_peor_caso_suma_la_entrada_que_se_le_diga(self):
+        cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 16000}
+        self.assertAlmostEqual(meta_api.peor_caso_usd(cuerpo), 0.068)  # sin entrada, como antes
+        self.assertAlmostEqual(meta_api.peor_caso_usd(cuerpo, entrada_tokens=360_000), 0.068 + 0.45)
+
+    def test_responder_aparta_la_entrada_del_video(self):
+        respuesta = mock.Mock(status_code=200)
+        respuesta.json.return_value = {"usage": {}}
+        with mock.patch.object(meta_api, "reservar", return_value="r1") as reservar,                 mock.patch.object(meta_api, "_pedir", return_value=respuesta), mock.patch.object(meta_api, "_registrar"):
+            meta_api.responder("describir", {"model": "muse-spark-1.3", "max_output_tokens": 16000}, entrada_tokens=360_000)
+        self.assertAlmostEqual(reservar.call_args.args[1], 0.068 + 0.45)
+
+    def test_describir_cuenta_el_video_en_lo_que_aparta(self):
+        from retina import describir
+        with tempfile.TemporaryDirectory() as d:
+            c = Path(d)
+            tramos = [{"tramo": i, "inicio_s": i, "fin_s": i + 1} for i in range(describir.N_TRAMOS)]
+            (c / "manifiesto.json").write_text(json.dumps({"duracion_s": 1800, "mp4_ligero": "l.mp4", "tramos": tramos}), encoding="utf-8")
+            (c / "l.mp4").write_bytes(b"x")
+            with mock.patch.object(meta_api, "subir_archivo", return_value="f"), mock.patch.object(meta_api, "borrar_archivo"),                     mock.patch.object(meta_api, "contar_tokens", return_value=2000), mock.patch.object(meta_api, "_revisar_tope"),                     mock.patch.object(meta_api, "responder", side_effect=RuntimeError("alto")) as responder:
+                with self.assertRaises(RuntimeError):
+                    describir.describir(c)
+        self.assertEqual(responder.call_args.kwargs["entrada_tokens"], 2000 + describir.TOKENS_VIDEO_POR_S * 1800)
+
+
 if __name__ == "__main__":
     unittest.main()
