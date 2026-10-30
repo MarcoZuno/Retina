@@ -186,7 +186,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
         if solo_meta:
             pred = sin_formula(pred)
-    else:
+    elif not solo_meta:  # de fábrica Retina no da número: lo que entrega es la apertura arreglada
         no_pude.append("El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).")
 
     if m is None:

@@ -433,16 +433,29 @@ class Tope(unittest.TestCase):
 class FormatoDelPanel(unittest.TestCase):
     def test_el_ejemplo_trae_lo_que_lee_el_panel(self):
         r = json.loads((RAIZ / "casos" / "demo" / "resultado.json").read_text(encoding="utf-8"))
-        # El ejemplo se ve como la versión pública: sin semáforo (docs/decisiones.md) y con la ficha del arranque.
+        # El ejemplo se ve como Retina de fábrica: solo modelos de Meta, sin número y con la apertura arreglada.
         self.assertEqual(r["arranque"]["nivel"], "sin_nivel")
-        self.assertEqual((r["licencia"]["cerebro"], r["licencia"]["conoce_al_creador"]), ("cualquier_video", False))
+        self.assertIsNone(r["prediccion"])
+        self.assertEqual((r["licencia"]["cerebro"], r["licencia"]["sin_formula"]), ("ninguno", True))
         self.assertTrue(r["ficha"]["gancho"])
-        self.assertEqual(len(r["prediccion"]["curva_predicha"]), 41)
-        self.assertEqual(len(r["prediccion"]["curva_parecidos"]), 41)
         for campo in explicar.esquema()["required"]:
             self.assertIn(campo, r["explicacion"])
         for campo in ("comparado_con", "datos_hasta", "no_pude_revisar"):
             self.assertIn(campo, r["licencia"])
+
+    def test_el_ejemplo_trae_su_apertura_comprobada_y_sus_dibujos(self):
+        for caso in ("demo", "demo-en"):
+            with self.subTest(caso=caso):
+                carpeta = RAIZ / "casos" / caso
+                r = json.loads((carpeta / "resultado.json").read_text(encoding="utf-8"))
+                a = r["apertura"]
+                self.assertTrue(a["aprobada"])
+                self.assertEqual(a["titulo"], r["video"]["titulo"])
+                self.assertTrue(all(c["paso"] for c in a["comprobaciones"]))
+                self.assertIn("promesa", {c["id"] for c in a["comprobaciones"]})
+                for nombre in [a["antes"]["imagen"], *a["despues"]["imagenes"]]:
+                    self.assertTrue((carpeta / nombre).is_file(), nombre)
+                    self.assertTrue(nombre.endswith(".webp"))
 
     def test_el_ejemplo_trae_la_revision_segun_meta_con_su_fuente(self):
         r = json.loads((RAIZ / "casos" / "demo" / "resultado.json").read_text(encoding="utf-8"))
@@ -806,6 +819,14 @@ class PlanBSoloModelosDeMeta(unittest.TestCase):
             os.environ.pop("RETINA_SOLO_MODELOS_META", None)
             if antes is not None:
                 os.environ["RETINA_SOLO_MODELOS_META"] = antes
+
+    def test_de_fabrica_no_tener_numero_no_es_una_falta(self):
+        from retina import retina as r
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(r, "segmentar", return_value={"duracion_s": 60.0}), \
+                mock.patch.object(r, "preparar_carpeta"), mock.patch.object(r, "solo_modelos_meta", return_value=True):
+            salida = r.correr(Path("v.mp4"), None, Path(d), "X", "", "2026-10-28 10:00", "t", False, None)
+        self.assertIsNone(salida["prediccion"])
+        self.assertFalse([x for x in salida["licencia"]["no_pude_revisar"] if x.startswith("El número")])
 
     def test_de_fabrica_no_corre_v_jepa_ni_llega_la_voz_al_numero(self):
         from retina import retina as r

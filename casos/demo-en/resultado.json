@@ -7,150 +7,15 @@
   "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
   "talento": ""
  },
- "prediccion": {
-  "curva_predicha": [
-   1.0,
-   0.8829,
-   0.7937,
-   0.725,
-   0.6713,
-   0.6287,
-   0.5942,
-   0.5656,
-   0.5415,
-   0.5207,
-   0.5022,
-   0.4916,
-   0.4824,
-   0.4742,
-   0.4668,
-   0.46,
-   0.4537,
-   0.4478,
-   0.4422,
-   0.4369,
-   0.4318,
-   0.4269,
-   0.4221,
-   0.4175,
-   0.4131,
-   0.4088,
-   0.4046,
-   0.4005,
-   0.3965,
-   0.3926,
-   0.3888,
-   0.3851,
-   0.3816,
-   0.3781,
-   0.3746,
-   0.3713,
-   0.3681,
-   0.3649,
-   0.3618,
-   0.3588,
-   0.3559
-  ],
-  "curva_parecidos": [
-   1.0,
-   0.8889,
-   0.8057,
-   0.743,
-   0.6953,
-   0.6587,
-   0.6302,
-   0.6076,
-   0.5895,
-   0.5747,
-   0.5622,
-   0.5516,
-   0.5424,
-   0.5342,
-   0.5268,
-   0.52,
-   0.5137,
-   0.5078,
-   0.5022,
-   0.4969,
-   0.4918,
-   0.4869,
-   0.4821,
-   0.4775,
-   0.4731,
-   0.4688,
-   0.4646,
-   0.4605,
-   0.4565,
-   0.4526,
-   0.4488,
-   0.4451,
-   0.4416,
-   0.4381,
-   0.4346,
-   0.4313,
-   0.4281,
-   0.4249,
-   0.4218,
-   0.4188,
-   0.4159
-  ],
-  "regla_de_parecidos": "publica",
-  "n_parecidos": null,
-  "uso_video": false,
-  "datos_hasta": "2026-10-27",
-  "cerebro": "cualquier_video",
-  "conoce_al_creador": false,
-  "uso_voz": true,
-  "formato_poco_conocido": false,
-  "otro_idioma": false
- },
+ "prediccion": null,
  "arranque": {
   "nivel": "sin_nivel",
-  "exceso_arranque_pp": 6.0,
-  "bloques": [
-   {
-    "bloque": "hook (0-10 %)",
-    "tramos": [
-     0,
-     4
-    ],
-    "caida_parecidos_pp": 30.5
-   },
-   {
-    "bloque": "first quarter (10-25 %)",
-    "tramos": [
-     4,
-     10
-    ],
-    "caida_parecidos_pp": 13.3
-   },
-   {
-    "bloque": "25-50 %",
-    "tramos": [
-     10,
-     20
-    ],
-    "caida_parecidos_pp": 7.0
-   },
-   {
-    "bloque": "50-75 %",
-    "tramos": [
-     20,
-     30
-    ],
-    "caida_parecidos_pp": 4.3
-   },
-   {
-    "bloque": "75-100 %",
-    "tramos": [
-     30,
-     40
-    ],
-    "caida_parecidos_pp": 3.3
-   }
-  ],
+  "exceso_arranque_pp": 0.0,
+  "bloques": [],
   "uso_voz": false,
-  "entrenado_con": 30000
+  "entrenado_con": null,
+  "comparado_con_su_tipo": false,
+  "sin_formula": true
  },
  "explicacion": {
   "por_que": "From second 0.0 to 7.2 the host says hello and gives her name before saying what the video is about, and the on-screen text doesn't mention the bread until second 9.6.",
@@ -203,34 +68,26 @@
    "nota": "Ejemplo inventado: muestra cómo se ve una revisión real, no salió de una corrida."
   },
   "anzuelo_frase": "",
-  "anzuelo_momento_s": -1,
-  "storyboard_imagenes": [
-   "storyboard-cuadro1-ilustracion-ia.webp",
-   "storyboard-cuadro2-ilustracion-ia.webp",
-   "storyboard-cuadro3-ilustracion-ia.webp"
-  ]
+  "anzuelo_momento_s": -1
  },
  "tiempos_s": {
   "segmentar": 12.0,
-  "predecir": 0.1,
   "transcribir": 16.0,
   "describir": 40.0,
   "explicar": 20.0
  },
  "licencia": {
-  "comparado_con": "videos videos de la misma duración en una página grande de Facebook en México",
-  "regla": "publica",
-  "datos_hasta": "2026-10-27",
-  "vio_el_video": false,
-  "no_pude_revisar": [
-   "The music: neither the lyrics nor the license are analyzed."
-  ],
+  "comparado_con": null,
+  "regla": null,
   "n_parecidos": null,
-  "cerebro": "cualquier_video",
+  "datos_hasta": null,
+  "vio_el_video": false,
   "conoce_al_creador": false,
-  "sin_formula": false,
-  "formato_poco_conocido": false,
-  "otro_idioma": false
+  "cerebro": "ninguno",
+  "sin_formula": true,
+  "no_pude_revisar": [
+   "La música: no se analiza la letra ni la licencia."
+  ]
  },
  "revision_meta": [
   {
@@ -292,5 +149,86 @@
   "pide_interaccion": false,
   "claridad": 3,
   "curiosidad": 3
+ },
+ "apertura": {
+  "version": "apertura-v1",
+  "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
+  "idioma": "inglés",
+  "objeto": "bread",
+  "antes": {
+   "voz": "Hi everyone, how are you? I'm Zoe Quintanar and welcome to today's kitchen. Today I want to talk about something that happens to all of us at home. It's about sweet bread. The first trick: keep it in a cloth bag, never in plastic.",
+   "imagen": "apertura-antes.webp",
+   "promesa": {
+    "concepto": "bread",
+    "aparece": false,
+    "primer_segundo": null
+   }
+  },
+  "aprobada": true,
+  "vueltas": 0,
+  "despues": {
+   "voz": "Three tricks to keep sweet bread from going stale: keep it in a cloth bag, never plastic. Use the fridge only if you need more than three days, and warm it on a griddle for ten seconds.",
+   "cuadros": [
+    "A pile of sweet bread centered large on a wooden kitchen table, crust and crumb clearly visible in close up.",
+    "A cloth bag open on the kitchen counter right next to the sweet bread, with no plastic in sight.",
+    "A griddle heating on a stovetop with a slice of sweet bread on it, with a refrigerator visible in the kitchen background."
+   ],
+   "imagenes": [
+    "apertura-cuadro1-ilustracion-ia.webp",
+    "apertura-cuadro2-ilustracion-ia.webp",
+    "apertura-cuadro3-ilustracion-ia.webp"
+   ]
+  },
+  "comprobaciones": [
+   {
+    "id": "anzuelos",
+    "paso": true
+   },
+   {
+    "id": "intocables",
+    "paso": true
+   },
+   {
+    "id": "cifras",
+    "paso": true
+   },
+   {
+    "id": "nombres",
+    "paso": true
+   },
+   {
+    "id": "tema",
+    "paso": true
+   },
+   {
+    "id": "largo",
+    "paso": true
+   },
+   {
+    "id": "cuadros",
+    "paso": true
+   },
+   {
+    "id": "promesa",
+    "paso": true,
+    "objeto": "bread",
+    "pct_maximo_del_cuadro": 669.2
+   }
+  ],
+  "intentos": [
+   {
+    "vuelta": 0,
+    "problemas": []
+   }
+  ],
+  "no_comprobe": [],
+  "licencia": {
+   "escribio": "meta-models/muse-spark-open-1026",
+   "servido_por": "Baseten",
+   "dibujo": "muse-image-1.0",
+   "reviso": "sam-3.1",
+   "instrucciones": "skills/apertura.md (apertura-v1)",
+   "reglas": "anzuelos-v1"
+  }
  }
 }

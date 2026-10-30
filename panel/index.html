@@ -605,8 +605,7 @@ const TEXTOS = {
     otro_idioma: "Retina aprendió con videos en español: con otro idioma, el número es una referencia más débil.",
     falta_ffmpeg: "A este equipo le falta ffmpeg y sin él no se puede revisar ningún video. Instálalo (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) y vuelve a abrir Retina.",
     falta_llave: "Falta la llave de la Meta Model API (MODEL_API_KEY en el archivo .env): sin ella Retina no puede ver ni oír el video.",
-    sin_cerebro_aviso: "Esta copia no trae el cerebro público: la revisión saldrá sin número, solo con lo que ven y oyen los modelos de Meta.",
-    sin_numero: "Esta copia de Retina no trae el cerebro público, así que no da un número: todo lo de abajo sale de lo que vieron y oyeron los modelos de Meta en tu video.",
+    sin_numero: "Retina no le pone calificación a tu video: todo lo que ves aquí sale de lo que vieron y oyeron los modelos de Meta.",
     herramientas: {  // lo que revisó el agente, en palabras de quien edita
       ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
       oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
@@ -801,8 +800,7 @@ const TEXTOS = {
     otro_idioma: "Retina learned from videos in Spanish: in another language, the number is a weaker reference.",
     falta_ffmpeg: "This computer is missing ffmpeg, and without it no video can be reviewed. Install it (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) and open Retina again.",
     falta_llave: "The Meta Model API key is missing (MODEL_API_KEY in the .env file): without it Retina can't watch or hear the video.",
-    sin_cerebro_aviso: "This copy doesn't include the public brain: the review will come without a number, only with what Meta's models see and hear.",
-    sin_numero: "This copy of Retina doesn't include the public brain, so it gives no number: everything below comes from what Meta's models saw and heard in your video.",
+    sin_numero: "Retina doesn't grade your video: everything you see here comes from what Meta's models saw and heard.",
     herramientas: {
       ver_arranque: "watched the opening and read the title", ver_tramos: "took a closer look at parts of the opening",
       oir: "listened to what is said, with timestamps", buscar_parecidos: "compared it with titles of similar videos",
@@ -1239,7 +1237,7 @@ function revisado(r) {
   const porque = [...new Set(textos.map((p) => tx().rechazos[(RECHAZOS.find(([re]) => re.test(p)) || [, "otra"])[1]]))];
   $("correccion").classList.toggle("oculto", !regresos.length);
   $("correccion").textContent = regresos.length ? t("correccion", regresos.length, porque.join("; ")) : "";
-  const cuadros = (e && e.storyboard) || [], dibujos = ilustraciones(e);
+  const cuadros = (!r.apertura && e && e.storyboard) || [], dibujos = ilustraciones(e);  // la apertura ya los enseña
   $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
   $("ver-storyboard").textContent = t(dibujos.some(Boolean) ? "ver_storyboard_ia" : "ver_storyboard");
   $("storyboard").replaceChildren(...cuadros.map((c, i) => {
@@ -1540,7 +1538,6 @@ async function prepararSubida() {
   // Si falta algo, se dice al abrir, antes de que la persona elija un video.
   if (salud.ffmpeg === false) avisar("falta_ffmpeg");
   else if (salud.llave === false) avisar("falta_llave");
-  else if (salud.cerebro === false) avisar("sin_cerebro_aviso");
   return true;
 }
 
