@@ -417,3 +417,32 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   público, en puntos) tiene su intervalo de 95 % entero arriba de 0. Pasa el semáforo con la misma vara de la v1: «alto» entre 15 %
   y 35 %, los «alto» pierden de más con intervalos de Wilson que no se tocan con la tasa base, y los «bajo» quedan
   debajo de la base. Con menos de 100 videos que se puedan medir no se concluye nada y el semáforo sigue fuera.
+
+## 30-oct-2026 · Retina deja de calificar y entrega la apertura arreglada y comprobada. Regla escrita antes de medir
+
+- **Por qué.** La regla del concurso dice que todo modelo que el proyecto llama al correr debe ser de Meta, y su personal
+  separa «modelo entrenado» (no se vale) de «código determinista» (sí se vale). La fórmula aprendió sus pesos de datos y
+  su aporte es mínimo (unas 2 personas de cada 1,000), así que de fábrica queda apagada, contesten lo que contesten.
+  Sin ella, «Spark describe y aconseja» queda cerca de los «simple image analyzers». El centro de Retina cambia a producir
+  y comprobar: Muse Spark Open reescribe el arranque, Muse Image lo dibuja, y reglas fijas de código más SAM 3.1 lo
+  comprueban. Si algo falla, Spark Open lo corrige con la lista exacta de lo que falló, hasta 2 veces. Nada que no pase
+  llega a la persona. El título nunca se toca.
+- **Qué se mide.** Los 50 casos de siempre (`eval/apertura_casos.py`), sin datos de retención. Antes de ver un solo
+  resultado, Muse Spark 1.3 eligió de la lista cerrada de SAM lo que promete cada título: 18 casos prometen algo que se
+  ve y 32 no. La lista quedó fija (sha256 de la lista privada: 981da79b9045e5cc95d4aec402afdeb65133b8dd2ed02ead03bf2557741df85e).
+- **Regla.** Las tres tienen que pasar:
+  - A. De los 18 con promesa visible, al menos 15 (80 %) pasan todo en 2 correcciones o menos: las reglas de texto (sin
+    anzuelos, sin tocar intocables, sin cifras ni nombres que no salgan del video, el tema del título en la primera
+    frase, largo de 10 a 15 segundos), el filtro de integridad en cada cuadro, y SAM 3.1 encuentra el objeto en el primer
+    cuadro.
+  - B. De los 32 sin promesa visible, al menos 26 (80 %) pasan lo mismo menos SAM, que ahí no aplica.
+  - C. Prueba trampa: 10 cuadros aprobados contra el objeto de otro caso, que el cuadro no tiene. SAM rechaza al menos 9.
+    Así se demuestra que el revisor no aprueba todo.
+- **Se reporta, sin ser condición.** En cuántos de los 18 el borrador no mostraba la promesa en sus primeros 3 segundos
+  (SAM sobre el video real) y la apertura nueva sí; el costo; y el intervalo de Wilson de 95 % de A. Con 18 casos el
+  intervalo es ancho y se dice.
+- **Lo que esto no mide.** Si la apertura nueva retiene más gente. Eso nunca se midió y Retina no lo promete. El
+  «después» es un boceto (voz y dibujos), no un video grabado.
+- **Cómo se afina.** Las instrucciones y el validador se afinan solo con 9 revisiones que no están entre los 50. Antes de
+  correr, el código se congela en un commit cuyo hash va en la bitácora. Si A, B o C fallan, el resultado se publica
+  igual y no se reajusta en estos 50 casos.

@@ -427,6 +427,18 @@ class LlamadaPagadaSiempreQuedaAnotada(ConRegistro):
             with self.assertRaises(meta_api.TopeAlcanzado):
                 sam.medir(Path(self.tmp.name), "flooded street")
 
+    def test_sam_cobra_el_minimo_de_50_cuadros_aunque_el_clip_sea_mas_corto(self):
+        async def vacio(*_):
+            return types.SimpleNamespace(outcome=types.SimpleNamespace(status="completed"), records=[])
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(sam, "_correr"),                 mock.patch.object(meta_api, "subir_archivo", return_value="file-1"),                 mock.patch.object(meta_api, "borrar_archivo"), mock.patch.object(sam, "_segmentar", vacio),                 mock.patch.dict(sys.modules, {"meta_sam_parser": types.SimpleNamespace(decode_mask_to_raster=None)}):
+            salida = sam.medir_imagen(Path(d) / "cuadro.png", "bread")
+        self.assertEqual(salida["aparece"], False)
+        self.assertAlmostEqual(self.filas()[0]["usd"], 0.01)
+
+    def test_una_imagen_tampoco_se_revisa_si_el_concepto_es_una_persona(self):
+        with mock.patch.object(meta_api, "subir_archivo", side_effect=AssertionError("subió")):
+            self.assertIn("error", sam.medir_imagen(Path(self.tmp.name) / "cuadro.png", "woman"))
+
     def test_el_registro_se_escribe_con_fsync(self):
         with mock.patch("os.fsync") as fsync:
             meta_api._registrar("prueba", "m", 1.0, 0.5)

@@ -30,6 +30,8 @@ from .segmentar import _correr
 MODELO = "sam-3.1"
 SEGUNDOS, FPS = 3, 10
 USD_POR_CUADRO = 0.20 / 1000  # dev.meta.ai/models/sam-3-1, 27-oct-2026
+MIN_CUADROS_COBRADOS = 50  # la API cobra al menos 50 cuadros por pedido
+ESCALA = "scale='if(gt(iw,ih),min(960,iw),-2)':'if(gt(iw,ih),-2,min(960,ih))'"
 PERMITIDOS = Path(__file__).resolve().parents[2] / "reglas" / "sam-permitidos-v1.json"
 
 
@@ -75,7 +77,7 @@ def recortar(carpeta: Path) -> Path:
     clip = carpeta / "primeros-3s.mp4"
     if not clip.exists():
         _correr(["-i", str(carpeta / "ligero.mp4"), "-t", str(SEGUNDOS), "-an", "-r", str(FPS),
-                 "-vf", "scale='if(gt(iw,ih),min(960,iw),-2)':'if(gt(iw,ih),-2,min(960,ih))'",
+                 "-vf", ESCALA,
                  "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", str(clip)])
     return clip
 
@@ -117,15 +119,16 @@ async def _segmentar(file_id: str, concepto: str):
                 return await parsed.final_result()
 
 
-def medir(carpeta: Path, concepto: str) -> dict:
+def _medir_clip(preparar_clip, concepto: str, segundos: int) -> dict:
+    """Sube el clip y mide en él. `preparar_clip` corre ya con el gasto apartado: si falla, no se cobró."""
     concepto = concepto.strip()[:60]
     if motivo := rechazo(concepto):
         return {"error": motivo}
-    cuadros = SEGUNDOS * FPS
-    reserva = meta_api.reservar("sam", cuadros * USD_POR_CUADRO)
+    cuadros = segundos * FPS
+    costo = max(cuadros, MIN_CUADROS_COBRADOS) * USD_POR_CUADRO
+    reserva = meta_api.reservar("sam", costo)
     try:
-        clip = recortar(carpeta)
-        file_id = meta_api.subir_archivo(clip)  # caducidad mínima de la API: 1 h
+        file_id = meta_api.subir_archivo(preparar_clip())  # caducidad mínima de la API: 1 h
     except BaseException:
         meta_api.liberar(reserva)  # todavía no se llamó a SAM: no se cobró
         raise
@@ -134,7 +137,7 @@ def medir(carpeta: Path, concepto: str) -> dict:
         r = asyncio.run(_segmentar(file_id, concepto))
     finally:  # se registra aunque falle a media corrida: la API pudo haber cobrado
         meta_api.borrar_archivo(file_id)
-        meta_api._registrar("sam", MODELO, time.time() - t0, cuadros * USD_POR_CUADRO, reserva, cuadros=cuadros)
+        meta_api._registrar("sam", MODELO, time.time() - t0, costo, reserva, cuadros=cuadros)
     if r.outcome.status != "completed":
         return {"concepto": concepto, "error": f"SAM no terminó: {getattr(r.outcome, 'reason', 'sin motivo')}"}
     from meta_sam_parser import decode_mask_to_raster
@@ -143,13 +146,35 @@ def medir(carpeta: Path, concepto: str) -> dict:
         if rec.kind == "mask" and rec.frame is not None:
             px = sum(decode_mask_to_raster(rec.mask)) / max(rec.mask.width * rec.mask.height, 1)
             por_cuadro[rec.frame.frame_index] = por_cuadro.get(rec.frame.frame_index, 0.0) + px
-    salida = {"concepto": concepto, "segundos_revisados": SEGUNDOS,
-              "aparece": bool(por_cuadro),
-              "primer_segundo": round(min(por_cuadro) / FPS, 1) if por_cuadro else None,
-              "pct_de_cuadros_donde_se_ve": round(100 * len(por_cuadro) / cuadros) if por_cuadro else 0,
-              "pct_maximo_del_cuadro": round(100 * max(por_cuadro.values()), 1) if por_cuadro else 0.0}
-    (carpeta / "sam.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
+    return {"concepto": concepto, "segundos_revisados": segundos,
+            "aparece": bool(por_cuadro),
+            "primer_segundo": round(min(por_cuadro) / FPS, 1) if por_cuadro else None,
+            "pct_de_cuadros_donde_se_ve": round(100 * len(por_cuadro) / cuadros) if por_cuadro else 0,
+            "pct_maximo_del_cuadro": round(100 * max(por_cuadro.values()), 1) if por_cuadro else 0.0}
+
+
+def medir(carpeta: Path, concepto: str) -> dict:
+    salida = _medir_clip(lambda: recortar(carpeta), concepto, SEGUNDOS)
+    if "aparece" in salida:
+        (carpeta / "sam.json").write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
     return salida
+
+
+def clip_de_imagen(imagen: Path) -> Path:
+    """Un dibujo como video de 1 segundo: SAM 3.1 en la API de Meta solo recibe video."""
+    clip = imagen.with_suffix(".clip.mp4")
+    _correr(["-loop", "1", "-i", str(imagen), "-t", "1", "-r", str(FPS), "-vf", ESCALA,
+             "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", str(clip)])
+    return clip
+
+
+def medir_imagen(imagen: Path, concepto: str) -> dict:
+    """¿Se ve el objeto en este dibujo? El clip se borra al terminar: solo sirve para esta pregunta."""
+    clip = imagen.with_suffix(".clip.mp4")
+    try:
+        return _medir_clip(lambda: clip_de_imagen(imagen), concepto, 1)
+    finally:
+        clip.unlink(missing_ok=True)
 
 
 INSTRUCCION_OBJETO = (
