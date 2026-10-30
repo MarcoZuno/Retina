@@ -455,3 +455,21 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   siempre era la palabra y no el dibujo: SAM no reconoce «tortilla» ni «nopal», pero en esos mismos dibujos encuentra
   «food» y «cactus». «Fair», «city» y «dump» son escenas, no objetos, y Muse Image rechaza dibujar «vape».
 
+## 30-oct-2026 · Los organizadores contestaron sobre la fórmula, y sigue apagada
+
+- **Qué dijeron (Discord, 30-oct, 12:12 y 12:14, hora de Tijuana).** Una fórmula ridge fija, ajustada fuera de línea con datos
+  propios, entra en lo que aceptan como componente pequeño entrenado por uno mismo. Es «borderline»: vale si el repo documenta
+  todo el método de entrenamiento, la descripción de los datos y los pesos fijos, si el README dice qué hace esa capa, y si los
+  modelos de Meta hacen claramente el trabajo de fondo. Apagarla de fábrica es la opción sin riesgo.
+- **Se decide.** Sigue apagada de fábrica. Prenderla obligaría a publicar pesos y datos de Badabun a cambio de muy poco
+  (unas 2 personas de cada 1,000), y lo que Retina entrega ahora ya no depende de ese número.
+
+## 30-oct-2026 · El número no sirve para comparar el arranque viejo con el nuevo (exploratorio)
+
+- **Qué se probó.** En las 41 aperturas aprobadas de la medición, el número con el arranque original contra el número con el
+  arranque reescrito, a los 15 segundos. Sin retención real y sin regla previa: era una exploración.
+- **Qué salió.** Bajó en 27, subió en 7 y casi no cambió en 7. En promedio bajó 1 persona de cada 100.
+- **Se decide.** Retina no muestra un número «después». No se sabe si la baja es real o un efecto de cómo se arma la voz nueva,
+  y la fórmula aprendió de diferencias entre videos distintos, no entre dos versiones del mismo video. Ajustarla hasta que suba
+  sería acomodar el resultado. Esto tampoco demuestra que la apertura nueva sea peor: retención real no se midió.
+

@@ -7,15 +7,150 @@
   "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
   "talento": ""
  },
- "prediccion": null,
+ "prediccion": {
+  "curva_predicha": [
+   1.0,
+   0.8829,
+   0.7937,
+   0.725,
+   0.6713,
+   0.6287,
+   0.5942,
+   0.5656,
+   0.5415,
+   0.5207,
+   0.5022,
+   0.4916,
+   0.4824,
+   0.4742,
+   0.4668,
+   0.46,
+   0.4537,
+   0.4478,
+   0.4422,
+   0.4369,
+   0.4318,
+   0.4269,
+   0.4221,
+   0.4175,
+   0.4131,
+   0.4088,
+   0.4046,
+   0.4005,
+   0.3965,
+   0.3926,
+   0.3888,
+   0.3851,
+   0.3816,
+   0.3781,
+   0.3746,
+   0.3713,
+   0.3681,
+   0.3649,
+   0.3618,
+   0.3588,
+   0.3559
+  ],
+  "curva_parecidos": [
+   1.0,
+   0.8889,
+   0.8057,
+   0.743,
+   0.6953,
+   0.6587,
+   0.6302,
+   0.6076,
+   0.5895,
+   0.5747,
+   0.5622,
+   0.5516,
+   0.5424,
+   0.5342,
+   0.5268,
+   0.52,
+   0.5137,
+   0.5078,
+   0.5022,
+   0.4969,
+   0.4918,
+   0.4869,
+   0.4821,
+   0.4775,
+   0.4731,
+   0.4688,
+   0.4646,
+   0.4605,
+   0.4565,
+   0.4526,
+   0.4488,
+   0.4451,
+   0.4416,
+   0.4381,
+   0.4346,
+   0.4313,
+   0.4281,
+   0.4249,
+   0.4218,
+   0.4188,
+   0.4159
+  ],
+  "regla_de_parecidos": "publica",
+  "n_parecidos": null,
+  "uso_video": false,
+  "datos_hasta": "2026-10-27",
+  "cerebro": "cualquier_video",
+  "conoce_al_creador": false,
+  "uso_voz": true,
+  "formato_poco_conocido": false,
+  "otro_idioma": false
+ },
  "arranque": {
   "nivel": "sin_nivel",
-  "exceso_arranque_pp": 0.0,
-  "bloques": [],
+  "exceso_arranque_pp": 6.0,
+  "bloques": [
+   {
+    "bloque": "hook (0-10 %)",
+    "tramos": [
+     0,
+     4
+    ],
+    "caida_parecidos_pp": 30.5
+   },
+   {
+    "bloque": "first quarter (10-25 %)",
+    "tramos": [
+     4,
+     10
+    ],
+    "caida_parecidos_pp": 13.3
+   },
+   {
+    "bloque": "25-50 %",
+    "tramos": [
+     10,
+     20
+    ],
+    "caida_parecidos_pp": 7.0
+   },
+   {
+    "bloque": "50-75 %",
+    "tramos": [
+     20,
+     30
+    ],
+    "caida_parecidos_pp": 4.3
+   },
+   {
+    "bloque": "75-100 %",
+    "tramos": [
+     30,
+     40
+    ],
+    "caida_parecidos_pp": 3.3
+   }
+  ],
   "uso_voz": false,
-  "entrenado_con": null,
-  "comparado_con_su_tipo": false,
-  "sin_formula": true
+  "entrenado_con": 30000
  },
  "explicacion": {
   "por_que": "From second 0.0 to 7.2 the host says hello and gives her name before saying what the video is about, and the on-screen text doesn't mention the bread until second 9.6.",
@@ -77,17 +212,19 @@
   "explicar": 20.0
  },
  "licencia": {
-  "comparado_con": null,
-  "regla": null,
-  "n_parecidos": null,
-  "datos_hasta": null,
+  "comparado_con": "videos videos de la misma duración en una página grande de Facebook en México",
+  "regla": "publica",
+  "datos_hasta": "2026-10-27",
   "vio_el_video": false,
-  "conoce_al_creador": false,
-  "cerebro": "ninguno",
-  "sin_formula": true,
   "no_pude_revisar": [
-   "La música: no se analiza la letra ni la licencia."
-  ]
+   "The music: neither the lyrics nor the license are analyzed."
+  ],
+  "n_parecidos": null,
+  "cerebro": "cualquier_video",
+  "conoce_al_creador": false,
+  "sin_formula": false,
+  "formato_poco_conocido": false,
+  "otro_idioma": false
  },
  "revision_meta": [
   {
@@ -229,6 +366,16 @@
    "reviso": "sam-3.1",
    "instrucciones": "skills/apertura.md (apertura-v1)",
    "reglas": "anzuelos-v1"
+  }
+ },
+ "normas": {
+  "version": "normas-v1",
+  "hallazgos": [],
+  "revisadas": 18,
+  "licencia": {
+   "modelo": "muse-spark-1.3",
+   "instrucciones": "skills/normas.md (normas-v1)",
+   "reglas": "normas-facebook-v1"
   }
  }
 }

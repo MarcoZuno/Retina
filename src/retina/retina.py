@@ -35,7 +35,7 @@ from .curvas import cubeta, tramo_exceso
 from .segmentar import Aviso, segmentar
 
 # Lo que se paga y depende del video: si el video cambia, se borra para no explicar otro.
-PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4", "apertura.json")
+PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4", "apertura.json", "normas.json")
 
 
 def solo_publicados() -> bool:
@@ -63,11 +63,11 @@ def preparar_carpeta(video: Path, salida: Path) -> None:
 
 
 def solo_modelos_meta() -> bool:
-    """De fábrica (30-oct) solo corren modelos de Meta: la curva queda en el promedio de videos de su duración,
-    no hay nivel de riesgo y la tarjeta sale de lo que ven y oyen. RETINA_SOLO_MODELOS_META=0 prende la fórmula
-    ajustada (la ridge) para quien tenga su propio modelo; por qué, en docs/decisiones.md."""
+    """El número de referencia sale de una fórmula ajustada (la ridge), que los organizadores aceptaron el 30-oct con
+    todo documentado (docs/numero.md). RETINA_SOLO_MODELOS_META=1 la apaga: la curva queda en el promedio de videos de
+    su duración, no hay nivel de riesgo y la tarjeta sale solo de lo que ven y oyen los modelos de Meta."""
     meta_api._cargar_env()
-    return os.environ.get("RETINA_SOLO_MODELOS_META", "1").strip() != "0"
+    return os.environ.get("RETINA_SOLO_MODELOS_META", "0").strip() == "1"
 
 
 def sin_formula(pred: dict) -> dict:
@@ -163,7 +163,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
 
     emb = audio = None
     solo_meta = solo_modelos_meta()
-    if ver_video and not solo_meta:  # V-JEPA 2 solo alimenta la fórmula
+    if ver_video and not solo_meta and Path(modelo or "").suffix == ".pkl":  # V-JEPA 2 solo alimenta el modelo privado
         try:
             from .embeber import Embebedor, cuadros_y_audio
             t = time.time()
@@ -186,7 +186,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         t = time.time(); pred = m.predecir(v, emb, audio); tiempos["predecir"] = round(time.time() - t, 1)
         if solo_meta:
             pred = sin_formula(pred)
-    elif not solo_meta:  # de fábrica Retina no da número: lo que entrega es la apertura arreglada
+    elif not solo_meta:
         no_pude.append("El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).")
 
     if m is None:
@@ -270,6 +270,8 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             from .revision_meta import revisar
             resultado["revision_meta"] = _paso("revision_meta", tiempos, no_pude,
                                                "Las recomendaciones de Meta para el inicio", revisar, salida, idioma) or []
+            from . import normas
+            resultado["normas"] = _paso("normas", tiempos, no_pude, "Las normas de Facebook", normas.revisar, salida, idioma, titulo)
     no_pude.append("La música: no se analiza la letra ni la licencia.")
     escribir()
     return resultado

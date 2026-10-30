@@ -275,6 +275,7 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .lado .voz { margin: 12px 0 0; font-size: 15px; }
 .lado .promesa { margin: 8px 0 0; font-size: 14px; color: var(--suave); }
 .lado.nuevo .promesa { color: var(--verde-letra); }
+.primero { color: var(--verde); }
 .resumen-apertura { margin: 16px 0 0; font-size: 15px; color: var(--suave); }
 .lista-comprobada { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
 .lista-comprobada li { display: grid; grid-template-columns: 20px 1fr; }
@@ -525,6 +526,13 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <div id="storyboard" class="storyboard oculto"></div>
         </div>
 
+        <div class="bloque vidrio oculto" id="bloque-normas">
+          <h2 data-t="normas_t">Normas de Facebook</h2>
+          <p class="porque" id="normas-resumen"></p>
+          <ul class="meta" id="normas-lista"></ul>
+          <p class="nota" data-t="normas_nota">Es una revisión previa con lo que vieron y oyeron los modelos de Meta. Quien decide es Meta.</p>
+        </div>
+
         <div class="bloque vidrio oculto" id="bloque-meta">
           <h2 data-t="segun_meta">Según lo que recomienda Meta</h2>
           <ul class="meta" id="meta"></ul>
@@ -671,6 +679,11 @@ const TEXTOS = {
     franjas: " Abajo, en verde lo que funciona y en ámbar lo flojo, según lo que vio Retina.",
     no_copio: "No se pudo copiar: selecciona el texto",
     ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
+    normas_t: "Normas de Facebook", normas_nota: "Es una revisión previa con lo que vieron y oyeron los modelos de Meta. Quien decide es Meta.",
+    normas_sin: (n) => `No encontré riesgos claros en las ${n} normas que revisé.`,
+    normas_con: (n) => (n === 1 ? "Encontré 1 punto que conviene revisar antes de publicar:" : `Encontré ${n} puntos que conviene revisar antes de publicar:`),
+    empieza_aqui: "Empieza por este.",
+    por_que_importa: "Por qué importa: en 30 mil videos de una página grande de Facebook, los que mejor retuvieron su primer cuarto llegaron a unas 3.5 veces más gente. Es una relación, no una promesa.",
     apertura_t: "Tu arranque, arreglado",
     apertura_lema: "Retina reescribe tus primeros 10 a 15 segundos, los dibuja y comprueba que cumplan lo que promete el título. El título no se toca.",
     arreglar: "Arreglar mi arranque (unos USD 0.10)",
@@ -862,6 +875,11 @@ const TEXTOS = {
     franjas: " Below, green is what works and amber what is weak, according to what Retina saw.",
     no_copio: "Couldn't copy: select the text instead",
     ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
+    normas_t: "Facebook's rules", normas_nota: "This is a first check based on what Meta's models saw and heard. Meta makes the final call.",
+    normas_sin: (n) => `I found no clear risks in the ${n} rules I checked.`,
+    normas_con: (n) => (n === 1 ? "I found 1 point worth checking before you publish:" : `I found ${n} points worth checking before you publish:`),
+    empieza_aqui: "Start here.",
+    por_que_importa: "Why it matters: across 30,000 videos from a large Facebook page, the ones that best held their first quarter reached about 3.5 times more people. That's a relation, not a promise.",
     apertura_t: "Your opening, fixed",
     apertura_lema: "Retina rewrites your first 10 to 15 seconds, draws them and checks that they deliver what the title promises. Your title stays as it is.",
     arreglar: "Fix my opening (about USD 0.10)",
@@ -1034,7 +1052,7 @@ function cifras(r) {
   if (conReal(r)) texto.append(nodo("p", "real-gente", t("gente_real", en100(r.realidad.curva, s))));
   const principal = nodo("div", "cifra vidrio grande personas");
   const fila = nodo("div", "fila-gente"); fila.append(gente, texto);
-  principal.append(fila, leyenda);
+  principal.append(fila, leyenda, nodo("p", "nota-gente", t("por_que_importa")));
   const l = r.licencia || {};
   if (comparadoCon(l)) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
   if (l.formato_poco_conocido) principal.append(nodo("p", "nota-gente", t("formato_poco")));
@@ -1143,6 +1161,24 @@ function grafica(r) {
 
 const seguro = (u) => { try { const x = new URL(u); return x.protocol === "https:" ? x.href : null; } catch (_) { return null; } };
 
+function normasFacebook(r) {  // lo que Spark señaló y el código sostuvo con evidencia del video; quien decide es Meta
+  const n = r.normas, lista = n && Array.isArray(n.hallazgos) ? n.hallazgos : [];
+  $("bloque-normas").classList.toggle("oculto", !n);
+  if (!n) return;
+  $("normas-resumen").textContent = lista.length ? t("normas_con", lista.length) : t("normas_sin", n.revisadas);
+  $("normas-lista").replaceChildren(...lista.map((h) => {
+    const marca = nodo("span", "no", "!"), texto = nodo("span");
+    texto.append(nodo("b", "", h.nombre || ""), document.createElement("br"), nodo("span", "", `${h.por_que || ""} «${h.evidencia || ""}»`));
+    const u = seguro(h.fuente);
+    if (u) {
+      const a = nodo("a", "", t("fuente_meta")); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
+      texto.append(" · ", a);
+    }
+    const li = nodo("li"); li.append(marca, nodo("span", "ventana", mmss(Number(h.segundo) || 0)), texto);
+    return li;
+  }));
+}
+
 function segunMeta(r) {  // revision_meta: buenas prácticas de Meta por ventanas del inicio, calculadas en código
   const lista = Array.isArray(r.revision_meta) ? r.revision_meta : [];
   $("bloque-meta").classList.toggle("oculto", !lista.length);
@@ -1176,6 +1212,7 @@ const ilustraciones = (e) => (e && Array.isArray(e.storyboard_imagenes) ? e.stor
 // «Lo que no revisé» llega en español desde el orquestador; en inglés se traducen sus piezas fijas.
 const NO_REVISE_EN = [
   ["La música: no se analiza la letra ni la licencia.", "Music: lyrics and licensing are not analyzed."],
+  ["Las normas de Facebook", "Facebook's rules"],
   ["El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).", "The number: this copy of Retina doesn't include the public brain (modelos/retina-publico.json)."],
   ["Lo que pasa en pantalla tramo a tramo con V-JEPA 2", "What happens on screen, segment by segment, with V-JEPA 2"],
   ["Por qué y qué cambiar en el arranque", "Why, and what to change in the opening"],
@@ -1291,7 +1328,9 @@ function pasos(e) {
       b.setAttribute("aria-pressed", String(on)); b.setAttribute("aria-label", t("paso_aria", on, i + 1));
       progreso();
     };
-    li.append(nodo("span", "num", String(i + 1)), conTiempos(nodo("p"), reloj(x)), b);
+    const texto = conTiempos(nodo("p"), reloj(x));
+    if (i === 0 && lista.length > 1) texto.prepend(nodo("b", "primero", `${t("empieza_aqui")} `));
+    li.append(nodo("span", "num", String(i + 1)), texto, b);
     return li;
   }));
   $("pie-pasos").classList.toggle("oculto", !(e && (e.que_cambiar || lista_(e, "mejoras_opcionales").length)));
@@ -1347,7 +1386,7 @@ function mostrar(r) {
     $("porque").textContent = t("sin_api_porque");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
-  pasos(e); balance(e); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r); pintarApertura(r);
+  pasos(e); balance(e); normasFacebook(r); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r); pintarApertura(r);
   $("error").classList.add("oculto");
   estado("resultado");
 }

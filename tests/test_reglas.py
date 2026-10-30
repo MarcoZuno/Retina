@@ -433,10 +433,11 @@ class Tope(unittest.TestCase):
 class FormatoDelPanel(unittest.TestCase):
     def test_el_ejemplo_trae_lo_que_lee_el_panel(self):
         r = json.loads((RAIZ / "casos" / "demo" / "resultado.json").read_text(encoding="utf-8"))
-        # El ejemplo se ve como Retina de fábrica: solo modelos de Meta, sin número y con la apertura arreglada.
+        # El ejemplo se ve como Retina de fábrica: con el número y sin semáforo (docs/decisiones.md).
         self.assertEqual(r["arranque"]["nivel"], "sin_nivel")
-        self.assertIsNone(r["prediccion"])
-        self.assertEqual((r["licencia"]["cerebro"], r["licencia"]["sin_formula"]), ("ninguno", True))
+        self.assertEqual((r["licencia"]["cerebro"], r["licencia"]["conoce_al_creador"]), ("cualquier_video", False))
+        self.assertEqual(len(r["prediccion"]["curva_predicha"]), 41)
+        self.assertEqual(len(r["prediccion"]["curva_parecidos"]), 41)
         self.assertTrue(r["ficha"]["gancho"])
         for campo in explicar.esquema()["required"]:
             self.assertIn(campo, r["explicacion"])
@@ -807,18 +808,32 @@ class PlanBSoloModelosDeMeta(unittest.TestCase):
         self.assertEqual((a["nivel"], len(a["bloques"])), ("sin_nivel", 5))
         self.assertTrue(licencia(p, [])["sin_formula"])
 
-    def test_de_fabrica_solo_corren_modelos_de_meta_y_la_formula_se_prende_con_un_0(self):
+    def test_de_fabrica_el_numero_va_prendido_y_se_apaga_con_un_1(self):
         from retina.retina import solo_modelos_meta
         antes = os.environ.pop("RETINA_SOLO_MODELOS_META", None)
         try:
             with mock.patch("retina.meta_api._cargar_env"):
-                self.assertTrue(solo_modelos_meta())
-                os.environ["RETINA_SOLO_MODELOS_META"] = "0"; self.assertFalse(solo_modelos_meta())
+                self.assertFalse(solo_modelos_meta())
                 os.environ["RETINA_SOLO_MODELOS_META"] = "1"; self.assertTrue(solo_modelos_meta())
+                os.environ["RETINA_SOLO_MODELOS_META"] = "0"; self.assertFalse(solo_modelos_meta())
         finally:
             os.environ.pop("RETINA_SOLO_MODELOS_META", None)
             if antes is not None:
                 os.environ["RETINA_SOLO_MODELOS_META"] = antes
+
+    def test_el_cerebro_publico_no_necesita_v_jepa(self):
+        from retina import retina as r
+        modelo = mock.Mock(semaforo=False)
+        modelo.predecir.return_value = self.pred()
+        modelo.arranque.return_value.predecir.return_value = {"nivel": "medio", "bloques": []}
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(r, "segmentar", return_value={"duracion_s": 60.0}), \
+                mock.patch.object(r, "preparar_carpeta"), mock.patch.object(r, "solo_modelos_meta", return_value=False), \
+                mock.patch("retina.publico.cargar_modelo", return_value=modelo):
+            archivo = Path(d) / "modelo.json"
+            archivo.write_text("{}", encoding="utf-8")
+            salida = r.correr(Path("v.mp4"), archivo, Path(d), "X", "", "2026-10-28 10:00", "t", False, None)
+        modelo.predecir.assert_called_once_with(mock.ANY, None, None)
+        self.assertFalse([x for x in salida["licencia"]["no_pude_revisar"] if "V-JEPA" in x])
 
     def test_revisar_otra_vez_el_mismo_video_conserva_su_apertura(self):
         from retina import retina as r
@@ -829,25 +844,13 @@ class PlanBSoloModelosDeMeta(unittest.TestCase):
             hecho = json.loads((Path(d) / "resultado.json").read_text(encoding="utf-8"))
         self.assertEqual(hecho["apertura"], {"aprobada": True})
 
-    def test_de_fabrica_no_tener_numero_no_es_una_falta(self):
+    def test_con_la_formula_apagada_no_tener_numero_no_es_una_falta(self):
         from retina import retina as r
         with tempfile.TemporaryDirectory() as d, mock.patch.object(r, "segmentar", return_value={"duracion_s": 60.0}), \
                 mock.patch.object(r, "preparar_carpeta"), mock.patch.object(r, "solo_modelos_meta", return_value=True):
             salida = r.correr(Path("v.mp4"), None, Path(d), "X", "", "2026-10-28 10:00", "t", False, None)
         self.assertIsNone(salida["prediccion"])
         self.assertFalse([x for x in salida["licencia"]["no_pude_revisar"] if x.startswith("El número")])
-
-    def test_de_fabrica_no_corre_v_jepa_ni_llega_la_voz_al_numero(self):
-        from retina import retina as r
-        modelo = mock.Mock()
-        modelo.predecir.return_value = self.pred()
-        with tempfile.TemporaryDirectory() as d, mock.patch.object(r, "segmentar", return_value={"duracion_s": 60.0}),                 mock.patch.object(r, "preparar_carpeta"), mock.patch.object(r, "solo_modelos_meta", return_value=True),                 mock.patch("retina.publico.cargar_modelo", return_value=modelo):
-            archivo = Path(d) / "modelo.json"
-            archivo.write_text("{}", encoding="utf-8")
-            salida = r.correr(Path("v.mp4"), archivo, Path(d), "X", "", "2026-10-28 10:00", "t", False, None)
-        modelo.predecir.assert_called_once_with(mock.ANY, None, None)
-        self.assertEqual(salida["arranque"]["nivel"], "sin_nivel")
-        self.assertFalse([x for x in salida["licencia"]["no_pude_revisar"] if "V-JEPA" in x])
 
     def test_sin_nivel_la_tarjeta_no_esta_obligada_a_proponer_un_cambio(self):
         sin_cambio = tarjeta(que_cambiar="", pasos=[])
