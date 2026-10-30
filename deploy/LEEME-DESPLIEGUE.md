@@ -54,6 +54,7 @@ concurso vencen el 4 de noviembre; después se cobra a la tarjeta de la empresa.
 - Videos de hasta 5 minutos y 200 MB, de uno en uno, y máximo 5 en la fila.
 - Cada revisión se borra a las 24 horas. Los videos van a la API de Meta y a Baseten para revisarlos.
 - Corre con un usuario sin permisos y solo escribe en `/datos`.
+- ffmpeg no ve las llaves ni puede salir a la red, y en línea no entran AVI ni FLV.
 
 ### Qué necesita
 

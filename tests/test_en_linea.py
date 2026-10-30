@@ -181,6 +181,39 @@ class CostoDeCadaVideo(unittest.TestCase):
             self.assertEqual(args[args.index("-t") + 1], "300", args)
 
 
+class VideoDeUnDesconocido(unittest.TestCase):
+    """ffmpeg abre archivos que no hicimos nosotros: no debe tener a la mano las llaves ni salir a la red."""
+
+    def test_ffmpeg_no_hereda_las_llaves(self):
+        with mock.patch.dict(os.environ, {"MODEL_API_KEY": "secreto", "BASETEN_API_KEY": "secreto", "RETINA_CODIGO_ACCESO": "secreto"}):
+            e = segmentar.entorno_ffmpeg()
+        self.assertFalse({"MODEL_API_KEY", "BASETEN_API_KEY", "RETINA_CODIGO_ACCESO"} & set(e))
+        self.assertIn("PATH", e)
+
+    def test_cada_llamada_a_ffmpeg_va_sin_llaves_y_solo_con_archivos_locales(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"MODEL_API_KEY": "secreto"}), \
+                mock.patch("retina.segmentar._ffmpeg", return_value="ffmpeg"), \
+                mock.patch.object(segmentar.subprocess, "run", return_value=mock.Mock(returncode=0, stderr="")) as correr, \
+                mock.patch.object(app.os, "replace"):
+            c = Path(d)
+            (c / "convirtiendo.mp4").write_bytes(b"x")
+            segmentar._correr(["-i", "a.mp4", "b.mp4"])
+            segmentar._info(Path("a.mp4"))
+            app.convertir_a_mp4(c / "a.webm", c / "video.mp4")
+        self.assertEqual(correr.call_count, 3)
+        for llamada in correr.call_args_list:
+            args = llamada.args[0]
+            self.assertEqual(args[args.index("-protocol_whitelist") + 1], "file,pipe", args)
+            self.assertLess(args.index("-protocol_whitelist"), args.index("-i"))
+            self.assertNotIn("MODEL_API_KEY", llamada.kwargs["env"])
+
+    def test_en_linea_no_entran_los_formatos_con_mas_trucos(self):
+        self.assertTrue(app.formato_riesgoso(b"RIFF\x00\x00\x00\x00AVI "))
+        self.assertTrue(app.formato_riesgoso(b"FLV\x01\x05\x00\x00\x00\x09\x00\x00\x00"))
+        self.assertFalse(app.formato_riesgoso(b"\x00\x00\x00\x18ftypmp42\x00\x00"))
+        self.assertFalse(app.formato_riesgoso(b"\x1aE\xdf\xa3" + b"\x00" * 8))
+
+
 class Duracion(unittest.TestCase):
     def test_en_linea_el_maximo_baja(self):
         with mock.patch.dict(os.environ, {"RETINA_DURACION_MAXIMA_S": "300"}):
@@ -274,6 +307,12 @@ class EnVivo(unittest.TestCase):
         self.assertEqual(self.pedir("POST", "/api/apertura/a1b2c3d4e5f6", {"X-Retina-Acceso": CODIGO})[0], 202)
         self.assertEqual(self.fila.apartar.call_count, self.fila.soltar.call_count)
         self.assertEqual(self.fila.soltar.call_count, 2)
+
+    def test_un_avi_no_entra_en_linea(self):
+        cuerpo = b"RIFF\x00\x00\x00\x00AVI " + b"\x00" * 20
+        estado, _ = self.pedir("POST", "/api/revisar", {**self.datos(), "X-Retina-Acceso": CODIGO}, cuerpo)
+        self.assertEqual(estado, 400)
+        self.fila.submit.assert_not_called()
 
     def test_con_la_fila_llena_se_avisa(self):
         self.fila.apartar.return_value = False

@@ -400,7 +400,8 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
       </div>
       <form class="forma vidrio" id="forma" novalidate>
         <div class="campos">
-          <label class="ancho" id="campo-acceso" hidden><span data-t="campo_acceso">Código de acceso</span><input type="password" id="v-acceso" maxlength="120" autocomplete="off"></label>
+          <label class="ancho" id="campo-acceso" hidden><span data-t="campo_acceso">Código de acceso</span><input type="password" id="v-acceso" maxlength="120" autocomplete="off">
+            <small data-t="nota_en_linea">Tu video se manda a la API de Meta y a Baseten para revisarlo, y se borra de aquí a las 24 horas. No subas nada confidencial.</small></label>
           <label class="ancho"><span data-t="campo_titulo">Título del video (como saldría en Facebook)</span><input type="text" id="v-titulo" maxlength="300" autocomplete="off"></label>
           <label><span data-t="campo_talento">Quién sale a cuadro</span><select id="v-talento"><option value="" data-t="sin_talento">Nadie o no está en la lista</option></select></label>
           <label><span data-t="campo_fecha">Día y hora en que se publicaría</span><input type="datetime-local" id="v-fecha"></label>
@@ -624,7 +625,9 @@ const TEXTOS = {
     subir_titulo: "Revisa tu video antes de publicarlo",
     subir_p: "Elige o arrastra el video (MP4, MOV, WebM, MKV o AVI). Retina te dice si el inicio va a perder gente, por qué y qué cambiar.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · toca para cambiarlo`,
-    campo_acceso: "Código de acceso", campo_titulo: "Título del video (como saldría en Facebook)", campo_talento: "Quién sale a cuadro",
+    campo_acceso: "Código de acceso",
+    nota_en_linea: "Tu video se manda a la API de Meta y a Baseten para revisarlo, y se borra de aquí a las 24 horas. No subas nada confidencial.",
+    campo_titulo: "Título del video (como saldría en Facebook)", campo_talento: "Quién sale a cuadro",
     sin_talento: "Nadie o no está en la lista", campo_fecha: "Día y hora en que se publicaría",
     campo_codigo: "Código de producción (si tiene)", campo_publicado: "Este video ya está publicado",
     campo_publicado_nota: "Déjala sin marcar si es un borrador.", revisar: "Revisar este video", otro_video: "Revisar otro video",
@@ -820,7 +823,9 @@ const TEXTOS = {
     subir_titulo: "Check your video before you publish it",
     subir_p: "Choose or drop the video (MP4, MOV, WebM, MKV or AVI). Retina tells you if the start will lose people, why, and what to change.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · tap to change it`,
-    campo_acceso: "Access code", campo_titulo: "Video title (as it would appear on Facebook)", campo_talento: "Who is on camera",
+    campo_acceso: "Access code",
+    nota_en_linea: "Your video goes to Meta's API and to Baseten for the review, and it's deleted from here after 24 hours. Don't upload anything confidential.",
+    campo_titulo: "Video title (as it would appear on Facebook)", campo_talento: "Who is on camera",
     sin_talento: "Nobody, or not on the list", campo_fecha: "Day and time it would be published",
     campo_codigo: "Production code (if any)", campo_publicado: "This video is already published",
     campo_publicado_nota: "Leave it unchecked for a draft.", revisar: "Review this video", otro_video: "Review another video",

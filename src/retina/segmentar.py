@@ -36,6 +36,15 @@ class Aviso(ValueError):
         self.clave = clave
 
 
+# ffmpeg abre archivos de cualquiera: solo lee archivos locales y no ve las llaves. Un archivo armado a propósito
+# podría pedirle leer el entorno del proceso y dejarlo escrito en lo que produce.
+PROTOCOLOS = ("-protocol_whitelist", "file,pipe")
+
+
+def entorno_ffmpeg() -> dict:
+    return {k: os.environ[k] for k in ("PATH", "SYSTEMROOT", "TEMP", "TMP", "HOME") if k in os.environ}
+
+
 def _ffmpeg() -> str:
     ruta = os.environ.get("FFMPEG") or shutil.which("ffmpeg")
     if not ruta:
@@ -46,8 +55,8 @@ def _ffmpeg() -> str:
 def _info(video: Path) -> str:
     # ffmpeg -i escribe la duración y las pistas en stderr; así no dependemos de ffprobe.
     try:
-        p = subprocess.run([_ffmpeg(), "-hide_banner", "-i", str(video)], capture_output=True, text=True,
-                           encoding="utf-8", errors="replace", timeout=120)
+        p = subprocess.run([_ffmpeg(), "-hide_banner", *PROTOCOLOS, "-i", str(video)], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", timeout=120, env=entorno_ffmpeg())
     except subprocess.TimeoutExpired:
         raise Aviso("no_lee", f"ffmpeg no pudo leer {video.name} a tiempo.") from None
     return p.stderr
@@ -76,8 +85,8 @@ def limites_tramos(duracion: float) -> list[tuple[float, float]]:
 
 def _correr(args: list[str]) -> None:
     try:
-        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *args], capture_output=True,
-                           text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S)
+        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *PROTOCOLOS, *args], capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S, env=entorno_ffmpeg())
     except subprocess.TimeoutExpired:
         raise Aviso("ffmpeg_lento", f"ffmpeg tardó más de {TIEMPO_MAXIMO_S // 60} minutos y se detuvo.") from None
     if p.returncode != 0:

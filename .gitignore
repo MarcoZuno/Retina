@@ -1,6 +1,7 @@
 # Secretos
 .env
 .env.*
+deploy/*.env
 !.env.example
 
 # Datos: nunca al repo (viven en el servidor, fuera de esta carpeta)

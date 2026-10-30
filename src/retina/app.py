@@ -201,16 +201,21 @@ def tipo_de_video(cabeza: bytes) -> str | None:
     return None
 
 
+def formato_riesgoso(cabeza: bytes) -> bool:
+    """AVI y FLV son los que dan más lugar a trucos con ffmpeg. Quien los use en su equipo puede; en línea no entran."""
+    return (cabeza[:4] == b"RIFF" and cabeza[8:12] == b"AVI ") or cabeza[:3] == b"FLV"
+
+
 def convertir_a_mp4(origen: Path, destino: Path) -> None:
     """Pasa el video a MP4 (H.264 y AAC) para que todo lo demás trabaje igual que con un MP4."""
-    from .segmentar import TIEMPO_MAXIMO_S, Aviso, _ffmpeg, maximo_s
+    from .segmentar import PROTOCOLOS, TIEMPO_MAXIMO_S, _ffmpeg, entorno_ffmpeg
     temporal = destino.with_name("convirtiendo.mp4")
     try:
-        r = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-i", str(origen),
+        r = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *PROTOCOLOS, "-i", str(origen),
                             "-t", str(maximo_s()), "-fs", str(MAX_SALIDA_BYTES),
                             "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
                             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(temporal)],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S)
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S, env=entorno_ffmpeg())
     except subprocess.TimeoutExpired:
         temporal.unlink(missing_ok=True)
         raise Aviso("ffmpeg_lento", "Convertir el video tardó demasiado.") from None
@@ -548,7 +553,7 @@ class ConSubida(SoloElPanel):
             return self._json(400, {"error": texto(idioma, "muy_pesado", mb=tope_mb)})
         cabeza = self.rfile.read(12)
         tipo = tipo_de_video(cabeza)
-        if tipo is None:
+        if tipo is None or (self.en_linea and formato_riesgoso(cabeza)):
             return self._json(400, {"error": texto(idioma, "no_es_video")})
         id_ = secrets.token_hex(6)
         carpeta = self.casos / id_
