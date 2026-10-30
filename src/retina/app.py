@@ -392,6 +392,7 @@ def _escribir_estado(carpeta: Path, **e) -> None:
 def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_A_S) -> None:
     """Corre el orquestador de punta a punta sobre el video subido (en segundo plano). Si es la versión B
     de una comparación, al terminar su tarjeta compara las dos antes de marcarla lista."""
+    from . import meta_api
     from .retina import correr
     _escribir_estado(carpeta, estado="procesando")
     try:
@@ -407,6 +408,9 @@ def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_
         if not marca.exists():
             _escribir_estado(carpeta, estado="listo")
             return
+    except meta_api.TopeAlcanzado:  # a media revisión: lo que no costó queda en resultado.json, pero la persona debe saber que falta
+        _escribir_estado(carpeta, estado="error", mensaje=texto(datos.get("idioma", "es"), "tope"))
+        return
     except ValueError as e:  # el candado y los datos que no cuadran se le explican a la persona, en su idioma
         clave, idioma = getattr(e, "clave", None), datos.get("idioma", "es")
         _escribir_estado(carpeta, estado="error",

@@ -146,6 +146,8 @@ def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
         salida = funcion(*args)
         tiempos[nombre] = round(time.time() - t, 1)
         return salida
+    except meta_api.TopeAlcanzado:  # no es una falla del paso: sin presupuesto la revisión no está completa y hay que decirlo
+        raise
     except Exception as e:  # noqa: BLE001 — cualquier falla de un paso no debe tumbar la revisión
         no_pude.append(f"{que} (falló: {type(e).__name__}).")
         return None
@@ -297,8 +299,11 @@ def main() -> None:
                          "(Spark Open con rescate de Spark 1.3). Por omisión, RETINA_MOTOR del .env.")
     ap.add_argument("--idioma", default="es", choices=["es", "en"], help="Idioma de la tarjeta.")
     a = ap.parse_args()
-    r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque,
-               voz=a.voz, publicado=a.ya_publicado, motor=a.motor, idioma=a.idioma)
+    try:
+        r = correr(a.video, a.modelo, a.salida, a.codigo, a.talento, a.fecha, a.titulo, a.con_api, a.arranque,
+                   voz=a.voz, publicado=a.ya_publicado, motor=a.motor, idioma=a.idioma)
+    except meta_api.TopeAlcanzado as e:  # lo gratuito ya quedó en resultado.json; falta lo que cuesta
+        raise SystemExit(f"{e} Lo que no cuesta quedó en {a.salida / 'resultado.json'}; sube RETINA_TOPE_USD para terminar.")
     print(f"Riesgo del arranque: {r['arranque']['nivel']} · {r['tiempos_s']}")
     for x in r["licencia"]["no_pude_revisar"]:
         print(f"  no revisé: {x}")
