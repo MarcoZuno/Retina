@@ -25,7 +25,8 @@ casos/*
 !casos/README.md
 !casos/demo/
 !casos/demo-en/
-modelos/
+modelos/*
+!modelos/retina-publico.json
 *.pkl
 *.npy
 *.csv

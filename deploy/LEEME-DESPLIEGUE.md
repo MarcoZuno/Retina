@@ -61,7 +61,6 @@ concurso vencen el 4 de noviembre; después se cobra a la tarjeta de la empresa.
 1. Un servidor con Docker, un dominio y su certificado.
 2. La llave de Meta y la de Baseten, con tarjeta si va a seguir viva después del 4 de noviembre.
 3. Un código de acceso de al menos 12 caracteres, que se les da a los jueces en el formulario de envío.
-4. `modelos/retina-publico.json`, que solo existe en la PC de desarrollo y entra con autorización. Sin él corre sin número.
 
 ### Desplegar
 
