@@ -28,8 +28,8 @@ cabeceras de `deploy/nginx.conf`.
 ## Agregar casos
 
 Cada caso es una carpeta en `casos/` con su `resultado.json` (formato en `docs/resultado-json.md`).
-**Solo casos aprobados:** videos ya publicados, sin temas de salud ni fuera de alcance, sin
-datos de audiencia que no se hayan autorizado. Después de agregar, volver a construir la imagen.
+**Solo casos que se puedan mostrar en público:** videos ya publicados, sin temas de salud ni fuera de alcance, sin
+datos de audiencia que no se puedan compartir. Después de agregar, volver a construir la imagen.
 
 ## Apagar
 
@@ -44,7 +44,7 @@ público).
 
 La guía del concurso dice que el jurado también usa el producto en vivo. Esta versión deja que un juez suba su propio video, con
 un código de acceso. A diferencia de la demo de arriba, **sí recibe videos, sí llama a las API y sí gasta**. Los créditos del
-concurso vencen el 4 de noviembre; después se cobra a la tarjeta de la empresa.
+concurso vencen el 4 de noviembre; después se cobra a la cuenta de las API.
 
 ### Qué trae puesto
 
@@ -56,7 +56,7 @@ concurso vencen el 4 de noviembre; después se cobra a la tarjeta de la empresa.
 - Corre con un usuario sin permisos y solo escribe en `/datos`.
 - ffmpeg no ve las llaves ni puede salir a la red, y en línea no entran AVI ni FLV.
 
-### Qué necesita
+### Qué necesitas
 
 1. Un servidor con Docker, un dominio y su certificado.
 2. La llave de Meta y la de Baseten, con tarjeta si va a seguir viva después del 4 de noviembre.

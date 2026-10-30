@@ -21,6 +21,12 @@ from pathlib import Path
 
 from .esquemas import RAIZ
 
+class ServidorExclusivo(http.server.ThreadingHTTPServer):
+    """En Windows SO_REUSEADDR deja que dos servidores tomen el mismo puerto y el pedido cae en el equivocado:
+    aquí un puerto ocupado es un error, no un permiso."""
+    allow_reuse_address = False
+
+
 CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
 PERMITIDO = re.compile(r"^/(panel/(index\.html)?|panel/fondos/(?:fondo|mini)-[a-z]+\.webp"
                        r"|casos/[\w-]+/(?:resultado|comparacion)\.json"  # comparacion.json: versión A contra B
@@ -101,7 +107,7 @@ def main() -> None:
         raise SystemExit(f"No encuentro {a.caso}: tiene que ser casos/<carpeta>/resultado.json dentro del repo.")
     destino = f"/panel/?caso={relativo}"
     manejador = functools.partial(type("Manejador", (SoloElPanel,), {"casos": casos}), directory=str(RAIZ))
-    servidor = http.server.ThreadingHTTPServer(("127.0.0.1", a.puerto), manejador)
+    servidor = ServidorExclusivo(("127.0.0.1", a.puerto), manejador)
     url = f"http://127.0.0.1:{servidor.server_port}{destino}"
     print(f"Retina está en {url}  (Ctrl+C para cerrar)")
     if not a.sin_navegador:

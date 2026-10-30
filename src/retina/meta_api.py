@@ -3,7 +3,7 @@
 Toda llamada pasa por aquí: registra modelo, tokens, segundos y USD en el
 registro de costos (por omisión mis-revisiones/costos.jsonl, de quien corre Retina;
 RETINA_COSTOS lo cambia), respeta el tope y reintenta los 429 con espera
-exponencial. La llave sale del entorno o de un .env fuera del repo; nunca se
+exponencial. La llave sale del entorno o del .env de la raíz del repo (.gitignore lo deja fuera); nunca se
 imprime ni se escribe en los registros.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ from pathlib import Path
 import requests
 
 RAIZ = Path(__file__).resolve().parents[2]
-TOPE_MAXIMO_USD = 185.0  # subirlo es cambiar esto
+TOPE_MAXIMO_USD = 185.0  # techo duro: ni RETINA_TOPE_USD ni el .env lo suben
 TIEMPO = (10, 300)  # conectar, leer (s): una llamada colgada no detiene la corrida 50 min
 
 # USD por millón de tokens (entrada, entrada en caché, salida), según
@@ -48,12 +48,8 @@ def como_dato(nombre: str, contenido: str) -> str:
 
 
 def _cargar_env() -> None:
-    """Lee RETINA_ENV, o el .env de la raíz del repo (una copia recién bajada), o un .env fuera del repo,
-    sin pisar lo que ya exista."""
-    if os.environ.get("RETINA_ENV"):
-        ruta = Path(os.environ["RETINA_ENV"])
-    else:
-        ruta = next((r for r in (RAIZ / ".env", RAIZ.parent / "privado" / ".env") if r.exists()), RAIZ / ".env")
+    """Lee el archivo que diga RETINA_ENV o, si no, el .env de la raíz del repo, sin pisar lo que ya exista."""
+    ruta = Path(os.environ["RETINA_ENV"]) if os.environ.get("RETINA_ENV") else RAIZ / ".env"
     if not ruta.exists():
         return
     for linea in ruta.read_text(encoding="utf-8").splitlines():
@@ -69,8 +65,8 @@ def _llave() -> str:
     llave = os.environ.get("MODEL_API_KEY", "")
     if not llave:
         raise RuntimeError(
-            "Falta MODEL_API_KEY. Ponla en tu .env "
-            "(ver .env.example); nunca dentro del repo."
+            "Falta MODEL_API_KEY, la llave de la Meta Model API. Copia .env.example como .env en la raíz del repo, "
+            "escribe ahí MODEL_API_KEY=tu_llave (.gitignore deja ese archivo fuera de git) o define la variable de entorno."
         )
     return llave
 
@@ -129,10 +125,14 @@ def gastado_usd(prefijo: str = "") -> float:
         return 0.0
     total = 0.0
     for linea in costos().read_text(encoding="utf-8").splitlines():
-        if linea.strip():
+        if not linea.strip():
+            continue
+        try:
             fila = json.loads(linea)
-            if str(fila.get("servicio", "")).startswith(prefijo):
-                total += _usd_de(fila)
+        except ValueError:  # una línea cortada por una caída: sin esto, cada llamada a la API se caía con ella
+            continue
+        if isinstance(fila, dict) and str(fila.get("servicio", "")).startswith(prefijo):
+            total += _usd_de(fila)
     return total
 
 
@@ -189,7 +189,7 @@ def _comprobar(estimado_usd: float, prefijo: str = "", tope_prefijo: float | Non
     if gastado + estimado_usd > tope:
         raise TopeAlcanzado(
             f"Tope del proyecto: llevamos {gastado:.2f} USD (con lo reservado) y el tope es "
-            f"{tope:.2f}. Súbelo en tu .env si hace falta."
+            f"{tope:.2f}. Para seguir, sube RETINA_TOPE_USD en tu .env (Retina nunca acepta más de {TOPE_MAXIMO_USD:.0f})."
         )
     if prefijo and tope_prefijo is not None:
         propio = gastado_usd(prefijo) + sum(_usd_de(v) for v in pendientes.values()
@@ -226,10 +226,20 @@ def liberar(reserva: str | None) -> None:
                 _guardar_reservas(reservas)
 
 
-def peor_caso_usd(cuerpo: dict) -> float:
-    """Lo máximo que puede costar una llamada: toda la salida permitida (la entrada es menor)."""
-    _, _, salida = PRECIOS_TOKENS.get(cuerpo.get("model", ""), (0.0, 0.0, 0.0))
-    return cuerpo.get("max_output_tokens", 0) * salida / 1e6
+def peor_caso_usd(cuerpo: dict, entrada_tokens: int = 0) -> float:
+    """Lo máximo que puede costar una llamada: toda la salida permitida más la entrada que quien llama sepa estimar.
+    La del texto es chica; la de un video no (≈200 tokens por segundo: media hora son ~USD 0.45), y no sale en `cuerpo`."""
+    entrada, _, salida = PRECIOS_TOKENS.get(cuerpo.get("model", ""), (0.0, 0.0, 0.0))
+    return (cuerpo.get("max_output_tokens", 0) * salida + max(entrada_tokens, 0) * entrada) / 1e6
+
+
+def _sin_salto_final(ruta: Path) -> bool:
+    try:
+        with ruta.open("rb") as f:
+            f.seek(-1, os.SEEK_END)
+            return f.read(1) != bytes([10])
+    except OSError:  # no existe o está vacío
+        return False
 
 
 def _registrar(servicio: str, modelo: str, segundos: float, usd: float, reserva: str | None = None, **extra) -> None:
@@ -246,6 +256,8 @@ def _registrar(servicio: str, modelo: str, segundos: float, usd: float, reserva:
     costos().parent.mkdir(parents=True, exist_ok=True)
     with _candado():
         with costos().open("a", encoding="utf-8") as f:
+            if _sin_salto_final(costos()):  # el registro quedó cortado a medias: la fila nueva no se le pega
+                f.write(chr(10))
             f.write(json.dumps(fila, ensure_ascii=False) + chr(10))
             f.flush()
             os.fsync(f.fileno())
@@ -311,9 +323,10 @@ def _error(r: requests.Response) -> RuntimeError:
     return RuntimeError(f"HTTP {r.status_code}: {msg}")
 
 
-def responder(servicio: str, cuerpo: dict) -> dict:
-    """POST /v1/responses. Devuelve el JSON y registra el costo real (usage)."""
-    reserva = reservar(servicio, peor_caso_usd(cuerpo))  # aparta el peor caso antes de llamar
+def responder(servicio: str, cuerpo: dict, entrada_tokens: int = 0) -> dict:
+    """POST /v1/responses. Devuelve el JSON y registra el costo real (usage). `entrada_tokens`: la entrada que se
+    sabe de más (un video adjunto), para que la reserva la cuente."""
+    reserva = reservar(servicio, peor_caso_usd(cuerpo, entrada_tokens))  # aparta el peor caso antes de llamar
     t0 = time.time()
     # Si _pedir lanza (red, tiempo agotado) no sabemos si la API cobró: la reserva se queda apartada.
     # 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble.

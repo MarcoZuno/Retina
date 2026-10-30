@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -231,10 +232,10 @@ class Lazo(unittest.TestCase):
 
 
 class PedirASparkOpen(unittest.TestCase):
-    def setUp(self):  # sin esto, la prueba depende de que haya una llave de Baseten en la máquina
-        for parche in (mock.patch.dict(apertura.os.environ, {"BASETEN_API_KEY": "x"}), mock.patch.object(meta_api, "_cargar_env")):
-            parche.start()
-            self.addCleanup(parche.stop)
+    def setUp(self):  # que vaya por Baseten no depende de que la PC tenga una llave real en su .env
+        env = mock.patch.dict(os.environ, {"BASETEN_API_KEY": "llave-de-prueba", "RETINA_ENV": str(Path(__file__).parent / "no-hay.env")})
+        env.start()
+        self.addCleanup(env.stop)
 
     def test_la_lista_de_lo_que_fallo_y_los_datos_llegan_al_modelo_pero_no_la_fuente(self):
         with mock.patch.object(apertura.baseten, "chat", return_value=json.dumps(buena())) as chat:
