@@ -323,6 +323,47 @@ class Rehacer(unittest.TestCase):
         self.assertNotIn("bread", segundo)
 
 
+class VocabularioDeSam(unittest.TestCase):
+    VOCABULARIO = {"tortilla": "food", "dog": "dog"}
+
+    def setUp(self):
+        parche = mock.patch.object(apertura.sam, "_vocabulario", return_value=self.VOCABULARIO)
+        parche.start()
+        self.addCleanup(parche.stop)
+
+    def test_lo_que_no_se_puede_comprobar_no_se_le_ofrece_a_spark(self):
+        respuesta = {"output": [{"type": "message", "content": [{"type": "output_text", "text": json.dumps({"objeto": "dog"})}]}]}
+        with mock.patch.object(meta_api, "responder", return_value=respuesta) as responder:
+            self.assertEqual(apertura.sam.objeto_del_titulo("Un perro en la calle"), "dog")
+        cuerpo = responder.call_args.args[1]
+        opciones = cuerpo["text"]["format"]["schema"]["properties"]["objeto"]["enum"]
+        self.assertEqual(sorted(opciones), ["dog", "ninguno", "tortilla"])
+
+    def test_se_dibuja_la_palabra_prometida_y_se_busca_la_que_sam_reconoce(self):
+        with tempfile.TemporaryDirectory() as t, \
+                mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))), \
+                mock.patch.object(apertura, "dibujar_cuadro",
+                                  side_effect=lambda c, i, texto, o: (c / f"apertura-cuadro{i}-ilustracion-ia.png", dibujados.append(o))[0]), \
+                mock.patch.object(apertura.sam, "medir_imagen",
+                                  return_value={"concepto": "food", "aparece": True, "primer_segundo": 0.0}) as medir:
+            dibujados = []
+            d = Path(t); Rehacer().preparar(d)
+            s = apertura.armar(d, TITULO, "tortilla")
+        self.assertEqual(dibujados[0], "tortilla")
+        self.assertEqual(medir.call_args.args[1], "food")
+        self.assertEqual(s["objeto"], "tortilla")
+        self.assertEqual({c["id"]: c.get("objeto") for c in s["comprobaciones"]}["promesa"], "food")
+
+    def test_la_revision_del_borrador_recuerda_lo_que_prometia_el_titulo(self):
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura.sam, "objeto_del_titulo", return_value="tortilla"), \
+                mock.patch.object(apertura.sam, "medir",
+                                  return_value={"concepto": "food", "aparece": False, "primer_segundo": None}) as medir:
+            d = Path(t)
+            apertura.sam.medir_promesa(d, "Las tortillas de hoy")
+            medir.assert_called_once_with(d, "food")
+            self.assertEqual(apertura.prometido(d, "Las tortillas de hoy"), "tortilla")
+
+
 class SinLlaveDeBaseten(unittest.TestCase):
     def test_con_solo_la_llave_de_meta_escribe_muse_spark_1_3(self):
         respuesta = {"output": [{"type": "message", "content": [{"type": "output_text", "text": json.dumps(buena())}]}]}

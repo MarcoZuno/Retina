@@ -460,6 +460,18 @@ class LlamadaPagadaSiempreQuedaAnotada(ConRegistro):
                 mock.patch.dict(sys.modules, {"meta_sam_parser": types.SimpleNamespace(decode_mask_to_raster=lambda m: [0, 0, 0, 0])}):
             self.assertFalse(sam.medir_imagen(Path(d) / "cuadro.png", "bread")["aparece"])
 
+    def test_varias_mascaras_en_un_cuadro_nunca_pasan_del_100_por_ciento(self):
+        mascara = types.SimpleNamespace(width=2, height=2)
+        registro = types.SimpleNamespace(kind="mask", frame=types.SimpleNamespace(frame_index=0), mask=mascara)
+
+        async def dos(*_):
+            return types.SimpleNamespace(outcome=types.SimpleNamespace(status="completed"), records=[registro, registro])
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(sam, "_correr"), \
+                mock.patch.object(meta_api, "subir_archivo", return_value="file-1"), \
+                mock.patch.object(meta_api, "borrar_archivo"), mock.patch.object(sam, "_segmentar", dos), \
+                mock.patch.dict(sys.modules, {"meta_sam_parser": types.SimpleNamespace(decode_mask_to_raster=lambda m: [1, 1, 1, 1])}):
+            self.assertEqual(sam.medir_imagen(Path(d) / "cuadro.png", "bread")["pct_maximo_del_cuadro"], 100.0)
+
     def test_una_imagen_tampoco_se_revisa_si_el_concepto_es_una_persona(self):
         with mock.patch.object(meta_api, "subir_archivo", side_effect=AssertionError("subió")):
             self.assertIn("error", sam.medir_imagen(Path(self.tmp.name) / "cuadro.png", "woman"))

@@ -281,8 +281,6 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .lista-comprobada li::before { content: "✓"; color: var(--verde); font-weight: 700; }
 .lista-comprobada li.no::before { content: "✕"; color: var(--rojo); }
 @media (max-width: 640px) { .antes-despues { grid-template-columns: 1fr; } }
-.acciones { display: flex; gap: 10px; flex-wrap: wrap; }
-.decision { margin: 12px 0 0; color: var(--suave); }
 .linea-bloque { padding: 18px 22px 16px; }
 .linea { position: relative; height: 104px; border-radius: 16px; overflow: hidden; background: rgba(0,0,0,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.15); }
 body[data-tema="claro"] .linea { background: rgba(255,255,255,.28); }
@@ -527,16 +525,6 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <div id="storyboard" class="storyboard oculto"></div>
         </div>
 
-        <div class="bloque vidrio">
-          <h2 data-t="que_vas">¿Qué vas a hacer?</h2>
-          <div class="acciones">
-            <button class="boton" id="d-cortar" type="button" data-t="cortar">Cortar como dice Retina</button>
-            <button class="boton vidrio" id="d-regrabar" type="button" data-t="regrabar">Regrabar</button>
-            <button class="boton vidrio" id="d-publicar" type="button" data-t="publicar">Publicar así</button>
-          </div>
-          <p class="decision" id="decision" aria-live="polite"></p>
-        </div>
-
         <div class="bloque vidrio oculto" id="bloque-meta">
           <h2 data-t="segun_meta">Según lo que recomienda Meta</h2>
           <ul class="meta" id="meta"></ul>
@@ -621,11 +609,6 @@ const TEXTOS = {
       sin_cambio: "no proponía ningún cambio", otra: "no pasaba una regla",
     },
     confianza: { alta: "alta", media: "media: revísalo tú antes de cortar", baja: "baja: tómalo como una pista" },
-    decisiones: {
-      cortar: "Anotado: haces el cambio. Cuando tengas la nueva versión, pásala otra vez por Retina.",
-      regrabar: "Anotado: regrabas. Cuando tengas la nueva versión, pásala otra vez por Retina.",
-      publicar: "Anotado: se publica así.",
-    },
     fondos: {},  // en español, los nombres de FONDOS
     idioma_boton: "English", idioma_destino: "en", idioma_titulo: "Ver el panel en inglés",
     fondo: "Fondo", elige_fondo: "Elige el fondo", legible: "Más legible",
@@ -710,7 +693,6 @@ const TEXTOS = {
     comprobada: { anzuelos: "Sin los anzuelos que Meta castiga", intocables: "No toca logos, avisos legales ni créditos", cifras: "Cada cifra sale de tu video",
       nombres: "Cada nombre sale de tu video", tema: "El tema del título llega en la primera frase", largo: "Cabe en 10 a 15 segundos",
       cuadros: "Tres cuadros listos", promesa: (o) => `SAM 3.1 encontró «${o}» en el primer cuadro`, promesa_falta: "SAM 3.1 no pudo revisar el primer cuadro esta vez" },
-    que_vas: "¿Qué vas a hacer?", cortar: "Cortar como dice Retina", regrabar: "Regrabar", publicar: "Publicar así",
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
     como_reviso: "Cómo lo revisó Retina", ver_detalle: "Ver detalle", otra: "Abrir otra revisión",
@@ -817,12 +799,7 @@ const TEXTOS = {
       sin_cambio: "it didn't suggest any change", otra: "it broke a rule",
     },
     confianza: { alta: "high", media: "medium: check it yourself before cutting", baja: "low: treat it as a hint" },
-    decisiones: {
-      cortar: "Noted: you'll make the change. When the new version is ready, run it through Retina again.",
-      regrabar: "Noted: you'll reshoot. When the new version is ready, run it through Retina again.",
-      publicar: "Noted: it goes out as is.",
-    },
-    fondos: { cristales: "Crystals", oceano: "Ocean", aurora: "Aurora", montanas: "Mountains", seda: "Silk",
+    fondos: { cristales: "Crystals", ola: "Wave", flor: "Bloom", oceano: "Ocean", aurora: "Aurora", montanas: "Mountains", seda: "Silk",
               espacio: "Space", valle: "Valley", laguna: "Lagoon", flores: "Flowers", cielo: "Sky" },
     idioma_boton: "Español", idioma_destino: "es", idioma_titulo: "View the panel in Spanish",
     fondo: "Background", elige_fondo: "Choose a background", legible: "Easier to read",
@@ -907,7 +884,6 @@ const TEXTOS = {
     comprobada: { anzuelos: "None of the bait Meta penalizes", intocables: "Doesn't touch logos, legal notices or credits", cifras: "Every number comes from your video",
       nombres: "Every name comes from your video", tema: "The title's topic arrives in the first sentence", largo: "Fits in 10 to 15 seconds",
       cuadros: "Three frames ready", promesa: (o) => `SAM 3.1 found “${o}” in the first frame`, promesa_falta: "SAM 3.1 couldn't check the first frame this time" },
-    que_vas: "What will you do?", cortar: "Cut as Retina suggests", regrabar: "Reshoot", publicar: "Publish as is",
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
     como_reviso: "How Retina reviewed it", ver_detalle: "See details", otra: "Open another review",
@@ -1000,7 +976,7 @@ const RECHAZOS = [  // los problemas los escribe el validador en español; aquí
   [/no trae un cambio/, "sin_cambio"],
 ];
 // carpeta: de dónde vino el caso (solo si vino de casos/ por http); porOmision: es el ejemplo del idioma (cambia con él)
-let actual = null, carpeta = null, porOmision = false, ultimaDecision = null, ultimoFallo = null;
+let actual = null, carpeta = null, porOmision = false, ultimoFallo = null;
 
 function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
 
@@ -1273,7 +1249,9 @@ function pintarApertura(r) {
   const lista = $("apertura-comprobada");
   lista.classList.toggle("oculto", !a);
   if (!a) return;
-  const objeto = a.objeto, antes = a.antes || {}, promesa = antes.promesa;
+  const antes = a.antes || {}, promesa = antes.promesa;
+  const revision = (a.comprobaciones || []).find((c) => c.id === "promesa");
+  const objeto = (revision && revision.objeto) || a.objeto;  // lo que SAM buscó de verdad
   const fotoAntes = delCaso(antes.imagen);
   const imgAntes = fotoAntes ? nodo("img") : nodo("div", "sin-imagen", t("sin_imagen_antes"));
   if (fotoAntes) { imgAntes.src = fotoAntes; imgAntes.alt = t("alt_antes"); }
@@ -1288,7 +1266,7 @@ function pintarApertura(r) {
     const miniaturas = nodo("div", "miniaturas");
     miniaturas.append(...otras);
     const hijosDespues = [primera, miniaturas, nodo("p", "voz", a.despues.voz)];
-    if ((a.comprobaciones || []).some((c) => c.id === "promesa" && c.paso)) hijosDespues.push(nodo("p", "promesa", t("promesa_nueva", objeto)));
+    if (revision && revision.paso) hijosDespues.push(nodo("p", "promesa", t("promesa_nueva", objeto)));
     $("antes-despues").replaceChildren(ladoApertura("", t("antes"), hijosAntes), ladoApertura("nuevo", t("despues"), hijosDespues));
   }
   const modelo = a.licencia && /open/i.test(a.licencia.escribio || "") ? "Muse Spark Open" : "Muse Spark 1.3";
@@ -1341,7 +1319,7 @@ function mostrar(r) {
   if (!r || !r.arranque || !r.video || !(r.video.duracion_s > 0)) throw falla("no_es_revision");
   // Sin cerebro público la revisión no trae número: la tarjeta sale solo de lo que vieron los modelos de Meta.
   const conNumero = !!(r.prediccion && Array.isArray(r.prediccion.curva_predicha));
-  actual = r; ultimaDecision = null;
+  actual = r;
   const e = r.explicacion, N = tx().niveles, nivel = de(N, r.arranque.nivel) ? r.arranque.nivel : "medio", n = N[nivel];
   $("resultado").className = `pantalla nivel-${nivel}`;
   $("semaforo").textContent = n.semaforo; $("titular").textContent = n.titular; $("sub").textContent = n.sub;
@@ -1370,7 +1348,6 @@ function mostrar(r) {
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
   pasos(e); balance(e); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r); pintarApertura(r);
-  $("decision").textContent = "";
   $("error").classList.add("oculto");
   estado("resultado");
 }
@@ -1427,16 +1404,6 @@ function fallo(motivo) {  // motivo: una clave de TEXTOS o un texto ya escrito (
   estado(conSubida ? "subir" : "vacio");
 }
 
-function decidir(que) {
-  ultimaDecision = que;
-  $("decision").textContent = tx().decisiones[que];
-  try {  // registro local de decisiones para medir la adopción; si el navegador no deja, no pasa nada
-    const k = "retina-decisiones", d = JSON.parse(localStorage.getItem(k) || "[]");
-    d.push({ codigo: actual && actual.video.codigo, nivel: actual && actual.arranque.nivel, que, cuando: new Date().toISOString() });
-    localStorage.setItem(k, JSON.stringify(d));
-  } catch (_) { /* sin almacenamiento */ }
-}
-
 async function leer(archivo) {
   carpeta = null;  // un archivo elegido a mano no trae su carpeta: el storyboard se ve solo en texto
   try { mostrar(JSON.parse(await archivo.text())); porOmision = false; }
@@ -1487,9 +1454,6 @@ $("ver-storyboard").onclick = () => {
   const abierto = $("storyboard").classList.toggle("oculto") === false;
   $("ver-storyboard").setAttribute("aria-expanded", String(abierto));
 };
-$("d-cortar").onclick = () => decidir("cortar");
-$("d-regrabar").onclick = () => decidir("regrabar");
-$("d-publicar").onclick = () => decidir("publicar");
 $("otra").onclick = () => {
   $("archivo").value = "";
   if (!conSubida) return estado("vacio");
@@ -1805,10 +1769,9 @@ $("idioma").onclick = async () => {
   history.replaceState(history.state, "", `${location.pathname}${q.toString() ? `?${q}` : ""}${location.hash}`);
   aplicarTextos();
   if (document.body.dataset.estado === "resultado" && actual) {
-    const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo")), d = ultimaDecision;
+    const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo"));
     try { if (porOmision) await abrir(DEMO(), true); else mostrar(actual); } catch (_) { mostrar(actual); }
     [...$("pasos").children].forEach((li, i) => { if (hechos[i]) li.querySelector(".hecho").click(); });
-    if (d) { ultimaDecision = d; $("decision").textContent = tx().decisiones[d]; }
     window.scrollTo(0, y);
   } else if (document.body.dataset.estado === "comparacion" && comparacionActual) {
     const y = window.scrollY; pintarComparacion(comparacionActual); window.scrollTo(0, y);
@@ -1842,7 +1805,9 @@ aplicarTextos();
 // Los cuadros del HTML solo llevan texto, bisel y borde de luz: así el navegador no recalcula filtros y todo va fluido.
 // Fondos hechos con Muse Image (Meta), en panel/fondos/.
 const FONDOS = [
-  { id: "cristales", nombre: "Cristales", imgs: ["cinta", "ola", "flor"] },
+  { id: "cristales", nombre: "Cristales", imgs: ["cinta"] },
+  { id: "ola", nombre: "Ola", imgs: ["ola"] },
+  { id: "flor", nombre: "Flor", imgs: ["flor"] },
   { id: "oceano", nombre: "Océano", imgs: ["oceano"] },
   { id: "aurora", nombre: "Aurora", imgs: ["aurora"] },
   { id: "montanas", nombre: "Montañas", imgs: ["montanas"] },
@@ -1861,11 +1826,11 @@ let actualFondo = FONDOS[0], conGL = false;
 
 const VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
 const FS = `precision highp float;
-uniform sampler2D uA, uB; uniform vec2 uTamA, uTamB, uRes; uniform float uMezcla, uT, uDpr;
+uniform sampler2D uA; uniform vec2 uTamA, uRes; uniform float uT, uDpr;
 uniform vec4 uR[${MAX}]; uniform vec4 uP[${MAX}]; uniform vec4 uO[${MAX}]; uniform int uN; uniform vec4 uTinte;
 vec2 cubrir(vec2 p, vec2 tam){ float s=max(uRes.x/tam.x,uRes.y/tam.y)*(1.07+.025*sin(uT*.045));
   vec2 d=vec2(sin(uT*.031),cos(uT*.026))*.014*uRes; return (p-uRes*.5+d)/(tam*s)+.5; }
-vec3 fondo(vec2 p){ return mix(texture2D(uA,cubrir(p,uTamA)).rgb, texture2D(uB,cubrir(p,uTamB)).rgb, uMezcla); }
+vec3 fondo(vec2 p){ return texture2D(uA,cubrir(p,uTamA)).rgb; }
 vec3 muestra(vec2 p, float f){ if(f<.5) return fondo(p); vec2 o=vec2(f,0.); vec2 q=vec2(0.,f);
   return (fondo(p)*2.+fondo(p+o)+fondo(p-o)+fondo(p+q)+fondo(p-q)+fondo(p+(o+q)*.7)+fondo(p-(o+q)*.7))/8.; }
 float sdr(vec2 p, vec2 h, float r){ vec2 q=abs(p)-h+r; return length(max(q,0.))+min(max(q.x,q.y),0.)-r; }
@@ -1905,8 +1870,8 @@ function compilar() {
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
   const loc = gl.getAttribLocation(pr, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-  const u = {}; for (const n of ["uA", "uB", "uTamA", "uTamB", "uRes", "uMezcla", "uT", "uDpr", "uR", "uP", "uO", "uN", "uTinte"]) u[n] = gl.getUniformLocation(pr, n);
-  gl.uniform1i(u.uA, 0); gl.uniform1i(u.uB, 1);
+  const u = {}; for (const n of ["uA", "uTamA", "uRes", "uT", "uDpr", "uR", "uP", "uO", "uN", "uTinte"]) u[n] = gl.getUniformLocation(pr, n);
+  gl.uniform1i(u.uA, 0);
   return u;
 }
 
@@ -1949,8 +1914,7 @@ function sinGL() {  // sin WebGL: imagen fija de fondo y esmerilado CSS
 
 function iniciarGL() {
   const u = compilar();
-  const A = textura(0), B = textura(1);
-  let mezcla = 0, cambio = null, siguiente = 0;
+  const A = textura(0);
   const R = new Float32Array(MAX * 4), P = new Float32Array(MAX * 4), O = new Float32Array(MAX * 4);
   let dpr = 1;
   const tam = () => { dpr = Math.min(1.5, devicePixelRatio || 1); lienzo.width = Math.round(innerWidth * dpr); lienzo.height = Math.round(innerHeight * dpr); gl.viewport(0, 0, lienzo.width, lienzo.height); };
@@ -1958,8 +1922,7 @@ function iniciarGL() {
   const pasar = (tex, im) => { try { subir(tex, im); } catch (_) { sinGL(); } };
 
   window.ponerFondoGL = async (f) => {
-    const a = await imagen(f.imgs[0]); pasar(A, a); mezcla = 0; cambio = null; siguiente = 1;
-    if (f.imgs.length > 1) imagen(f.imgs[1]);
+    pasar(A, await imagen(f.imgs[0]));
   };
 
   const t0 = performance.now();
@@ -1968,17 +1931,6 @@ function iniciarGL() {
     if (!conGL) return;
     const dt = Math.min(0.05, (ahora - previo) / 1000); previo = ahora;
     const t = quieto ? 0 : (ahora - t0) / 1000;
-    // cruce lento entre las imágenes de un mismo fondo (cada 20 s, tarda 4 s)
-    if (actualFondo.imgs.length > 1 && !quieto) {
-      if (!cambio && t % 20 < dt + 0.001 && t > 1) {
-        const n = actualFondo.imgs[siguiente % actualFondo.imgs.length];
-        imagen(n).then((im) => { pasar(B, im); cambio = { inicio: performance.now() }; });
-      }
-      if (cambio) {
-        mezcla = Math.min(1, (performance.now() - cambio.inicio) / 4000);
-        if (mezcla >= 1) { imagen(actualFondo.imgs[siguiente % actualFondo.imgs.length]).then((im) => pasar(A, im)); mezcla = 0; cambio = null; siguiente++; }
-      }
-    }
     // los cuadros de vidrio visibles, del de más arriba (menú) al de más abajo
     const els = [...document.querySelectorAll(".fondos:not([hidden]), .vidrio:not(.fondos)")].filter((x) => x.offsetParent !== null || x.classList.contains("fondos"));
     let n = 0;
@@ -1998,10 +1950,10 @@ function iniciarGL() {
     }
     const claro = document.body.dataset.tema === "claro", res = document.body.dataset.estado === "resultado";
     const tinte = claro ? [1, 1, 1, res ? 0.22 : 0.06] : [0.016, 0.035, 0.09, res ? 0.42 : 0.12];
-    gl.uniform2f(u.uRes, lienzo.width, lienzo.height); gl.uniform1f(u.uT, t); gl.uniform1f(u.uDpr, dpr); gl.uniform1f(u.uMezcla, mezcla);
-    gl.uniform2f(u.uTamA, A.w, A.h); gl.uniform2f(u.uTamB, B.w, B.h);
+    gl.uniform2f(u.uRes, lienzo.width, lienzo.height); gl.uniform1f(u.uT, t); gl.uniform1f(u.uDpr, dpr);
+    gl.uniform2f(u.uTamA, A.w, A.h);
     gl.uniform4fv(u.uR, R); gl.uniform4fv(u.uP, P); gl.uniform4fv(u.uO, O); gl.uniform1i(u.uN, n); gl.uniform4fv(u.uTinte, tinte);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, A.t); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, B.t);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, A.t);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     requestAnimationFrame(cuadro);
   };

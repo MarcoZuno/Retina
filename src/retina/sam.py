@@ -33,6 +33,7 @@ USD_POR_CUADRO = 0.20 / 1000  # dev.meta.ai/models/sam-3-1, 27-oct-2026
 MIN_CUADROS_COBRADOS = 50  # la API cobra al menos 50 cuadros por pedido
 ESCALA = "scale='if(gt(iw,ih),min(960,iw),-2)':'if(gt(iw,ih),-2,min(960,ih))'"
 PERMITIDOS = Path(__file__).resolve().parents[2] / "reglas" / "sam-permitidos-v1.json"
+VOCABULARIO = PERMITIDOS.with_name("sam-vocabulario-v1.json")
 
 
 def normalizar(texto: str) -> str:
@@ -46,6 +47,16 @@ def _singular(p: str) -> str:
 def _lista() -> tuple[set, set, set]:
     d = json.loads(PERMITIDOS.read_text(encoding="utf-8"))
     return set(d["palabras"]), set(d["personas"]), set(d["modificadores"])
+
+
+def _vocabulario() -> dict[str, str]:
+    """Qué se le pide a SAM por cada palabra: la que encontró de verdad en dibujos (eval/calibrar_vocabulario.py)."""
+    return json.loads(VOCABULARIO.read_text(encoding="utf-8"))["buscar"]
+
+
+def termino(objeto: str) -> str | None:
+    """La palabra que SAM reconoce para este objeto («tortilla» se busca como «food»). None: no se puede comprobar."""
+    return _vocabulario().get(objeto)
 
 
 def rechazo(concepto: str) -> str | None:
@@ -151,7 +162,7 @@ def _medir_clip(preparar_clip, concepto: str, segundos: int) -> dict:
             "aparece": bool(por_cuadro),
             "primer_segundo": round(min(por_cuadro) / FPS, 1) if por_cuadro else None,
             "pct_de_cuadros_donde_se_ve": round(100 * len(por_cuadro) / cuadros) if por_cuadro else 0,
-            "pct_maximo_del_cuadro": round(100 * max(por_cuadro.values()), 1) if por_cuadro else 0.0}
+            "pct_maximo_del_cuadro": round(100 * min(max(por_cuadro.values()), 1.0), 1) if por_cuadro else 0.0}
 
 
 def medir(carpeta: Path, concepto: str) -> dict:
@@ -187,7 +198,7 @@ def objeto_del_titulo(titulo: str) -> str | None:
     """Lo que el título promete que se verá, de la lista cerrada que SAM puede buscar. Lo elige Muse Spark 1.3
     con salida estructurada (no puede inventar fuera de la lista); None si el título no promete algo que se vea."""
     from .explicar import MODELO as SPARK
-    palabras = _lista()[0]
+    palabras = _vocabulario()  # solo lo que SAM puede comprobar
     cuerpo = {
         "model": SPARK, "reasoning": {"effort": "low"}, "max_output_tokens": 2000, "store": False,
         "text": {"format": {"type": "json_schema", "name": "objeto_prometido", "strict": True, "schema": {
@@ -208,7 +219,13 @@ def medir_promesa(carpeta: Path, titulo: str) -> dict | None:
     if previo.exists():
         return json.loads(previo.read_text(encoding="utf-8"))
     objeto = objeto_del_titulo(titulo) if titulo.strip() else None
-    return medir(carpeta, objeto) if objeto else None
+    if not objeto:
+        return None
+    salida = medir(carpeta, termino(objeto) or objeto)
+    if "aparece" in salida:  # se busca una palabra y se promete otra: se guardan las dos
+        salida["objeto"] = objeto
+        previo.write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")
+    return salida
 
 
 def main() -> None:

@@ -178,7 +178,7 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
     fallos = {p["id"]: p for p in intentos[-1]["problemas"]}
     comprobaciones = [] if "formato" in fallos else [{"id": c, "paso": c not in fallos} for c in COMPROBACIONES]
     if vista is not None:
-        comprobaciones.append({"id": "promesa", "paso": "promesa" not in fallos, "objeto": concepto,
+        comprobaciones.append({"id": "promesa", "paso": "promesa" not in fallos, "objeto": vista.get("concepto", concepto),
                                "pct_maximo_del_cuadro": vista.get("pct_maximo_del_cuadro")})
     if fallos:
         return {"aprobada": False, "vueltas": len(intentos) - 1, "despues": None, "comprobaciones": comprobaciones,
@@ -275,9 +275,9 @@ def prometido(carpeta: Path, titulo: str) -> str | None:
     """Lo que el título promete que se verá, de la lista cerrada de SAM. Reusa lo que ya se revisó en el borrador."""
     vista = carpeta / "sam.json"
     if vista.exists():
-        concepto = json.loads(vista.read_text(encoding="utf-8")).get("concepto")
-        if concepto:
-            return concepto
+        previo = json.loads(vista.read_text(encoding="utf-8"))
+        if objeto := previo.get("objeto") or previo.get("concepto"):
+            return objeto
     return sam.objeto_del_titulo(titulo) if titulo.strip() else None
 
 
@@ -285,7 +285,8 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
     datos = datos_de_apertura(carpeta, titulo, idioma)
     medido = None
     try:
-        medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o), sam.medir_imagen, avisar)
+        medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o),
+                      lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar)
     finally:
         if not (medido and medido["aprobada"]):  # lo que no pasó no se queda en la carpeta del caso
             for i in (1, 2, 3):
