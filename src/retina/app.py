@@ -77,6 +77,13 @@ MAX_SALIDA_BYTES = 2 * 1024 ** 3  # lo más que puede pesar un video ya converti
 TEXTOS = {
     "es": {
         "falta_titulo": "Escribe el título del video (300 caracteres como máximo).",
+        "muy_corto": "El video dura menos de 5 segundos: en tan poco no hay arranque que revisar.",
+        "sin_a": "No encontré la versión A para comparar; la tarjeta de esta versión sí quedó.",
+        "a_fallo": "La versión A no se pudo revisar, así que no se pudo comparar con esta. Lo que pasó con la versión A: {detalle}",
+        "a_tarde": "La versión A no terminó su revisión a tiempo y no se pudo comparar; la tarjeta de esta versión sí quedó.",
+        "a_tope": "No se pudo comparar con la versión A: se llegó al tope de gasto. La tarjeta de esta versión sí quedó.",
+        "a_error": "No se pudo comparar con la versión A ({tipo}). La tarjeta de esta versión sí quedó.",
+        "sin_detalle": "no hay detalle",
         "talento_largo": "El nombre del talento es demasiado largo.",
         "codigo_malo": "El código de producción tiene que verse como XYZ0000001: letras y luego números.",
         "falta_fecha": "La fecha de publicación tiene que traer día y hora.",
@@ -104,6 +111,13 @@ TEXTOS = {
     },
     "en": {
         "falta_titulo": "Type the video's title (300 characters at most).",
+        "muy_corto": "The video is under 5 seconds long: there is no opening to review in so little time.",
+        "sin_a": "I couldn't find version A to compare; this version's card is ready.",
+        "a_fallo": "Version A couldn't be reviewed, so it couldn't be compared with this one. What happened with version A: {detalle}",
+        "a_tarde": "Version A didn't finish its review in time, so they couldn't be compared; this version's card is ready.",
+        "a_tope": "Couldn't compare with version A: the spending cap was reached. This version's card is ready.",
+        "a_error": "Couldn't compare with version A ({tipo}). This version's card is ready.",
+        "sin_detalle": "no details",
         "talento_largo": "The talent's name is too long.",
         "codigo_malo": "The production code must look like XYZ0000001: letters, then numbers.",
         "falta_fecha": "The publishing date needs a day and a time.",
@@ -243,7 +257,8 @@ def pedir_apertura(carpeta: Path, fila, idioma: str) -> tuple[int, dict]:
         return 404, {"error": "No encuentro esa revisión."}
     with _PIDIENDO_APERTURA:
         e = estado_apertura(carpeta)
-        if e["estado"] == "listo":
+        ruta = carpeta / "apertura.json"
+        if e["estado"] == "listo" and json.loads(ruta.read_text(encoding="utf-8")).get("aprobada"):
             return 200, e
         if e["estado"] in ("en_fila", "procesando"):
             return 202, e
@@ -416,41 +431,36 @@ def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_
         (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
         _escribir_estado(carpeta, estado="error", mensaje=texto(datos.get("idioma", "es"), "falla", tipo=type(e).__name__))
         return
-    comparar_al_terminar(carpeta, marca.read_text(encoding="utf-8").strip(), espera_s)
+    comparar_al_terminar(carpeta, marca.read_text(encoding="utf-8").strip(), espera_s, idioma=datos.get("idioma", "es"))
 
 
-def comparar_al_terminar(carpeta: Path, id_a: str, espera_s: float = ESPERA_A_S, cada_s: float = 2.0) -> None:
+def comparar_al_terminar(carpeta: Path, id_a: str, espera_s: float = ESPERA_A_S, cada_s: float = 2.0, idioma: str = "es") -> None:
     """La tarjeta de la B ya está. Espera a que la A esté lista y compara cómo arrancan las dos.
     Si la A falló, la B sale con error; si lo que falla es la comparación, la tarjeta de la B se queda
     y el estado lo dice en «comparacion_error»."""
     version_a = carpeta.parent / id_a
     if not ID.fullmatch(id_a) or not version_a.is_dir():
-        _escribir_estado(carpeta, estado="listo", comparacion_error="No encontré la versión A para comparar; "
-                         "la tarjeta de esta versión sí quedó.")
+        _escribir_estado(carpeta, estado="listo", comparacion_error=texto(idioma, "sin_a"))
         return
     fin = time.monotonic() + espera_s
     while (e := estado(version_a))["estado"] not in ("listo", "error") and time.monotonic() < fin:
         time.sleep(max(0.0, min(cada_s, fin - time.monotonic())))
     if e["estado"] == "error":
-        _escribir_estado(carpeta, estado="error", mensaje="La versión A no se pudo revisar, así que no se pudo comparar "
-                         f"con esta. Lo que pasó con la versión A: {e.get('mensaje') or 'no hay detalle'}")
+        _escribir_estado(carpeta, estado="error", mensaje=texto(idioma, "a_fallo", detalle=e.get("mensaje") or texto(idioma, "sin_detalle")))
         return
     if e["estado"] != "listo":
-        _escribir_estado(carpeta, estado="listo", comparacion_error="La versión A no terminó su revisión a tiempo y no "
-                         "se pudo comparar; la tarjeta de esta versión sí quedó.")
+        _escribir_estado(carpeta, estado="listo", comparacion_error=texto(idioma, "a_tarde"))
         return
     from . import meta_api
     from .comparar import comparar
     try:
         comparar(version_a, carpeta)
     except meta_api.TopeAlcanzado:
-        _escribir_estado(carpeta, estado="listo", comparacion_error="No se pudo comparar con la versión A: se llegó al "
-                         "tope de gasto del proyecto. La tarjeta de esta versión sí quedó.")
+        _escribir_estado(carpeta, estado="listo", comparacion_error=texto(idioma, "a_tope"))
         return
     except Exception as e:  # noqa: BLE001 — la tarjeta de la B no se pierde por la comparación
         (carpeta / "comparacion-error.txt").write_text(traceback.format_exc(), encoding="utf-8")
-        _escribir_estado(carpeta, estado="listo", comparacion_error=f"No se pudo comparar con la versión A "
-                         f"({type(e).__name__}). La tarjeta de esta versión sí quedó.")
+        _escribir_estado(carpeta, estado="listo", comparacion_error=texto(idioma, "a_error", tipo=type(e).__name__))
         return
     _escribir_estado(carpeta, estado="listo")
 

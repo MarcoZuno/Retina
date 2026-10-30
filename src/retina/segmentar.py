@@ -24,6 +24,7 @@ N_TRAMOS = N_PUNTOS - 1
 
 # Retina revisa el arranque: un video de más de media hora no le aporta y tardaría demasiado en cortarse.
 DURACION_MAXIMA_S = 30 * 60
+MINIMO_S = 5
 # Ningún paso de ffmpeg se queda colgado: pasado este tiempo, la revisión falla con un aviso claro.
 TIEMPO_MAXIMO_S = 15 * 60
 
@@ -108,6 +109,8 @@ def segmentar(video: Path, salida: Path, fps: float = 4.0, lado: int = 256) -> d
     con_imagen, con_audio = pistas(info)
     if not con_imagen:  # un M4A o un MP3 con portada no es un video
         raise Aviso("sin_imagen", "Ese archivo no trae imagen: Retina revisa videos.")
+    if dur < MINIMO_S:  # antes de gastar: en tan poco no hay arranque que revisar
+        raise Aviso("muy_corto", f"El video dura menos de {MINIMO_S} segundos: en tan poco no hay arranque que revisar.")
     if dur > maximo_s():
         raise Aviso("muy_largo", f"El video dura más de {maximo_s() // 60} minutos, que es lo que Retina revisa.")
 

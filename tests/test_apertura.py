@@ -99,6 +99,19 @@ class ReglasDeTexto(unittest.TestCase):
     def test_un_nombre_en_un_cuadro_que_no_viene_del_video_se_rechaza(self):
         self.assertIn("nombres", ids(buena(cuadros=[CUADROS[0], "Un auto Tesla junto a la mesa.", CUADROS[2]])))
 
+    def test_un_gentilicio_en_un_cuadro_no_es_un_nombre(self):
+        self.assertNotIn("nombres", ids(buena(cuadros=[CUADROS[0], "A baker in a Mexican kitchen.", CUADROS[2]])))
+
+    def test_un_gentilicio_en_la_voz_si_tiene_que_venir_del_video(self):
+        self.assertIn("nombres", ids(buena(voz=VOZ + " Lo cuenta un panadero Mexican.")))
+
+    def test_un_cuadro_sin_punto_no_vuelve_nombre_el_inicio_del_siguiente(self):
+        self.assertNotIn("nombres", ids(buena(cuadros=["Una pieza de pan dulce", "Bolsa de tela sobre la mesa", "Canasta con pan fresco"])))
+
+    def test_las_cifras_con_letra_que_faltaban_tambien_cuentan(self):
+        for palabra in ("thirteen", "eleven", "nineteen", "docena", "dozen", "catorce"):
+            self.assertIn("cifras", ids(buena(voz=VOZ.replace("2 horas", f"{palabra} horas"))), palabra)
+
     def test_un_titulo_en_otro_idioma_no_obliga_a_usar_sus_palabras(self):
         datos = {**DATOS, "tema_obligatorio": False}
         self.assertNotIn("tema", ids(buena(voz="Esto casi nadie lo hace bien. " + VOZ), datos))
@@ -209,6 +222,11 @@ class Lazo(unittest.TestCase):
 
 
 class PedirASparkOpen(unittest.TestCase):
+    def setUp(self):  # sin esto, la prueba depende de que haya una llave de Baseten en la máquina
+        for parche in (mock.patch.dict(apertura.os.environ, {"BASETEN_API_KEY": "x"}), mock.patch.object(meta_api, "_cargar_env")):
+            parche.start()
+            self.addCleanup(parche.stop)
+
     def test_la_lista_de_lo_que_fallo_y_los_datos_llegan_al_modelo_pero_no_la_fuente(self):
         with mock.patch.object(apertura.baseten, "chat", return_value=json.dumps(buena())) as chat:
             self.assertEqual(apertura.pedir(DATOS, "la voz mide 3 palabras"), buena())
@@ -307,6 +325,21 @@ class Rehacer(unittest.TestCase):
             (d / "apertura.json").write_text("{}", encoding="utf-8")
             video.write_bytes(b"dos"); preparar_carpeta(video, d)
             self.assertFalse((d / "apertura.json").exists())
+
+    def test_una_apertura_que_no_paso_se_puede_volver_a_intentar(self):
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura.sam, "objeto_del_titulo", return_value=None),                 mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))),                 mock.patch.object(apertura, "dibujar_cuadro",
+                                  side_effect=lambda c, i, texto, o: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
+            d = Path(t); self.preparar(d)
+            (d / "apertura.json").write_text(json.dumps({"aprobada": False}), encoding="utf-8")
+            self.assertTrue(apertura.rehacer(d)["aprobada"])
+
+    def test_un_video_en_otro_alfabeto_no_gasta_y_lo_dice(self):
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura, "lazo", side_effect=AssertionError("gastó")):
+            d = Path(t); self.preparar(d)
+            (d / "transcribir.json").write_text(json.dumps({"arranque_voz_ms": 0, "silencios": [], "turnos": [{"startMs": 0, "transcript": "这是一个关于面包的视频，我们今天来学习怎么保存面包。" * 3}]}), encoding="utf-8")
+            s = apertura.armar(d, "如何保存面包", None)
+        self.assertFalse(s["aprobada"])
+        self.assertTrue(s["otro_alfabeto"])
 
     def test_no_se_paga_dos_veces_por_la_misma_revision(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura, "pedir", side_effect=AssertionError("pagó")):
@@ -414,9 +447,14 @@ class DesdeLaApp(unittest.TestCase):
         self.fila.submit.assert_called_once()
 
     def test_la_que_ya_esta_hecha_no_se_vuelve_a_pagar(self):
-        (self.carpeta / "apertura.json").write_text("{}", encoding="utf-8")
+        (self.carpeta / "apertura.json").write_text(json.dumps({"aprobada": True}), encoding="utf-8")
         self.assertEqual(app.pedir_apertura(self.carpeta, self.fila, "es"), (200, {"estado": "listo"}))
         self.fila.submit.assert_not_called()
+
+    def test_la_que_no_paso_se_puede_volver_a_pedir(self):
+        (self.carpeta / "apertura.json").write_text(json.dumps({"aprobada": False}), encoding="utf-8")
+        self.assertEqual(app.pedir_apertura(self.carpeta, self.fila, "es")[0], 202)
+        self.fila.submit.assert_called_once()
 
     def test_sin_llave_se_avisa_en_el_idioma_del_panel(self):
         with mock.patch.object(app, "salud", return_value={"ffmpeg": True, "llave": False}):

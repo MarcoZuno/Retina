@@ -54,6 +54,21 @@ class SoloLoQueSeSostiene(unittest.TestCase):
     def test_una_evidencia_de_una_o_dos_palabras_no_sostiene_nada(self):
         self.assertEqual(normas.filtrar([hallazgo(evidencia="hoy mismo")], DATOS), [])
 
+    def test_la_cita_tiene_que_estar_en_ese_segundo(self):
+        self.assertEqual(normas.filtrar([hallazgo(segundo=40)], {**DATOS, "se_dice": [*DATOS["se_dice"], {"segundo": 30, "dice": "ya otra cosa"}]}), [])
+
+    def test_un_turno_largo_cuenta_hasta_que_empieza_el_siguiente(self):
+        self.assertEqual(len(normas.filtrar([hallazgo(segundo=25)], DATOS)), 1)
+
+    def test_la_cita_no_puede_salir_de_los_nombres_de_los_campos(self):
+        self.assertEqual(normas.filtrar([hallazgo(evidencia="segundo 12 dice")], DATOS), [])
+
+    def test_la_cita_no_puede_juntar_dos_momentos(self):
+        self.assertEqual(normas.filtrar([hallazgo(segundo=0, evidencia="sobre la mesa Oferta de hoy")], DATOS), [])
+
+    def test_la_cita_del_titulo_vale_en_cualquier_segundo(self):
+        self.assertEqual(len(normas.filtrar([hallazgo(segundo=50, evidencia="Compra este vape")], DATOS)), 1)
+
     def test_una_norma_fuera_de_la_lista_se_descarta(self):
         self.assertEqual(normas.filtrar([hallazgo(norma="me_cae_mal")], DATOS), [])
 

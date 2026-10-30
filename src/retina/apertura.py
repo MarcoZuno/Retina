@@ -20,6 +20,7 @@ import json
 import os
 import re
 import shutil
+import unicodedata
 from pathlib import Path
 
 from . import baseten, explicar, integridad, meta_api, sam, storyboard, transcribir
@@ -47,9 +48,16 @@ LETRA = {"dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6, "siete": 7, "o
          "veinte": 20, "veintiuno": 21, "veintidos": 22, "veintitres": 23, "veinticuatro": 24, "veinticinco": 25,
          "veintiseis": 26, "veintisiete": 27, "veintiocho": 28, "veintinueve": 29, "treinta": 30, "cuarenta": 40, "cincuenta": 50, "sesenta": 60, "setenta": 70, "ochenta": 80,
          "noventa": 90, "cien": 100, "doscientos": 200, "trescientos": 300, "cuatrocientos": 400, "quinientos": 500,
+         "seiscientos": 600, "setecientos": 700, "ochocientos": 800, "novecientos": 900, "docena": 12, "docenas": 12,
+         "dozen": 12, "dozens": 12, "eleven": 11, "thirteen": 13, "fourteen": 14, "sixteen": 16, "seventeen": 17,
+         "eighteen": 18, "nineteen": 19,
          "mil": 1000, "millon": 1e6, "millones": 1e6, "million": 1e6, "millions": 1e6, "billion": 1e9, "billions": 1e9, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
          "nine": 9, "ten": 10, "twelve": 12, "fifteen": 15, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
          "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100, "thousand": 1000}
+# En inglés llevan mayúscula sin ser un nombre. En un cuadro describen la escena; en la voz serían un dato y sí se revisan.
+GENTILICIOS = frozenset("""mexican american latin spanish french italian german chinese japanese korean indian brazilian
+    argentine colombian peruvian cuban canadian british english irish greek turkish russian arab african asian european""".split())
+MIN_LETRAS_ALFABETO = 20
 FORMATO = ("\n\nFORMATO DE RESPUESTA: devuelve solo un objeto JSON válido, sin texto antes ni después y sin bloques de "
            "código, con exactamente estas claves: «voz»: texto; «cuadros»: lista de tres textos.")
 
@@ -85,6 +93,13 @@ def nombres_nuevos(voz: str, fuente: str) -> list[str]:
                    if p[0].isupper() and integridad.normalizar(p) not in conocidas})
 
 
+def otro_alfabeto(texto: str) -> bool:
+    """Retina escribe en español o en inglés y sus reglas cuentan palabras: en chino o árabe nada aprobaría."""
+    letras = [c for c in texto if c.isalpha()]
+    latinas = sum(unicodedata.name(c, "").startswith("LATIN") for c in letras)
+    return len(letras) >= MIN_LETRAS_ALFABETO and latinas < len(letras) / 2
+
+
 def tema_llega_tarde(voz: str, titulo: str) -> bool:
     claves = {p for p in _palabras(titulo) if len(p) >= 4 and p not in VACIAS}
     if len(claves) < MIN_CLAVES_TITULO:
@@ -111,7 +126,8 @@ def revisar(s: dict, datos: dict) -> list[dict]:
         fallo("intocables", f"toca algo intocable: {', '.join(t)}")
     if n := cifras_nuevas(voz, fuente):
         fallo("cifras", f"cifras que no vienen en los datos del video: {', '.join(n)}")
-    if n := nombres_nuevos(todo, fuente):
+    en_cuadros = [p for c in cuadros for p in nombres_nuevos(c, fuente) if integridad.normalizar(p) not in GENTILICIOS]
+    if n := sorted({*nombres_nuevos(voz, fuente), *en_cuadros}):
         fallo("nombres", f"nombres que no vienen en los datos del video: {', '.join(n)}")
     if datos.get("tema_obligatorio", True) and tema_llega_tarde(voz, titulo):
         fallo("tema", "la primera frase tiene que decir de qué trata el video con palabras del título")
@@ -285,8 +301,13 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
     datos = datos_de_apertura(carpeta, titulo, idioma)
     medido = None
     try:
-        medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o),
-                      lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar)
+        dicho = " ".join([titulo, datos["resto_de_lo_que_se_dice"], *(f["dice"] or "" for f in datos.get("frases", []))])
+        if otro_alfabeto(dicho):  # se dice antes de gastar
+            medido = {"aprobada": False, "otro_alfabeto": True, "vueltas": 0, "despues": None, "comprobaciones": [],
+                      "intentos": [], "no_comprobe": []}
+        else:
+            medido = lazo(datos, concepto, pedir, lambda i, c, o: dibujar_cuadro(carpeta, i, c, o),
+                          lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar)
     finally:
         if not (medido and medido["aprobada"]):  # lo que no pasó no se queda en la carpeta del caso
             for i in (1, 2, 3):
@@ -306,12 +327,12 @@ def _escribir(ruta: Path, datos: dict) -> None:
 
 
 def rehacer(carpeta: Path, idioma: str = "es", avisar=_nada_que_avisar) -> dict:
-    """La apertura de una revisión ya hecha. Una vez hecha no se vuelve a pagar: se regresa la misma."""
+    """La apertura de una revisión ya hecha. Una aprobada no se vuelve a pagar: se regresa la misma. La que no pasó
+    se guarda para enseñar qué falló, pero se puede volver a intentar."""
     ruta, archivo = carpeta / "apertura.json", carpeta / "resultado.json"
     resultado = json.loads(archivo.read_text(encoding="utf-8"))
-    if ruta.exists():
-        salida = json.loads(ruta.read_text(encoding="utf-8"))
-    else:
+    salida = json.loads(ruta.read_text(encoding="utf-8")) if ruta.exists() else None
+    if not (salida and salida.get("aprobada")):
         titulo = (resultado.get("video") or {}).get("titulo") or ""
         salida = armar(carpeta, titulo, prometido(carpeta, titulo), idioma, avisar)
     resultado["apertura"] = salida

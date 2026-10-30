@@ -13,7 +13,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-from retina.segmentar import Aviso, pistas, segmentar  # noqa: E402
+from retina.segmentar import MINIMO_S, Aviso, pistas, segmentar  # noqa: E402
 from retina.transcribir import idioma_de, recortar  # noqa: E402
 
 CON_AUDIO = """Input #0, mov,mp4,m4a,3gp,3g2,mj2, from 'x.mp4':
@@ -77,12 +77,20 @@ class SegmentarDeVerdad(unittest.TestCase):
     def test_un_video_sin_audio_se_corta_sin_audio(self):
         with tempfile.TemporaryDirectory() as d:
             d = Path(d)
-            self.ffmpeg("-f", "lavfi", "-i", "color=c=gray:s=320x240:d=4", "-c:v", "libx264", "-pix_fmt", "yuv420p",
+            self.ffmpeg("-f", "lavfi", "-i", f"color=c=gray:s=320x240:d={MINIMO_S + 1}", "-c:v", "libx264", "-pix_fmt", "yuv420p",
                         str(d / "mudo.mp4"))
             m = segmentar(d / "mudo.mp4", d / "caso")
             self.assertIsNone(m["audio"])
             self.assertFalse((d / "caso" / "audio.wav").exists())
             self.assertTrue((d / "caso" / "ligero.mp4").exists())
+
+    def test_un_video_de_menos_de_5_segundos_se_rechaza_antes_de_gastar(self):
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            self.ffmpeg("-f", "lavfi", "-i", "color=c=gray:s=320x240:d=1", "-c:v", "libx264", "-pix_fmt", "yuv420p", str(d / "corto.mp4"))
+            with self.assertRaises(Aviso) as e:
+                segmentar(d / "corto.mp4", d / "caso")
+            self.assertEqual(e.exception.clave, "muy_corto")
 
     def test_un_audio_solo_se_rechaza_con_su_clave(self):
         with tempfile.TemporaryDirectory() as d:

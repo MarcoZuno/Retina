@@ -2,8 +2,8 @@
 
 Muse Spark 1.3 lee lo que se ve y lo que se dice en todo el video y señala posibles incumplimientos de una lista cerrada
 (reglas/normas-facebook-v1.json, cada norma con su fuente pública). Después, en código, se descarta lo que no se sostiene:
-norma fuera de la lista, segundo fuera del video o evidencia que no sea copia de los datos. Es una revisión previa, no una
-decisión de Meta. Cuesta unos centavos y corre con cada revisión.
+norma fuera de la lista, segundo fuera del video o evidencia que no sea copia de lo que se ve o se dice en ese segundo. Es
+una revisión previa, no una decisión de Meta. Cuesta unos centavos y corre con cada revisión.
 
 Uso:
     python -m retina.normas CARPETA --titulo "..." [--idioma es|en]
@@ -24,6 +24,7 @@ VERSION = "normas-v1"
 REGLAS = RAIZ / "reglas" / "normas-facebook-v1.json"
 MAX_HALLAZGOS = 5
 MIN_PALABRAS_EVIDENCIA = 3
+HOLGURA_S = 3  # el modelo redondea el segundo y un turno de voz solo trae cuándo empieza
 MAX_CARACTERES = 220
 IDIOMAS = {"es": "español", "en": "inglés"}
 
@@ -53,10 +54,21 @@ def datos_del_video(carpeta: Path, titulo: str) -> dict:
             "se_dice": [{"segundo": round(t["startMs"] / 1000), "dice": t["transcript"]} for t in turnos if t.get("transcript")]}
 
 
+def en_ese_segundo(datos: dict, segundo: float) -> list[str]:
+    """Lo que se ve y se dice alrededor de ese segundo, y el título, que no tiene segundo. Solo los valores: una cita
+    no puede salir de los nombres de los campos ni juntar dos momentos del video."""
+    textos = [datos["titulo"]]
+    for lista, campos in ((datos["se_ve"], ("que_pasa", "texto_en_pantalla")), (datos["se_dice"], ("dice",))):
+        for i, x in enumerate(lista):
+            fin = lista[i + 1]["segundo"] if i + 1 < len(lista) else datos["duracion_video_s"]
+            if x["segundo"] - HOLGURA_S <= segundo <= fin + HOLGURA_S:
+                textos += [str(x.get(c) or "") for c in campos]
+    return [_plano(t) for t in textos]
+
+
 def filtrar(hallazgos: list, datos: dict) -> list[dict]:
     """Lo que se sostiene en los datos. Ante cualquier duda, el hallazgo se descarta: un falso aviso cuesta confianza."""
     validas = {n["id"] for n in reglas()}
-    fuente = _plano(json.dumps(datos, ensure_ascii=False))
     salida, vistas = [], set()
     for h in hallazgos:
         if not isinstance(h, dict):
@@ -70,7 +82,7 @@ def filtrar(hallazgos: list, datos: dict) -> list[dict]:
         if not por_que.strip() or len(por_que) > MAX_CARACTERES:
             continue
         cita = _plano(evidencia)
-        if len(cita.split()) < MIN_PALABRAS_EVIDENCIA or cita not in fuente:
+        if len(cita.split()) < MIN_PALABRAS_EVIDENCIA or not any(cita in t for t in en_ese_segundo(datos, segundo)):
             continue
         vistas.add(norma)
         salida.append({"norma": norma, "segundo": segundo, "evidencia": evidencia.strip(), "por_que": por_que.strip()})

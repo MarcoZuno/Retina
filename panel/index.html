@@ -580,7 +580,7 @@ const reloj = (t) => (t || "")
   .replace(/\b([Ff]rom) second (\d+(?:[.,]\d+)?) to (?:second )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} to ${seg(b)}`)
   .replace(/\bsecond (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
 
-// ---- Idioma: español por omisión; inglés con ?lang=en o con el botón del encabezado (se recuerda en este navegador) ----
+// ---- Idioma: el del navegador (español si es español; inglés en cualquier otro); ?lang= o el botón del encabezado mandan y se recuerdan ----
 // Solo se traducen los textos fijos del panel. Lo que viene del resultado.json (por qué, pasos, storyboard, título)
 // es contenido del caso y se muestra tal cual: para la demo en inglés existe casos/demo-en/.
 const TEXTOS = {
@@ -708,6 +708,7 @@ const TEXTOS = {
       : "Pasó todas las comprobaciones a la primera. El título no se tocó."),
     apertura_incompleta: () => "Pasó las reglas de texto, pero SAM 3.1 no pudo revisar el primer cuadro. El título no se tocó.",
     apertura_no: "No logré una apertura que pasara todas las comprobaciones, así que no te enseño ninguna. Esto fue lo que falló:",
+    apertura_alfabeto: "Por ahora Retina reescribe arranques en español e inglés. Este video parece estar en otro idioma, así que no gasté nada.",
     apertura_quien: (m) => `Escribió ${m} · dibujó Muse Image · revisaron SAM 3.1 y reglas fijas de código.`,
     apertura_nota: "Es un boceto, con la voz de tu navegador y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si esta apertura hará que se quede más gente: eso no se ha medido.",
     apertura_error: "No se pudo terminar. Intenta otra vez.",
@@ -907,6 +908,7 @@ const TEXTOS = {
       : "It passed every check on the first try. Your title wasn't touched."),
     apertura_incompleta: () => "It passed the text rules, but SAM 3.1 couldn't check the first frame. Your title wasn't touched.",
     apertura_no: "I couldn't get an opening to pass every check, so I'm not showing you one. This is what failed:",
+    apertura_alfabeto: "For now Retina rewrites openings in Spanish and English. This video seems to be in another language, so nothing was spent.",
     apertura_quien: (m) => `Written by ${m} · drawn by Muse Image · checked by SAM 3.1 and fixed code rules.`,
     apertura_nota: "This is a sketch, with your browser's voice and drawings, not a filmed video. Retina checks that numbers and names come from your video, not that they are true. And it doesn't know whether this opening keeps more people watching: that hasn't been measured.",
     apertura_error: "It couldn't be finished. Try again.",
@@ -990,7 +992,7 @@ let idioma = (() => {
     return pedido;
   }
   try { const g = localStorage.getItem("retina-idioma"); if (g === "en" || g === "es") return g; } catch (_) { /* sin almacenamiento */ }
-  return "es";
+  return /^es\b/i.test(navigator.language || "") ? "es" : "en";
 })();
 const tx = () => TEXTOS[idioma];
 const t = (clave, ...args) => { const v = tx()[clave] ?? TEXTOS.es[clave]; return typeof v === "function" ? v(...args) : v; };
@@ -1227,6 +1229,8 @@ const ilustraciones = (e) => (e && Array.isArray(e.storyboard_imagenes) ? e.stor
 // «Lo que no revisé» llega en español desde el orquestador; en inglés se traducen sus piezas fijas.
 const NO_REVISE_EN = [
   ["La música: no se analiza la letra ni la licencia.", "Music: lyrics and licensing are not analyzed."],
+  ["La voz y los silencios: el video no trae audio. Lo de abajo sale solo de lo que se ve.", "The voice and the silences: the video has no audio. What follows comes only from what is on screen."],
+  [/La voz después del minuto (\d+): Voice Transcribe escucha hasta ahí, y el arranque queda completo\./g, "The voice after minute $1: Voice Transcribe listens up to there, and the opening is covered in full."],
   ["Las normas de Facebook", "Facebook's rules"],
   ["El número: esta copia de Retina no trae el cerebro público (modelos/retina-publico.json).", "The number: this copy of Retina doesn't include the public brain (modelos/retina-publico.json)."],
   ["Lo que pasa en pantalla tramo a tramo con V-JEPA 2", "What happens on screen, segment by segment, with V-JEPA 2"],
@@ -1240,7 +1244,7 @@ const NO_REVISE_EN = [
   ["no hubo descripción del video", "there was no description of the video"],
   ["falló:", "failed:"],
 ];
-const enIdioma = (texto) => idioma === "en" ? NO_REVISE_EN.reduce((x, [es, en]) => x.split(es).join(en), String(texto)) : texto;
+const enIdioma = (texto) => idioma === "en" ? NO_REVISE_EN.reduce((x, [es, en]) => (es instanceof RegExp ? x.replace(es, en) : x.split(es).join(en)), String(texto)) : texto;
 
 // La frase de «contra qué se comparó» se arma aquí, en el idioma del panel (el JSON trae la regla y cuántos).
 const comparadoCon = (l) => (l.regla && (l.n_parecidos != null || l.regla === "publica"))
@@ -1325,7 +1329,7 @@ function pintarApertura(r) {
   const a = r.apertura, idCaso = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname);
   const puede = !!(conSubida && idCaso && r.explicacion), hecha = !!(a && a.despues && a.aprobada);
   $("bloque-apertura").classList.toggle("oculto", !a && !puede);
-  $("arreglar").classList.toggle("oculto", !!a || !puede);
+  $("arreglar").classList.toggle("oculto", hecha || !puede);  // la que no pasó se puede volver a intentar
   $("arreglar").dataset.id = idCaso ? idCaso[1] : "";
   $("apertura-lema").classList.toggle("oculto", !!a);
   $("apertura-avance").classList.add("oculto");
@@ -1367,7 +1371,7 @@ function pintarApertura(r) {
   }
   const modelo = a.licencia && /open/i.test(a.licencia.escribio || "") ? "Muse Spark Open" : "Muse Spark 1.3";
   const sinRevisar = (a.no_comprobe || []).includes("promesa");
-  $("apertura-resumen").textContent = hecha ? `${t(sinRevisar ? "apertura_incompleta" : "apertura_vueltas", a.vueltas || 0)} ${t("apertura_quien", modelo)}` : t("apertura_no");
+  $("apertura-resumen").textContent = hecha ? `${t(sinRevisar ? "apertura_incompleta" : "apertura_vueltas", a.vueltas || 0)} ${t("apertura_quien", modelo)}` : t(a.otro_alfabeto ? "apertura_alfabeto" : "apertura_no");
   const C = tx().comprobada;
   const filas = (a.comprobaciones || []).filter((c) => c.id !== "promesa" || objeto).map((c) => {
     const texto = c.id === "promesa" ? C.promesa(objeto) : de(C, c.id);
