@@ -54,7 +54,8 @@ def _info(video: Path) -> str:
 
 
 def duracion_s(video: Path, info: str | None = None) -> float:
-    m = re.search(r"Duration: (\d+):(\d+):(\d+\.\d+)", info if info is not None else _info(video))
+    # Solo la línea propia de ffmpeg: un título del archivo podría decir «Duration: 00:00:01.00».
+    m = re.search(r"^  Duration: (\d+):(\d+):(\d+\.\d+)", info if info is not None else _info(video), re.M)
     if not m:
         raise Aviso("no_lee", f"No pude leer la duración de {video.name}.")
     h, mi, s = m.groups()
@@ -102,16 +103,18 @@ def segmentar(video: Path, salida: Path, fps: float = 4.0, lado: int = 256) -> d
         raise Aviso("muy_largo", f"El video dura más de {maximo_s() // 60} minutos, que es lo que Retina revisa.")
 
     # Cuadros a fps fijo, lado corto = `lado` px (lo que espera V-JEPA 2).
-    _correr(["-i", str(video), "-vf",
+    # -t en cada paso: la duración de arriba la declara el archivo, y un archivo puede mentir.
+    tope = str(maximo_s())
+    _correr(["-i", str(video), "-t", tope, "-vf",
              f"fps={fps},scale='if(gt(iw,ih),-2,{lado})':'if(gt(iw,ih),{lado},-2)'",
              "-q:v", "3", str(cuadros_dir / "c%05d.jpg")])
     # Audio para Voice Transcribe: mono, PCM 16 bits, 24 kHz (tasa nativa del modelo).
     # Un video sin audio se revisa igual, solo con lo que se ve (la tarjeta lo dice).
     if con_audio:
-        _correr(["-i", str(video), "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le",
+        _correr(["-i", str(video), "-t", tope, "-vn", "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le",
                  "-map_metadata", "-1", str(salida / "audio.wav")])
     # Copia ligera para la Files API: menos bytes que subir, mismos cuadros visibles.
-    _correr(["-i", str(video), "-vf", "scale=-2:480", "-c:v", "libx264", "-preset", "veryfast",
+    _correr(["-i", str(video), "-t", tope, "-vf", "scale=-2:480", "-c:v", "libx264", "-preset", "veryfast",
              "-crf", "28", "-c:a", "aac", "-b:a", "64k", "-movflags", "+faststart",
              str(salida / "ligero.mp4")])
 

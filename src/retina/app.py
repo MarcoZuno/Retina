@@ -47,6 +47,7 @@ from urllib.parse import unquote, urlsplit
 
 from .demo import SoloElPanel
 from .esquemas import RAIZ
+from .segmentar import Aviso, duracion_s, maximo_s
 
 MAX_MB = 800
 ID = re.compile(r"^[0-9a-f]{12}$")
@@ -69,6 +70,8 @@ HORAS_DE_VIDA = 24
 MIN_LARGO_CODIGO = 12
 TOPE_EN_LINEA_USD = 30.0
 MARGEN_USD = 0.5  # lo que puede costar una revisión completa con su apertura
+LIMPIEZA_CADA_S = 3600
+MAX_SALIDA_BYTES = 2 * 1024 ** 3  # lo más que puede pesar un video ya convertido
 
 # Lo que ve la persona cuando algo falla, en el idioma del panel. Los detalles técnicos van a error.txt.
 TEXTOS = {
@@ -200,10 +203,11 @@ def tipo_de_video(cabeza: bytes) -> str | None:
 
 def convertir_a_mp4(origen: Path, destino: Path) -> None:
     """Pasa el video a MP4 (H.264 y AAC) para que todo lo demás trabaje igual que con un MP4."""
-    from .segmentar import TIEMPO_MAXIMO_S, Aviso, _ffmpeg
+    from .segmentar import TIEMPO_MAXIMO_S, Aviso, _ffmpeg, maximo_s
     temporal = destino.with_name("convirtiendo.mp4")
     try:
         r = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", "-i", str(origen),
+                            "-t", str(maximo_s()), "-fs", str(MAX_SALIDA_BYTES),
                             "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
                             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(temporal)],
                            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S)
@@ -298,8 +302,21 @@ def limpiar(casos: Path, horas: float = HORAS_DE_VIDA) -> None:
     """Borra las revisiones viejas. Solo toca carpetas con nombre de revisión."""
     limite = time.time() - horas * 3600
     for carpeta in casos.iterdir():
-        if carpeta.is_dir() and ID.fullmatch(carpeta.name) and carpeta.stat().st_mtime < limite:
-            shutil.rmtree(carpeta, ignore_errors=True)
+        try:
+            if carpeta.is_dir() and ID.fullmatch(carpeta.name) and carpeta.stat().st_mtime < limite:
+                shutil.rmtree(carpeta, ignore_errors=True)
+        except OSError:  # otra carpeta no debe quedarse sin borrar por esta
+            continue
+
+
+def limpiar_siempre(casos: Path) -> None:
+    """Corre aparte, en su propio hilo: el plazo de borrado no depende de que alguien suba un video."""
+    while True:
+        try:
+            limpiar(casos)
+        except OSError:
+            pass  # se intenta otra vez en la siguiente vuelta
+        time.sleep(LIMPIEZA_CADA_S)
 
 
 class FilaContada:
@@ -315,9 +332,20 @@ class FilaContada:
         futuro.add_done_callback(self._termino)
         return futuro
 
-    def _termino(self, _futuro) -> None:
+    def apartar(self, maximo: int) -> bool:
+        """Toma un lugar de un solo golpe: dos subidas al mismo tiempo no pueden pasar por el mismo hueco."""
+        with self.candado:
+            if self.n >= maximo:
+                return False
+            self.n += 1
+            return True
+
+    def soltar(self) -> None:
         with self.candado:
             self.n -= 1
+
+    def _termino(self, _futuro) -> None:
+        self.soltar()
 
     def pendientes(self) -> int:
         with self.candado:
@@ -362,7 +390,9 @@ def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_
     from .retina import correr
     _escribir_estado(carpeta, estado="procesando")
     try:
-        if (carpeta / SUBIDA).is_file():  # WebM, MKV, AVI…: primero a MP4
+        if (carpeta / SUBIDA).is_file():  # WebM, MKV, AVI…: primero a MP4, pero antes se mide: convertir cuesta
+            if duracion_s(carpeta / SUBIDA) > maximo_s():
+                raise Aviso("muy_largo", "El video es demasiado largo.")
             convertir_a_mp4(carpeta / SUBIDA, carpeta / "video.mp4")
             (carpeta / SUBIDA).unlink()
         correr(carpeta / "video.mp4", modelos["modelo"], carpeta, datos["codigo"], datos["talento"], datos["fecha"],
@@ -374,7 +404,6 @@ def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_
             return
     except ValueError as e:  # el candado y los datos que no cuadran se le explican a la persona, en su idioma
         clave, idioma = getattr(e, "clave", None), datos.get("idioma", "es")
-        from .segmentar import maximo_s
         _escribir_estado(carpeta, estado="error",
                          mensaje=texto(idioma, clave, minutos=maximo_s() // 60) if clave in TEXTOS["es"] else str(e))
         return
@@ -429,6 +458,7 @@ class ConSubida(SoloElPanel):
     fila: FilaContada | None = None
     talentos: list[str] = []
     en_linea: dict | None = None
+    apartado = False
 
     def _json(self, codigo: int, cuerpo: dict) -> None:
         datos = json.dumps(cuerpo, ensure_ascii=False).encode("utf-8")
@@ -454,13 +484,17 @@ class ConSubida(SoloElPanel):
             self.close_connection = True
             self._json(401, {"error": texto(idioma, "sin_acceso")})
             return False
-        problema = "ocupado" if self.fila.pendientes() >= MAX_EN_FILA else None if queda_presupuesto() else "sin_presupuesto"
-        if problema:
+        if not queda_presupuesto() or not self.fila.apartar(MAX_EN_FILA):
             self.close_connection = True
-            self._json(503, {"error": texto(idioma, problema)})
+            self._json(503, {"error": texto(idioma, "ocupado" if queda_presupuesto() else "sin_presupuesto")})
             return False
-        limpiar(self.casos)
+        self.apartado = True
         return True
+
+    def _soltar(self) -> None:
+        if self.apartado:
+            self.apartado = False
+            self.fila.soltar()
 
     def do_GET(self):  # noqa: N802
         ruta = self.path.split("?", 1)[0]
@@ -482,6 +516,12 @@ class ConSubida(SoloElPanel):
         return super().do_GET()
 
     def do_POST(self):  # noqa: N802
+        try:
+            self._atender_post()
+        finally:  # el lugar apartado solo cuida la subida: lo que ya entró a la fila se cuenta allá
+            self._soltar()
+
+    def _atender_post(self):
         m = re.match(r"^/api/apertura/([0-9a-f]{12})$", self.path)
         idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
         if m and self._local() and self._propio():
@@ -571,6 +611,8 @@ def main() -> None:
         "hosts": SoloElPanel.hosts + ((en_linea["host"],) if en_linea else ()),
         "modelos": {k: (r.resolve() if r else None) for k, r in (("modelo", a.modelo), ("arranque", a.arranque), ("voz", a.voz))}})
     interfaz = "0.0.0.0" if en_linea else "127.0.0.1"  # en línea, el proxy es lo único que llega a este puerto
+    if en_linea:
+        threading.Thread(target=limpiar_siempre, args=(a.casos.resolve(),), daemon=True).start()
     servidor = http.server.ThreadingHTTPServer((interfaz, a.puerto), functools.partial(clase, directory=str(RAIZ)))
     url = f"http://127.0.0.1:{servidor.server_port}/panel/"
     print(f"Retina está en {url}  (Ctrl+C para cerrar)")
