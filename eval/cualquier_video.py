@@ -11,6 +11,7 @@ código y solo con el título publicado. Se comparan:
   D. el cerebro público (retina.publico): C entrenado sin videos no elegibles, sin
      temas fuera de alcance ni graves y sin nombres de talentos, con la curva fija por
      duración que trae el archivo público en lugar de la de los últimos 90 días.
+  E. D más la ficha del arranque que anota Muse Spark Open (retina.ficha), con --fichas.
 Aparte, en talentos conocidos: v0 contra C más la capa de la casa (talento y
 tipo). También la diferencia por video entre B y C (los dos cerebros en los
 mismos videos). Reglas escritas antes de correr en docs/decisiones.md (29-oct).
@@ -35,6 +36,7 @@ from retina.curvas import (CORTE_PRUEBA, FIN_PRUEBA, cargar, en_segundo, interva
 from retina.curvas import VENTANA  # noqa: E402
 from retina.predecir import (LAMBDA_UNIVERSAL, Rasgos, ajustar_ridge, de_fuera, fijos_universales,  # noqa: E402
                              rasgos_universales, tipo_produccion)
+from retina.ficha import N_FICHA, ficha_a_vector  # noqa: E402
 from retina.publico import motivo_fuera, nombres, patrones, titulo_publico  # noqa: E402
 
 GRUPOS = 5
@@ -88,6 +90,7 @@ def main() -> None:
     ap.add_argument("--salida", type=Path, required=True)
     ap.add_argument("--corte", default=CORTE_PRUEBA.date().isoformat())
     ap.add_argument("--fin", default=FIN_PRUEBA.date().isoformat())
+    ap.add_argument("--fichas", type=Path, help="Fichas del arranque (retina.ficha): agrega la variante E.")
     a = ap.parse_args()
     corte, fin = datetime.fromisoformat(a.corte), datetime.fromisoformat(a.fin)
     voz = {}
@@ -105,7 +108,12 @@ def main() -> None:
     # 1. Creador nunca visto: cada grupo de talentos se esconde completo.
     grupo = lambda t: zlib.crc32(t.encode()) % GRUPOS  # noqa: E731
     pred = {"A_promedio_duracion": [], "B_retina_hoy_vacia": [], "C_cualquier_video": [],
-            "D_publico_sin_voz": [], "D_publico": []}
+            "D_publico_sin_voz": [], "D_publico": [], "E_publico_ficha": []}
+    fichas = {}
+    if a.fichas:
+        for l in a.fichas.open(encoding="utf-8"):
+            d = json.loads(l); fichas[d.pop("codigo")] = d
+    vf = lambda v: ficha_a_vector(fichas.get(v["codigo"])) if fichas else np.zeros(N_FICHA)  # noqa: E731
     temas, fecha_corte = patrones(), datetime.fromisoformat(a.corte)
     publicable = {v["codigo"] for v in filas if motivo_fuera(v, voz.get(v["codigo"]), temas) is None}
     orden, bases_a, lams = [], [], {"B": [], "C": []}
@@ -135,7 +143,10 @@ def main() -> None:
         base_d = [regla_de_hoy(f, hist_p, ent_p)[0] for f in limpios]
         Xd = np.array([rasgos_universales(f, b, fijos_universales(f["archivo"], voz.get(v["codigo"]), v["dur"], quitar))
                        for f, v, b in zip(limpios, ent_p, base_d)])
-        Wd = ajustar_ridge(Xd, np.array([v["curva"] - b for v, b in zip(ent_p, base_d)]), LAMBDA_UNIVERSAL)
+        Yd = np.array([v["curva"] - b for v, b in zip(ent_p, base_d)])
+        Wd = ajustar_ridge(Xd, Yd, LAMBDA_UNIVERSAL)
+        # E: lo mismo, más la ficha del arranque (ceros donde no hay ficha)
+        We = ajustar_ridge(np.hstack([Xd, np.array([vf(v) for v in ent_p])]), Yd, LAMBDA_UNIVERSAL) if fichas else None
         fija = {}
         for c in range(5):
             rec = [v["curva"] for v in ent_p if v["cubeta"] == c and v["fecha"] > fecha_corte - VENTANA]
@@ -149,6 +160,9 @@ def main() -> None:
             bf = fija[v["cubeta"]]
             pred["D_publico_sin_voz"].append(bf)
             pred["D_publico"].append(np.clip(bf + uni(f, v, bf) @ Wd, 0, 1) if v["codigo"] in voz else bf)
+            if fichas:
+                xe = np.concatenate([uni(f, v, bf), vf(v)])
+                pred["E_publico_ficha"].append(np.clip(bf + xe @ We, 0, 1) if v["codigo"] in voz else bf)
             orden.append(v); bases_a.append(b)
         print(f"grupo {g}: {len(pru)} videos de prueba, {len(ent)} de entrenamiento", flush=True)
     r["nunca_visto"] = {k: resumen(orden, p, bases_a) for k, p in pred.items()}
@@ -156,6 +170,11 @@ def main() -> None:
     r["nunca_visto"]["pareja_b_contra_c"] = pareja(orden, pred["B_retina_hoy_vacia"], pred["C_cualquier_video"])
     r["nunca_visto"]["pareja_b_contra_d"] = pareja(orden, pred["B_retina_hoy_vacia"], pred["D_publico"])
     r["nunca_visto"]["pareja_promedio_contra_d"] = pareja(orden, pred["D_publico_sin_voz"], pred["D_publico"])
+    if fichas:
+        r["nunca_visto"]["pareja_d_contra_e"] = pareja(orden, pred["D_publico"], pred["E_publico_ficha"])
+        r["nunca_visto"]["videos_de_prueba_con_ficha_pct"] = round(100 * float(np.mean([v["codigo"] in fichas for v in orden])), 1)
+    else:
+        pred.pop("E_publico_ficha")
 
     # 2. Talentos conocidos: lo de la casa encima del cerebro para cualquier video.
     corte = int(len(entrenamiento) * 0.8)
@@ -181,6 +200,8 @@ def main() -> None:
     print("pareja B-C", r["nunca_visto"]["pareja_b_contra_c"])
     print("pareja B-D", r["nunca_visto"]["pareja_b_contra_d"])
     print("pareja promedio-D", r["nunca_visto"]["pareja_promedio_contra_d"])
+    if fichas:
+        print("pareja D-E (ficha)", r["nunca_visto"]["pareja_d_contra_e"], "con ficha %", r["nunca_visto"]["videos_de_prueba_con_ficha_pct"])
 
 
 if __name__ == "__main__":

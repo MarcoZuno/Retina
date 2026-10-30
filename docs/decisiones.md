@@ -348,3 +348,20 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   público no muestra semáforo.** La tarjeta dice lo que vio, el número queda como referencia (ese sí pasó
   su medición) y, en videos de menos de 30 segundos, avisa que Retina vio pocos así. No se cambia la regla
   después de ver el resultado. Cifras en la carpeta privada.
+
+## 29-oct-2026 (noche) · ¿Leer el inicio mejora el número? Regla sellada antes de medir
+
+- **Por qué.** La auditoría encontró que el número sale sobre todo del título y la duración, no de cómo arranca
+  el video. Lo que mejor funciona en la literatura reciente (SnapUGC 2025, anuncios 2026) es que un modelo
+  multimodal llene una ficha fija del inicio y un modelo pequeño aprenda de ella.
+- **Qué se mide.** La ficha del arranque (`retina.ficha`): Muse Spark Open lee el título y las primeras 60
+  palabras dichas y anota el tipo de gancho, si quien habla se presenta antes del tema, si el tema llega en la
+  primera frase, si promete algo que se verá, si hay cifra o se pide interacción, claridad, curiosidad y
+  emoción. En `eval/cualquier_video.py` (variante E), el cerebro público más la ficha contra el cerebro público
+  solo (D), en los mismos videos de talentos escondidos, en dos periodos: ene-jun 2026 (entrenando antes del
+  1-ene-2026) y jul-dic 2025 (entrenando antes del 1-jul-2025). Fichas desde 2022; donde no hay, ceros.
+- **Regla.** La ficha entra al número si, en los dos periodos, la diferencia pareja del error de toda la curva
+  (D menos E) tiene su intervalo de 95 % entero arriba de 0 y la diferencia pareja del orden a los 15 s (E
+  menos D) es positiva. Si entra, Retina le pide la ficha de cada video nuevo a Muse Spark Open al revisarlo.
+  Si no, la ficha se queda solo como descripción en la tarjeta (la táctica del gancho), sin tocar el número.
+
