@@ -1,30 +1,39 @@
 # Retina
 
-**Before you publish, see if your opening loses more people than videos like it, and what to change.**
+**Retina doesn't stop at a score: it rewrites your video's opening, draws it and checks the fix before you publish.**
 
-![A Retina card for a made-up example video: how many of 100 people are still watching, how the opening starts according to Muse Spark Open, why, and what to change](docs/img/retina-example-card.jpg)
+![Retina's before and after for a made-up example video: the draft opens with a greeting and no bread in sight; the new opening shows the bread from the first frame, with the list of checks it passed](docs/img/retina-example-card.jpg)
 
-*The card above is a made-up example (no real video), as the public version shows it: no traffic light, a number
-from the public brain, and advice from Meta's models. Open it yourself in one minute, with no key: see
-"Try it in one minute" below.*
+*The picture above is a made-up example (no real video), with drawings by Muse Image. Open it yourself in one
+minute, with no key: see "Try it in one minute" below.*
 
-Retina reviews a video draft before it goes to Facebook and tells you where its
-opening (the hook and the first quarter) may lose people, why, and what to change.
-Muse Spark 1.3 watches the video, Muse Voice Transcribe listens to it and SAM 3.1
-checks whether what the title promises shows in the first 3 seconds. Then
-**Muse Spark Open**, Meta's open-weight model, writes the card: what works, what is
-weak and one concrete edit with steps an editor can follow, checked by a validator
-before you see it. **Muse Image** draws what the new opening would look like. A
-company can add a private layer on top: an agent that compares the draft with its
-own past openings.
-For videos that are already published, we lay the real retention curve over the
-predicted one to check it ([`eval/prediccion_vs_real.py`](eval/prediccion_vs_real.py)).
+**What makes it different.** A tool that only reads a video stops at a description or a grade. Retina's output is a new opening,
+and its core is a rule engine and a verification loop around Meta's models: the rules run in code, after the model, and send the
+work back with the exact list of what failed. SAM 3.1 then has to find what the title promises inside the frame Muse Image drew. One
+prompt to one model cannot do this.
 
-Why the opening and not "the exact second": Facebook reports the retention
-curve in whole percentage points. Past the first quarter of a video, the drop
-between two stretches is almost always 0 or 1 point, so the exact stretch is
-rounding noise. We promise what the data supports
-([`docs/decisiones.md`](docs/decisiones.md)).
+It also estimates how many of 100 people may still be watching, compared with videos like yours, and checks the whole video
+against Facebook's public rules, with the second and the words behind each warning.
+
+How the opening gets fixed:
+
+1. **Watch and listen.** Muse Spark 1.3 describes what is on screen and Muse Voice Transcribe writes down what is said.
+2. **Rewrite.** **Muse Spark Open**, Meta's open-weight model, writes a new opening that brings the title's promise to
+   the front. The title itself is never touched: it belongs to whoever wrote the script.
+3. **Check the words.** Fixed code rules, not a model, read the result: none of the engagement bait Meta's distribution
+   rules penalize, nothing that touches logos, legal notices or credits, every number and name must come from the video,
+   the title's topic in the first sentence, and a length that fits 10 to 15 seconds.
+4. **Draw it.** **Muse Image** draws the first frame.
+5. **Check the picture.** **SAM 3.1** looks for what the title promises in that frame. Muse Spark 1.3 picks it from a
+   closed list of objects and places, never people.
+6. **Correct.** If anything fails, Spark Open receives the exact list of failures and tries again, up to twice. What does
+   not pass never reaches you.
+7. **Before and after.** You see your opening next to the new one, with the two remaining frames and every check it passed.
+
+Three limits we say out loud. **The number is a modest reference**, not a promise: it barely beats the average for videos
+of the same length, and it cannot compare two versions of one video, so Retina shows no number for the new opening. **The
+"after" is a sketch** (voice and drawings), not a filmed video. **Retina does not promise that the new opening keeps more
+people watching**: we never measured that. The rules check is a first look, not a guarantee: Meta makes the final call.
 
 Built by Badabun (Mexico) for the Meta Global AI Developer Hackathon 2026 ·
 Startup track · theme *Build for Your World*.
@@ -40,6 +49,8 @@ Mexico and stay out of this repository, so here they are in words.
 
 | Question | Rule written first | Result |
 |---|---|---|
+| Can Retina rewrite an opening that keeps the title's promise and breaks no rule? (first test, 50 videos) | At least 15 of 18 openings with a visible promise pass every check in 2 corrections or fewer, 26 of the other 32 pass, and SAM rejects 9 of 10 trap frames | **Did not pass.** 10 of 18. The other two parts passed (31 of 32, and 10 of 10). SAM did not know words like "tortilla" even when the drawing showed one |
+| The same question after calibrating SAM's vocabulary (second test, 30 videos never used for this) | At least 24 of 30 pass everything and SAM rejects 9 of 10 trap frames | **Passed**: 29 of 30, 23 of them on the first try, and SAM rejected 9 of 10 traps. Details under Results |
 | Can the predicted curve beat today's rule (the average of videos of the same duration and creator over the previous 90 days)? | Beat it on error at 3 s, 15 s, mid-video, end and whole curve | **Passed** on videos the model had not seen |
 | Does the "high / medium / low" opening level pick out openings that really lose more people? | Better than the base rate, against videos of the same production type | **Passed**: openings flagged "high" lost more people than the base rate |
 | Can we point to the exact stretch where people leave? | Beat always guessing the most common stretch | **Did not pass.** The curve comes in whole points, so past the opening it is rounding noise. We dropped the promise |
@@ -61,25 +72,28 @@ Mexico and stay out of this repository, so here they are in words.
 
 ## Meta models in Retina
 
+Every AI model Retina calls while it runs is a Meta model. The one exception is a small formula, explained below the table.
+
 | Step | Model | Where it runs | What it does |
 |---|---|---|---|
+| Rewriting the opening (main step) | **Muse Spark Open** (open weights) | Baseten Model API | Writes the new first 10 to 15 seconds and the three frames, and fixes them when a check fails. Without a Baseten key, Muse Spark 1.3 does it |
+| Drawing it | **Muse Image 1.0** | Meta Model API | Draws the first frame and, once everything passes, the other two |
+| Checking the promise | Muse Spark 1.3 + **SAM 3.1** | Meta Model API | Spark picks what the title promises from a closed list of objects and places (never people); SAM looks for it in the first 3 s of the draft and in the first drawn frame |
+| Checking Facebook's rules | Muse Spark 1.3 | Meta Model API | Reads the whole video against a closed list of 18 public Meta rules; code drops any warning without real evidence from the video |
 | Watching | Muse Spark 1.3 (Files API) | Meta Model API | Describes what is on screen in each stretch (strict JSON), in the reviewer's language |
 | Listening | Muse Voice Transcribe 1.0 | Meta Model API | Speech with timestamps, and silences |
-| Reading the opening | **Muse Spark Open** (open weights) | Baseten Model API | Reads the title and the first words and fills a fixed sheet: hook tactic, whether the speaker introduces themselves before the topic, clarity, curiosity, emotion. It feeds the number and is shown on the card |
-| Checking the promise | Muse Spark 1.3 + **SAM 3.1** | Meta Model API | Spark picks what the title promises from a closed list of objects and places (never people); SAM checks whether it shows in the first 3 s and from which second |
-| Writing the card (main step) | **Muse Spark Open** (open weights) | Baseten Model API | Reads what was seen, said and measured, writes the card in English or Spanish, fixes it when the validator objects. Muse Spark 1.3 takes over only if Spark Open does not close a case |
+| Reading the opening | **Muse Spark Open** (open weights) | Baseten Model API | Reads the title and the first words and fills a fixed sheet: hook tactic, whether the speaker introduces themselves before the topic, clarity, curiosity, emotion |
+| Writing the card | **Muse Spark Open** (open weights) | Baseten Model API | What works and what is weak in the draft, checked by the same validator. Muse Spark 1.3 takes over only if Spark Open does not pass |
 | The agent (with a company's private layer) | Muse Spark Open | Baseten Model API | Same card, plus tools to look up how that company's similar videos opened (needs its private history) |
-| Drawing the fix | **Muse Image 1.0** | Meta Model API | When you press the button, a 3-frame storyboard of the suggested opening (about USD 0.03); also the panel backgrounds |
-| Video features (tried) | V-JEPA 2 (open weights) | Our GPU | One vector per stretch. Measured: it does not improve the number, so the number does not depend on it |
 
-The number (how many of 100 people are still watching) is not an AI call: it is the average curve for
-videos of that length plus fixed weights (`modelos/retina-publico.json`) learned from the private retention data of a large Facebook page in Mexico (the company that provides the data). The file carries no video and no per-video data.
-If the organizers rule that fixed learned weights count as a non-Meta model, `RETINA_SOLO_MODELOS_META=1`
-turns them off: the number becomes the plain average for that length, there is no risk level, and the
-card comes only from what Meta's models saw and heard. The card says so.
-The public mode shows **no traffic light** (no "high / medium / low" level): the first version did not pass its
-rule, and the second passed its own but was written after seeing the first one fail and was tested on periods
-already used several times, so by our rule it counts as exploratory and stays out (see the table above).
+**The reference number is a small fitted formula, not an AI call.** It is a ridge regression fitted offline on the retention
+data of a large Facebook page in Mexico, and at runtime it is a JSON file of fixed weights that plain Python multiplies and adds.
+It adjusts the average curve for the video's length; it writes nothing and decides nothing. The fit: ridge regression in closed form
+with λ = 300, from 1,703 inputs to the 41 points of the curve, on about 30,000 videos without eligibility, out-of-scope topics or serious
+topics. The fixed weights are in [`modelos/retina-publico.json`](modelos/retina-publico.json) and the full method and data description
+are in [`docs/numero.md`](docs/numero.md). The organizers ruled on 30-Oct-2026 that ridge coefficients are acceptable when the README
+explains the layer, with its fitting details and its weights in the repo. `RETINA_SOLO_MODELOS_META=1` turns it off and the rest of
+Retina works the same. Whisper ran offline only, to build the training set; it never runs in the app.
 
 ## Status
 
@@ -89,17 +103,25 @@ diary and [`docs/decisiones.md`](docs/decisiones.md) for every decision.
 ## Architecture
 
 Three decoupled layers: **presentation** (`panel/`) ·
-**orchestration** (`retina.py`, calls the services in order and versions each
-output) · **services** (the table below). Each service takes files or JSON,
-returns files or JSON, and does not know who calls it.
+**orchestration** (`retina.py` for the review, `apertura.py` for the fix) · **services** (the table below). Each service
+takes files or JSON, returns files or JSON, and does not know who calls it.
 
 ```
-draft MP4 ─► segmentar ─► 40 stretches aligned to the 41-point curve + WAV + light MP4
+draft MP4 ─► segmentar ─► 40 stretches + WAV + light MP4
                ├─► transcribir  (Muse Voice Transcribe)  speech turns, silences
-               ├─► embeber      (V-JEPA 2, open weights, our GPU; optional)  one vector per stretch
-               └─► describir    (Muse Spark 1.3, Files API, strict JSON)  what is on screen
-                        └─► predecir + arranque (own regressions) ─► curve and opening risk vs. similar videos
-                                 └─► agente (Spark Open + tools + validator; Spark 1.3 rescues) ─► card ─► storyboard (Muse Image) ─► panel
+               ├─► describir    (Muse Spark 1.3, Files API, strict JSON)  what is on screen
+               ├─► ficha        (Muse Spark Open)  how the opening starts
+               ├─► sam          (Muse Spark 1.3 + SAM 3.1)  does the title's promise show in the first 3 s?
+               ├─► normas       (Muse Spark 1.3 + code)  possible breaches of Facebook's rules, with evidence
+               ├─► número       (fixed formula, docs/numero.md)  how many of 100 may stay
+               └─► explicar     (Muse Spark Open, validator; Muse Spark 1.3 rescues) ─► card ─► panel
+
+press «Fix my opening» ─► apertura:
+    Muse Spark Open writes ─► rules in code ─► Muse Image draws frame 1 ─► SAM 3.1 looks for the promise
+          ▲                       │ fails                                        │ fails
+          └───────────────────────┴──── exact list of failures, up to 2 times ───┘
+                                  │ all pass
+                                  └─► Muse Image draws frames 2 and 3 ─► before and after in the panel
 ```
 
 The agent follows the pattern in Meta's cookbook: **code computes, the model
@@ -124,14 +146,17 @@ If a service is not in this table, it does not exist.
 | `segmentar` | MP4 → frames per stretch, 24 kHz mono WAV, 480p MP4 | ffmpeg (no model) | 0 | ✅ |
 | `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ |
 | `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | ≈ USD 0.05 / 100 s | ✅ |
-| `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | ✅ · optional: no gain on the risk level |
-| `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression | 0 | ✅ |
-| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | ✅ |
+| `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | research: no gain on the risk level |
+| `apertura` | title + what was seen and said → new opening, rules, frames, SAM check, up to 2 corrections | **Muse Spark Open**, Muse Image 1.0, SAM 3.1 | ≈ USD 0.05 to 0.25 | ✅ · the core of Retina |
+| `normas` | what is seen and said → possible breaches of 18 public rules, with second and evidence | Muse Spark 1.3 + code | ≈ USD 0.01 | ✅ |
+| `publico` | title, speech and opening sheet → 41-point curve vs. videos of the same length | small fitted formula, [`docs/numero.md`](docs/numero.md) | 0 | ✅ |
+| `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression, private layer | 0 | research |
+| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | research: the traffic light is not shown |
 | `explicar` | opening + descriptors + speech → why + one edit (one shot, validated; the agent's fallback) | Muse Spark Open or 1.3 (`RETINA_MOTOR`) | ≈ USD 0.03 | ✅ |
 | `agente` | case folder → card, with tools and the validator in the loop | **Muse Spark Open** (open weights, Baseten); Muse Spark 1.3 rescues | ≈ USD 0.04 | ✅ |
-| `sam` | first 3 s + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.006 | ✅ |
+| `sam` | first 3 s or a drawn frame + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.01 | ✅ |
 | `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ |
-| `storyboard` | suggestion → 3 illustrations of the new opening, shown in the panel (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ |
+| `storyboard` | a card's suggestion → 3 illustrations, from the command line (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | not built (after the event) |
 | `escuchar` | post id → real curve + labeled comments | Graph API + Spark | ≈ USD 0.02 | not built (after the event) |
 | `evaluar` | held-out videos → metrics with intervals | — | 0 | baseline ✅ |
@@ -150,12 +175,10 @@ PYTHONPATH=src python -m retina.demo      # Windows PowerShell: $env:PYTHONPATH=
 Only the Python standard library is needed for the demo. The interface is in Spanish and English: use the **English** button in the header,
 or open `/panel/?lang=en` (the made-up example is translated too, in `casos/demo-en/`).
 
-It opens the review card in your browser, served only on your machine (127.0.0.1), with the example
-case in `casos/demo/`. The card answers three questions in plain words: **will the start of my video lose
-people, where, and what exactly do I change** (numbered steps with clock times an editor can follow),
-plus a check of the first 3 and 10 seconds against Meta's public recommendations, each with its source,
-and a 3-frame storyboard of the new opening drawn with **Muse Image**. It also says which model wrote
-the card. `--caso PATH` opens any other `resultado.json` inside the repo.
+It opens the example in your browser, served only on your machine (127.0.0.1), from `casos/demo/`: how many of 100 people may
+stay, the opening before and after with every check it passed, the check against Facebook's rules, and the card with what works,
+what is weak and numbered steps with clock times an editor can follow. The example's draft and its number are made up, but its new
+opening was written, drawn and checked by the real pipeline. `--caso PATH` opens any other `resultado.json` inside the repo.
 
 The panel is a "liquid glass" interface drawn with WebGL over backgrounds generated with
 **Muse Image** (`panel/fondos/`); it falls back to plain CSS when WebGL is not available or the file is
@@ -171,14 +194,15 @@ pip install -r requirements.txt
 # ffmpeg:  winget install Gyan.FFmpeg  (Windows) · brew install ffmpeg (macOS) · apt install ffmpeg (Linux)
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env  (Retina reads .env at the repo root)
 # Open .env and put your Meta Model API key in MODEL_API_KEY.
-# Add BASETEN_API_KEY for Muse Spark Open; without it, Muse Spark 1.3 writes every card.
+# Add BASETEN_API_KEY for Muse Spark Open; without it, Muse Spark 1.3 does its work.
 PYTHONPATH=src python -m retina.app     # Windows PowerShell: $env:PYTHONPATH="src"; python -m retina.app
 ```
 
-The app opens in your browser at `http://127.0.0.1:8790` (change it with `--puerto`). Drop a video in the
-page, write its title and when it would go out, and the card is ready in about 3 minutes, in the language
-the page is in (English or Spanish). On the card, «Draw it with Muse Image» sketches the suggested opening in
-3 frames.
+The app opens in your browser at `http://127.0.0.1:8790` (change it with `--puerto`). Drop a video in the page, write its
+title and when it would go out, and the review is ready in about 3 minutes, in the language the page is in (English or
+Spanish). Then press **Fix my opening**: you watch each step happen, and in about a minute you get the before and after.
+It costs about USD 0.05 to 0.25 of your own credits, so it only runs when you press the button. The new opening comes out
+in the language of the video.
 
 Without the app, from the command line:
 
@@ -186,31 +210,19 @@ Without the app, from the command line:
 PYTHONPATH=src python -m retina.retina VIDEO --salida CARPETA --con-api --ya-publicado --idioma en
 ```
 
-**With or without a number.** The number (how many of 100 people are still watching) comes from
-`modelos/retina-publico.json`, the **public brain**: weights and five average curves by video length,
-with no titles, creators, production codes, revenue or per-video figures. It was trained only on videos with
-no eligibility that do not touch out-of-scope topics or out-of-scope topics
-([`reglas/alcance-v1.json`](reglas/alcance-v1.json)), with creator names removed from the words
-it learns. It is JSON, so opening it runs no code. **If your copy does not include
-`modelos/retina-publico.json`, Retina still runs, but without a number:** the card comes only from what
-Meta's models see and hear in your video, and the app says so in the page and in the terminal when it starts
-(it does the same if ffmpeg or the key is missing). The card also says plainly when
-Retina does not know the creator: the number is a reference from a large Facebook page in Mexico, and the
-advice comes from Meta's models watching your video. The public mode shows no traffic light (see Results).
 
 **Who it was tested on.** We tested Retina on horizontal videos of 1 to 4 minutes from one large Facebook page in
-Spanish. It is meant for any creator, but with reels, videos under 30 seconds or other languages Retina
-warns you and the number is a weaker reference.
+Spanish. It works for any creator and in English, but the new opening was measured on those videos.
 
 Retina is built to review a video *before* you publish it, so by default any video goes to Meta's API, which
-costs money (the card of one video is a few US cents; your own cap is in `.env`, `RETINA_TOPE_USD`).
+costs money (a review is about 10 US cents and fixing the opening 5 to 25 more; your own cap is in `.env`,
+`RETINA_TOPE_USD`).
 With the free credits of the contest, the content you send may be used by Meta; a company that does not
 want to send drafts can turn on a lock with `RETINA_SOLO_PUBLICADOS=1` in its `.env`: then only
 already-published videos go, and `--con-api` requires `--ya-publicado`.
 
 No Badabun video or per-video data is needed. A company can add its own layer on top (its creators, its
-history, its transcripts) with a private model: that is how Badabun runs it. The public mode is the same
-program with one file less.
+history, its transcripts) with a private model. That layer is not part of this entry.
 
 ### Reproducing our measurements (needs the private data)
 
@@ -293,14 +305,25 @@ was letting it work as an agent: with tools to look again and a validator that
 returns its objections inside the loop, it reached Spark 1.3's coverage. In the
 agent it runs with `reasoning_effort: high`, which Baseten honors.
 
-The public version (what you run with the public brain) writes the card in one pass with the same
+The public version (what you run from this repo) writes the card in one pass with the same
 validator, because the agent's best tool looks up a company's own past videos. When Spark Open
 cannot produce a card the validator accepts, Muse Spark 1.3 takes over, and the card says which
 model wrote it. A blind judge preferred one-pass cards over the agent's (see Results).
 
 ## Results
 
-What was measured where. Every measurement is on videos the model had not seen, but the periods and the
+**The opening fix.** The rule was sealed before each run. The first test failed: 10 of 18 openings with a visible promise passed,
+because SAM did not know some words even when the drawing showed the object. We calibrated its vocabulary on made-up drawings
+([`eval/calibrar_vocabulario.py`](eval/calibrar_vocabulario.py)): of 167 words, 104 work as they are, 10 work through a general word
+("tortilla" is searched as "food") and 53 can no longer be checked with SAM. Then we sealed a new rule and ran it on 30 videos never
+used for this: **29 of 30 passed every check** (95 % interval, 83 % to 99 %), 23 on the first try and 6 after one correction. SAM
+rejected 9 of 10 trap frames, the minimum; the tenth asked for a building in a drawing that does show buildings. It cost USD 1.84.
+
+What this does not show: about a third of titles (30 of 83) promise something SAM can check, and the rest get only the text and
+frame rules. That test used the title and the speech, without the video. And it measures passing the checks, not keeping people.
+
+The rest of this section is what we measured on the way there, while Retina still had a number. It is why Retina now
+promises only what it can check. What was measured where. Every measurement is on videos the model had not seen, but the periods and the
 comparison rule differ, so do not read the rows as one test:
 
 - **Predicted curve, opening level and reach** (house model): Jul–Sep 2026, against today's rule, "the average

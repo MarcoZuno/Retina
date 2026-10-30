@@ -496,6 +496,14 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
 - **Si no pasa.** Se publica igual, junto con la primera, y no se reajusta en estos 30 casos. Lo que esto no mide es lo mismo que
   antes: si la apertura nueva retiene más gente.
 
+- **Resultado (30-oct; corrida con el commit d44e721, el del código congelado).** **Pasó.** A: 29 de 30, y pedía 24 (intervalo de
+  95 %: de 83 % a 99 %). B: SAM rechazó 9 de 10, justo lo que pedía. El cuadro que no rechazó era un perro frente a una casa con la
+  calle de fondo y se le preguntó por «building»: sí había edificios, así que la trampa estaba mal puesta, pero la cuenta se queda
+  como salió. De las 29, 23 pasaron a la primera y 6 con una corrección. La que no pasó fue por SAM. Costo: USD 1.84.
+- **Cómo leerlo.** Con el vocabulario calibrado, 30 de 83 títulos prometen algo que SAM puede comprobar; en los demás solo aplican las
+  reglas de texto y los cuadros. Esta medición usa título y voz, sin video. Mide que la apertura pase las comprobaciones, no que
+  retenga más gente. La primera medición no pasó y se queda publicada.
+
 ## 30-oct-2026 · El número regresa, con la respuesta completa de los organizadores
 
 - **Por qué se cambia.** Jossafat vio la tarjeta sin número y dijo que predecir la retención es lo importante y lo llamativo.

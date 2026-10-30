@@ -532,3 +532,12 @@ todo Retina. Lo que se corrigió:
 - Pruebas: 183.
 
 **Costo:** USD 0 (ninguna llamada a las API).
+
+## 30-oct-2026 · Retina predice, revisa normas y arregla el arranque
+
+Los organizadores contestaron: la fórmula se vale si está documentada, y una idea cercana a «simple image analyzers» se vale si el
+centro es nuevo. Se construyó el lazo de la apertura (Spark Open escribe, reglas de código revisan, Muse Image dibuja, SAM 3.1 comprueba,
+hasta 2 correcciones). La primera medición sellada no pasó (10 de 18). Se calibró el vocabulario de SAM y la segunda, con 30 videos
+nuevos, pasó (29 de 30). Se probó volver a predecir con el arranque nuevo y no sirvió: el número no compara versiones de un video.
+Se sumaron la revisión de normas de Facebook y la demo en línea con código de acceso, y se quitó el cruce de fondos que parpadeaba.
+
