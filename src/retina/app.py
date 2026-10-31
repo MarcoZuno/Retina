@@ -411,6 +411,10 @@ def estado(carpeta: Path) -> dict:
     e = json.loads(ruta.read_text(encoding="utf-8"))
     if e.get("estado") != "procesando":
         return e
+    try:  # lo que avisa la revisión misma; sin ese aviso, se deduce de los archivos que ya salieron
+        return {"estado": "procesando", **json.loads((carpeta / "avance.json").read_text(encoding="utf-8"))}
+    except (OSError, ValueError):
+        pass
     pasos = PASOS + ((PASO_COMPARAR,) if (carpeta / COMPARAR_CON).exists() else ())  # una sola versión: los de siempre
     paso = next((nombre for archivo, nombre in pasos if not (carpeta / archivo).exists()), "terminando")
     return {"estado": "procesando", "paso": paso}

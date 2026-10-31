@@ -141,6 +141,13 @@ def licencia(pred: dict | None, no_pude: list) -> dict:
     }
 
 
+def anotar_avance(salida: Path, nombre: str, tiempos: dict) -> None:
+    """Qué está haciendo Retina ahora y cuánto tardó lo anterior: el panel lo enseña en vivo."""
+    temporal = salida / "avance.json.tmp"
+    temporal.write_text(json.dumps({"paso": nombre, "tiempos": tiempos}, ensure_ascii=False), encoding="utf-8")
+    os.replace(temporal, salida / "avance.json")
+
+
 def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
     """Corre un paso de la API; si falla, lo anota y sigue con lo demás."""
     t = time.time()
@@ -163,6 +170,12 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
                                "Marca «ya publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
     tiempos, no_pude = {}, []
     preparar_carpeta(video, salida)
+
+    def paso(nombre: str, que: str, funcion, *args):
+        anotar_avance(salida, nombre, tiempos)
+        return _paso(nombre, tiempos, no_pude, que, funcion, *args)
+
+    anotar_avance(salida, "segmentar", tiempos)
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
 
     emb = audio = None
@@ -231,8 +244,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         if not man.get("audio"):
             no_pude.append("La voz y los silencios: el video no trae audio. Lo de abajo sale solo de lo que se ve.")
         elif not (salida / "transcribir.json").exists():
-            _paso("transcribir", tiempos, no_pude, "La voz y los silencios", transcribir.transcribir, salida,
-                  transcribir.idioma_de(titulo), idioma)
+            paso("transcribir", "La voz y los silencios", transcribir.transcribir, salida, transcribir.idioma_de(titulo), idioma)
         voz_json = salida / "transcribir.json"
         hasta_s = json.loads(voz_json.read_text(encoding="utf-8")).get("escucho_hasta_s") if voz_json.exists() else None
         if hasta_s:
@@ -242,42 +254,39 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         # Cómo arranca, según Muse Spark Open (táctica del gancho, claridad, curiosidad). Se muestra siempre y,
         # si el cerebro público la aprendió, también entra al número.
         from .ficha import ficha_de
-        resultado["ficha"] = _paso("ficha", tiempos, no_pude, "Cómo arranca (ficha de Muse Spark Open)",
-                                   ficha_de, titulo, tramos)
+        resultado["ficha"] = paso("ficha", "Cómo arranca (ficha de Muse Spark Open)", ficha_de, titulo, tramos)
         if tramos and m is not None and not m.de_la_casa(v) and not solo_meta:
             # Video de fuera: con la voz ya se puede usar el cerebro para cualquier video.
-            pred = m.predecir(v, emb, audio, tramos, resultado["ficha"])
+            anotar_avance(salida, "predecir", tiempos)
+            t = time.time(); pred = m.predecir(v, emb, audio, tramos, resultado["ficha"]); tiempos["predecir"] = round(time.time() - t, 1)
             # Retina aprendió las palabras en español: con otro idioma el número es una referencia más débil.
             dichas = " ".join(x for _, x in tramos).split()[:60]
             pred["otro_idioma"] = transcribir.idioma_de(titulo + " " + " ".join(dichas)) == "en"
             resultado["prediccion"], resultado["licencia"] = pred, licencia(pred, no_pude)
             escribir()
         if not (salida / "describir.json").exists():
-            _paso("describir", tiempos, no_pude, "Lo que se ve tramo a tramo",
-                  lambda c: describir.describir(c, idioma=idioma), salida)
+            paso("describir", "Lo que se ve tramo a tramo", lambda c: describir.describir(c, idioma=idioma), salida)
         if (salida / "describir.json").exists():
             if voz is not None and m is not None and m.filas:  # el agente lee resultado.json y busca en la historia de la casa
                 from .agente import cargar_voz, correr_agente
-                resultado["explicacion"] = _paso("agente", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
-                                                 correr_agente, salida, m, cargar_voz(voz), motor)
+                resultado["explicacion"] = paso("agente", "Por qué y qué cambiar en el arranque", correr_agente, salida, m, cargar_voz(voz), motor)
             else:
                 # Sin agente, SAM revisa igual si lo que promete el título se ve en los primeros 3 segundos.
                 from .sam import medir_promesa
-                _paso("sam", tiempos, no_pude, "Si lo que promete el título se ve al inicio (SAM 3.1)",
-                      medir_promesa, salida, titulo)
-                resultado["explicacion"] = _paso("explicar", tiempos, no_pude, "Por qué y qué cambiar en el arranque",
-                                                 explicar.explicar, salida, riesgo_arranque, motor, "explicar.json", idioma)
+                paso("sam", "Si lo que promete el título se ve al inicio (SAM 3.1)", medir_promesa, salida, titulo)
+                resultado["explicacion"] = paso("explicar", "Por qué y qué cambiar en el arranque",
+                                                explicar.explicar, salida, riesgo_arranque, motor, "explicar.json", idioma)
         else:
             no_pude.append("Por qué y qué cambiar en el arranque (no hubo descripción del video).")
         if (salida / "describir.json").exists():
             # Lo que Meta recomienda para los primeros segundos, calculado en código (no llama a la API).
             from .revision_meta import revisar
-            resultado["revision_meta"] = _paso("revision_meta", tiempos, no_pude,
-                                               "Las recomendaciones de Meta para el inicio", revisar, salida, idioma) or []
+            resultado["revision_meta"] = paso("revision_meta", "Las recomendaciones de Meta para el inicio", revisar, salida, idioma) or []
             from . import normas
-            resultado["normas"] = _paso("normas", tiempos, no_pude, "Las normas de Facebook", normas.revisar, salida, idioma, titulo)
+            resultado["normas"] = paso("normas", "Las normas de Facebook", normas.revisar, salida, idioma, titulo)
     no_pude.append("La música: no se analiza la letra ni la licencia.")
     escribir()
+    (salida / "avance.json").unlink(missing_ok=True)
     return resultado
 
 

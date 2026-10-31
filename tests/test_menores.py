@@ -307,6 +307,29 @@ class LlaveYTopeParaQuienBajaElRepo(unittest.TestCase):
         self.assertIn("RETINA_TOPE_USD", str(e.exception))
 
 
+class AvanceEnVivo(unittest.TestCase):
+    """Mientras corre la revisión, el panel enseña qué motor trabaja y cuánto tardó lo anterior."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.d = Path(self.tmp.name)
+        (self.d / "estado.json").write_text(json.dumps({"estado": "procesando"}), encoding="utf-8")
+
+    def test_el_paso_lo_avisa_la_revision_con_sus_tiempos(self):
+        retina.anotar_avance(self.d, "describir", {"transcribir": 8.2})
+        self.assertEqual(app.estado(self.d), {"estado": "procesando", "paso": "describir", "tiempos": {"transcribir": 8.2}})
+
+    def test_un_aviso_a_medias_no_truena_y_se_deduce_de_los_archivos(self):
+        (self.d / "avance.json").write_text('{"paso":', encoding="utf-8")
+        self.assertEqual(app.estado(self.d)["paso"], "cortando")
+
+    def test_el_panel_nombra_cada_paso_de_la_revision_en_los_dos_idiomas(self):
+        panel = (RAIZ / "panel" / "index.html").read_text(encoding="utf-8")
+        for paso in ("segmentar", "transcribir", "ficha", "predecir", "describir", "sam", "explicar", "normas"):
+            self.assertEqual(len(re.findall(rf"\b{paso}: \[", panel)), 2, paso)
+
+
 class BotonDeOtraRevision(unittest.TestCase):
     """B20: sin la API (la demo), «Abrir otra revisión» llevaba a una pantalla que pide un resultado.json:
     quien no conoce el proyecto no sabe qué es. El botón dice a dónde va."""

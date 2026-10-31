@@ -589,3 +589,11 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **Cómo leerlo.** El juez es un modelo. F favorece a la nueva porque compara texto limpio contra voz transcrita. 45 de 46 contra 26 de 29 son videos
   distintos y sus intervalos se tocan: es indicio, no prueba, de que apertura-v2 ya no vacía el video. 15 de los 30 con promesa son mascotas o animales. Sin
   video. Retención, no medida. Estos 50 casos ya no se usan para esto.
+
+## 30-oct-2026 · Lo que salió de usar Retina con videos reales
+
+- **Traducción.** El botón de idioma solo cambiaba los textos fijos: lo que escribió el modelo se quedaba en el idioma de la revisión. Muse Spark 1.3 lo traduce una
+  vez, al cambiar de idioma. Si pierde una cifra se pide otra vez, y si la inventa o trae un anzuelo, ese texto se queda como estaba.
+- **La tarjeta se perdía justo cuando el video traía un anzuelo.** Un paso decía «Ubica la frase “Comparte…”» y el filtro solo reconocía verbos de quitar, así que tiraba
+  toda la tarjeta. Ahora señalar lo que el video ya dice no cuenta como sugerirlo, el filtro le dice al modelo en qué campo falló y las instrucciones suben a
+  explicar-v9. Sigue en pie que nada que no pase el filtro llega a la persona. No se volvió a medir el juez de tarjetas: esa medición es de una versión anterior.

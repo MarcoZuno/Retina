@@ -65,12 +65,31 @@ class Traducir(unittest.TestCase):
         with mock.patch.object(traducir, "pedir", side_effect=AssertionError("gastó")):
             self.assertEqual(traducir.traducir(self.d, "en")["explicacion"]["por_que"], CASO["explicacion"]["por_que"])
 
-    def test_una_cifra_cambiada_deja_el_texto_como_estaba(self):
+    def test_una_cifra_inventada_deja_el_texto_como_estaba(self):
         malo = ["Desde el segundo 9 la voz repite.", *BIEN[1:]]
-        with mock.patch.object(traducir, "pedir", return_value=malo):
+        with mock.patch.object(traducir, "pedir", side_effect=[malo, ["Desde el segundo 9 la voz repite."]]):
             r = traducir.traducir(self.d, "es")
         self.assertEqual(r["explicacion"]["por_que"], CASO["explicacion"]["por_que"])
         self.assertEqual(r["explicacion"]["pasos"], ["Corta 2 segundos."])
+
+    def test_si_pierde_una_cifra_se_pide_otra_vez_insistiendo(self):
+        malo = ["La voz repite.", *BIEN[1:]]
+        with mock.patch.object(traducir, "pedir", side_effect=[malo, [BIEN[0]]]) as pedir:
+            r = traducir.traducir(self.d, "es")
+        self.assertEqual(r["explicacion"]["por_que"], BIEN[0])
+        self.assertEqual(pedir.call_args.args[0], [CASO["explicacion"]["por_que"]])
+        self.assertTrue(pedir.call_args.kwargs["insistir"])
+
+    def test_perder_una_cifra_es_mejor_que_dejarlo_en_otro_idioma(self):
+        malo = ["Desde el principio la voz repite.", *BIEN[1:]]
+        with mock.patch.object(traducir, "pedir", side_effect=[malo, ["Desde el principio la voz repite."]]):
+            r = traducir.traducir(self.d, "es")
+        self.assertEqual(r["explicacion"]["por_que"], "Desde el principio la voz repite.")
+
+    def test_una_traduccion_guardada_de_otra_version_se_rehace(self):
+        (self.d / "resultado-es.json").write_text(json.dumps({"idioma": "es", "explicacion": {"por_que": "vieja"}}), encoding="utf-8")
+        with mock.patch.object(traducir, "pedir", return_value=BIEN):
+            self.assertEqual(traducir.traducir(self.d, "es")["explicacion"]["por_que"], BIEN[0])
 
     def test_una_traduccion_no_puede_meter_un_anzuelo(self):
         self.assertFalse(traducir.aceptable("Cut 2 seconds.", "Corta 2 segundos y comenta abajo."))

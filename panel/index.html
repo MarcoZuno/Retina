@@ -143,6 +143,8 @@ body[data-tema="claro"] .campos input, body[data-tema="claro"] .campos select { 
 .avance-pasos { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .avance-pasos li { display: flex; align-items: center; gap: 12px; color: var(--tenue); }
 .avance-pasos li i { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.22); flex: none; }
+.avance-pasos li b { color: var(--texto); font-weight: 650; }
+.avance-pasos li small { color: var(--tenue); font-weight: 400; }
 .avance-pasos li.listo { color: var(--suave); } .avance-pasos li.listo i { background: var(--verde); }
 .avance-pasos li.ahora { color: var(--texto); font-weight: 650; } .avance-pasos li.ahora i { background: var(--azul); box-shadow: 0 0 12px var(--azul); animation: late 1.2s infinite; }
 @keyframes late { 50% { opacity: .35; } }
@@ -426,7 +428,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
     <section id="revisando" class="pantalla" aria-labelledby="avance-titulo" aria-live="polite">
       <div class="avance vidrio">
         <h1 id="avance-titulo"></h1>
-        <p data-t="avance_p">Tarda unos 3 minutos. No cierres esta página ni la ventana de Retina.</p>
+        <p data-t="avance_p">Tarda de 3 a 5 minutos. No cierres esta página ni la ventana de Retina.</p>
         <div class="barra"><i id="avance-barra"></i></div>
         <ol class="avance-pasos" id="avance-lista"></ol>
       </div>
@@ -496,7 +498,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <p class="texto-linea" id="texto-linea"></p>
         </div>
 
-        <div class="bloque vidrio">
+        <div class="bloque vidrio" id="bloque-porque">
           <h2 data-t="por_que">Por qué</h2>
           <p class="porque" id="porque"></p>
         </div>
@@ -587,14 +589,14 @@ const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart
 // la persona lee tiempos de reloj: 0:04, 0:11. El caso puede venir en un idioma y el panel estar en el otro.
 const seg = (x) => mmss(parseFloat(x.replace(",", ".")));
 const reloj = (t) => (t || "")
-  .replace(/\b([Dd]el) segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
+  .replace(/\b([Dd]el|[Dd]esde el) segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
   .replace(/\b([Dd]el|[Ee]l|[Dd]esde el|[Ee]n el) segundo (\d+(?:[.,]\d+)?)/g, (_, d, a) => `${d} ${seg(a)}`)
   .replace(/\bsegundo (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a))
   .replace(/\b([Ff]rom) second (\d+(?:[.,]\d+)?) to (?:second )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} to ${seg(b)}`)
   .replace(/\bsecond (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
 
 // ---- Idioma: el del navegador (español si es español; inglés en cualquier otro); ?lang= o el botón del encabezado mandan y se recuerdan ----
-// Solo se traducen los textos fijos del panel. Lo que viene del resultado.json (por qué, pasos, storyboard, título)
+// Aquí van los textos fijos del panel. Lo que escribió el modelo se traduce aparte, con retina.traducir. Lo que viene del resultado.json (por qué, pasos, storyboard, título)
 // es contenido del caso y se muestra tal cual: para la demo en inglés existe casos/demo-en/.
 const TEXTOS = {
   es: {
@@ -648,10 +650,13 @@ const TEXTOS = {
     sin_talento: "Nadie o no está en la lista", campo_fecha: "Día y hora en que se publicaría",
     campo_codigo: "Código de producción (si tiene)", campo_publicado: "Este video ya está publicado",
     campo_publicado_nota: "Déjala sin marcar si es un borrador.", revisar: "Revisar este video", otro_video: "Revisar otro video",
-    avance_p: "Tarda unos 3 minutos. No cierres esta página ni la ventana de Retina.",
+    avance_p: "Tarda de 3 a 5 minutos. No cierres esta página ni la ventana de Retina.",
     avance_subiendo: "Subiendo el video…", avance_fila: "En fila: hay otro video revisándose…", avance_revisando: "Revisando tu video…",
-    avance: { subiendo: "Subir el video", cortando: "Cortar el video en partes", escuchando: "Escuchar lo que se dice",
-              mirando: "Mirar lo que pasa en pantalla", escribiendo: "Escribir la tarjeta", terminando: "Revisar lo que recomienda Meta" },
+    avance: { subiendo: ["Retina", "recibe tu video"], segmentar: ["ffmpeg", "corta el video en 40 partes"],
+              transcribir: ["Muse Voice Transcribe", "escucha lo que se dice"], ficha: ["Muse Spark Open", "lee cómo empieza tu video"],
+              predecir: ["La fórmula de Retina", "calcula cuánta gente se quedaría"], describir: ["Muse Spark 1.3", "mira lo que pasa en pantalla"],
+              sam: ["Muse Spark 1.3 y SAM 3.1", "buscan al inicio lo que promete el título"], explicar: ["Muse Spark Open", "escribe qué funciona y qué cambiar"],
+              normas: ["Muse Spark 1.3", "revisa las normas de Facebook"] },
     falta_video: "Primero elige el video.", falta_titulo: "Escribe el título del video.",
     falta_fecha: "Pon el día y la hora en que se publicaría.", solo_mp4: "Eso no parece un video. Sube un MP4, MOV, WebM, MKV o AVI.",
     codigo_malo: "El código tiene que verse como XYZ0000001 (letras y luego números). Si no tiene, déjalo vacío.",
@@ -844,10 +849,13 @@ const TEXTOS = {
     sin_talento: "Nobody, or not on the list", campo_fecha: "Day and time it would be published",
     campo_codigo: "Production code (if any)", campo_publicado: "This video is already published",
     campo_publicado_nota: "Leave it unchecked for a draft.", revisar: "Review this video", otro_video: "Review another video",
-    avance_p: "It takes about 3 minutes. Don't close this page or the Retina window.",
+    avance_p: "It takes 3 to 5 minutes. Don't close this page or the Retina window.",
     avance_subiendo: "Uploading the video…", avance_fila: "Waiting: another video is being reviewed…", avance_revisando: "Reviewing your video…",
-    avance: { subiendo: "Upload the video", cortando: "Cut the video into parts", escuchando: "Listen to what is said",
-              mirando: "Watch what happens on screen", escribiendo: "Write the card", terminando: "Check Meta's recommendations" },
+    avance: { subiendo: ["Retina", "receives your video"], segmentar: ["ffmpeg", "cuts the video into 40 parts"],
+              transcribir: ["Muse Voice Transcribe", "listens to what is said"], ficha: ["Muse Spark Open", "reads how your video opens"],
+              predecir: ["Retina's formula", "estimates how many people would stay"], describir: ["Muse Spark 1.3", "watches what happens on screen"],
+              sam: ["Muse Spark 1.3 and SAM 3.1", "look at the start for what the title promises"], explicar: ["Muse Spark Open", "writes what works and what to change"],
+              normas: ["Muse Spark 1.3", "checks Facebook's rules"] },
     falta_video: "Choose the video first.", falta_titulo: "Write the video title.",
     falta_fecha: "Set the day and time it would be published.", solo_mp4: "That doesn't look like a video. Upload an MP4, MOV, WebM, MKV or AVI.",
     codigo_malo: "The code has to look like XYZ0000001 (letters, then numbers). If there is none, leave it empty.",
@@ -1423,6 +1431,7 @@ function mostrar(r) {
   else { $("cifras").className = "cifras"; $("cifras").replaceChildren(nodo("div", "cifra vidrio grande", t("sin_numero"))); }
   if (e) {
     conTiempos($("porque"), reloj(e.por_que));
+    $("bloque-porque").classList.toggle("oculto", !e.por_que);  // si ninguna tarjeta pasó el filtro, no queda un título vacío
     conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar) : t(nivel === "bajo" ? "sin_cambio_bajo" : "sin_sugerencia"));
     $("funciona").classList.toggle("oculto", !e.lo_que_funciona || lista_(e, "lo_bueno").length > 0);  // sin repetir lo que ya está en la lista de arriba
     $("funciona").replaceChildren(nodo("b", "", t("ya_funciona")), conTiempos(nodo("span"), reloj(e.lo_que_funciona || "")));
@@ -1434,7 +1443,7 @@ function mostrar(r) {
         t("anzuelo_texto", cuando, de(tx().anzuelos, e.anzuelo_detectado) || t("anzuelo_otro"), e.anzuelo_frase)));
     }
   } else {
-    $("porque").textContent = t("sin_api_porque");
+    $("porque").textContent = t("sin_api_porque"); $("bloque-porque").classList.remove("oculto");
     $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
   }
   pasos(e); balance(e); normasFacebook(r); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r); pintarApertura(r);
@@ -1591,7 +1600,11 @@ $("legible").onclick = () => { const on = document.body.classList.toggle("legibl
 // La demo sin llave (python -m retina.demo) no tiene /api/: ahí el panel solo abre revisiones ya hechas.
 let conSubida = false, video = null, talentos = [];
 const acceso = () => ($("v-acceso").value ? { "X-Retina-Acceso": $("v-acceso").value } : {});  // solo en la demo en línea
-const PASOS_AVANCE = ["subiendo", "cortando", "escuchando", "mirando", "escribiendo", "terminando"];
+const PASOS_AVANCE = ["subiendo", "segmentar", "transcribir", "ficha", "predecir", "describir", "sam", "explicar", "normas"];
+// Otros nombres del mismo paso: los que se deducen de los archivos, el agente y la revisión en código de lo que recomienda Meta.
+const MISMO_PASO = { cortando: "segmentar", escuchando: "transcribir", mirando: "describir", escribiendo: "explicar", agente: "explicar", revision_meta: "normas", terminando: "normas" };
+const quePaso = (k) => MISMO_PASO[k] || k;
+const nombrePaso = (k) => [].concat(de(tx().avance, quePaso(k)) || []).join(" ");
 const sinAcentos = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 
 function avisar(motivo) {  // motivo: una clave de TEXTOS o el texto que manda Retina; vacío lo borra
@@ -1649,12 +1662,15 @@ function elegirVideo(archivo) {
 const PASOS_AB = ["subiendo", "version_a", "version_b", "comparando"];
 let modoAB = false, videoB = null, comparacionActual = null;
 
-function pintarAvance(paso, titulo, pasos = PASOS_AVANCE, nombres = tx().avance) {
+function pintarAvance(paso, titulo, pasos = PASOS_AVANCE, nombres = tx().avance, tiempos = {}) {
   $("avance-titulo").textContent = typeof de(tx(), titulo) === "string" ? t(titulo) : titulo;
-  const i = pasos.indexOf(paso);
+  const i = pasos.indexOf(quePaso(paso));
   $("avance-lista").replaceChildren(...pasos.map((k, j) => {
-    const li = nodo("li", j < i ? "listo" : j === i ? "ahora" : "");
-    li.append(document.createElement("i"), document.createTextNode(nombres[k]));
+    const li = nodo("li", j < i ? "listo" : j === i ? "ahora" : ""), texto = nodo("span"), [quien, hace] = [].concat(nombres[k]);
+    texto.append(hace ? nodo("b", "", quien) : quien, hace ? ` ${hace}` : "");
+    const s = tiempos[k === "explicar" && tiempos.agente ? "agente" : k];
+    if (j < i && s >= 1) texto.append(nodo("small", "", ` · ${Math.round(s)} s`));
+    li.append(document.createElement("i"), texto);
     return li;
   }));
   if (paso !== "subiendo") $("avance-barra").style.width = `${Math.max(4, Math.round(100 * i / pasos.length))}%`;
@@ -1692,7 +1708,7 @@ function subirVideo(archivo, extra, alSubir) {
 async function esperar(id, alPaso) {
   let fallas = 0;  // 10 preguntas seguidas sin respuesta (30 s): Retina se cerró
   for (;;) {
-    await new Promise((r) => setTimeout(r, 3000));
+    await new Promise((r) => setTimeout(r, 1500));
     let e;
     try {
       const r = await fetch(`/api/estado/${id}`, { cache: "no-store" });
@@ -1710,8 +1726,8 @@ async function esperar(id, alPaso) {
 async function revisarUno() {  // un video: al terminar abre la tarjeta aquí mismo
   $("avance-barra").style.width = "0%"; pintarAvance("subiendo", "avance_subiendo"); estado("revisando");
   const id = await subirVideo(video, {}, (f) => { $("avance-barra").style.width = `${Math.round(100 * f / PASOS_AVANCE.length)}%`; });
-  pintarAvance("cortando", "avance_revisando");
-  const e = await esperar(id, (x) => pintarAvance(x.paso || "cortando", x.estado === "en_fila" ? "avance_fila" : "avance_revisando"));
+  pintarAvance("segmentar", "avance_revisando");
+  const e = await esperar(id, (x) => pintarAvance(x.paso || "segmentar", x.estado === "en_fila" ? "avance_fila" : "avance_revisando", PASOS_AVANCE, tx().avance, x.tiempos));
   if (e.estado === "error") throw new Error(String(e.mensaje || "") || "no_termino");
   $("avance-barra").style.width = "100%";
   const ruta = `/casos/${id}/resultado.json`, q = new URLSearchParams(location.search);
@@ -1722,7 +1738,7 @@ async function revisarUno() {  // un video: al terminar abre la tarjeta aquí mi
 
 async function revisarDos() {  // dos versiones: se revisan una tras otra y al final Spark las compara
   const ab = (paso, texto) => pintarAvance(paso, texto, PASOS_AB, tx().avance_ab);
-  const detalle = (v, x) => (x.estado === "en_fila" ? t("avance_fila") : `${t(v)} · ${tx().avance[x.paso] || t("avance_revisando")}`);
+  const detalle = (v, x) => (x.estado === "en_fila" ? t("avance_fila") : `${t(v)} · ${nombrePaso(x.paso) || t("avance_revisando")}`);
   $("avance-barra").style.width = "0%"; ab("subiendo", t("avance_subiendo_ab")); estado("revisando");
   const pista = PASOS_AB.length;
   const idA = await subirVideo(video, {}, (f) => { $("avance-barra").style.width = `${Math.round(50 * f / pista)}%`; });

@@ -132,7 +132,9 @@ def cifras_inventadas(salida: dict, datos: dict) -> list[str]:
     return sorted({n for n in _NUM.findall(texto) if float(n.replace(",", ".")) not in validos})
 
 
-QUITAR = re.compile(r"\b(?:quit|elimin|cort|borr|sac|reemplaz|sustitu|remov|delet|cut|drop|trim|replac|swap|erase)\w*", re.I)
+# También los verbos de señalar: «ubica la frase «…»» es el paso previo a cortarla, no una sugerencia de decirla.
+QUITAR = re.compile(r"\b(?:quit|elimin|cort|borr|sac|reemplaz|sustitu|remov|delet|cut|drop|trim|replac|swap|erase|"
+                    r"ubic|localiz|busc|encuentr|identific|locat|find|spot)\w*", re.I)
 # Entre el verbo de quitar y la cita no puede haber otra orden: «corta el silencio y repite «…»».
 # También cuenta lo que se propone poner: «reemplaza el saludo por «…»», «replace the greeting with «…»».
 OTRA_ORDEN = re.compile(r"\b(?:di|dilo|dile|diles|pon|ponlo|ponla|ponle|agrega|añade|anade|repite|mantén|manten|deja|"
@@ -141,6 +143,8 @@ OTRA_ORDEN = re.compile(r"\b(?:di|dilo|dile|diles|pon|ponlo|ponla|ponle|agrega|a
                         r"empieza|comienza|coloca|diga|digan|diciendo|"
                         r"say|add|write|put|type|insert|include|use|replace|with|by|to|ask|tell|invite|read|show|"
                         r"display|mention|start|end|repeat|keep|change|swap|substitute|caption|label)\b", re.I)
+# «donde empieza «…»» señala un lugar del video; no es la orden de empezar con eso.
+SENALA_LUGAR = re.compile(r"\b(?:donde|cuando|where|when)\s+(?:empieza|comienza|termina|it\s+starts|it\s+ends|starts|ends)\b", re.I)
 CITA = re.compile(r"[«\"“‘']([^«»\"“”‘’']+)[»\"”’']")
 FIN_DE_FRASE = re.compile(r"[.!?;](?=\s|$)")  # no corta en «4.9»
 
@@ -167,7 +171,7 @@ def sin_citas_a_quitar(texto: str, datos: dict | None = None) -> str:
         cortes = list(FIN_DE_FRASE.finditer(antes))
         frase = antes[cortes[-1].end():] if cortes else antes
         verbos = list(QUITAR.finditer(frase))
-        if not verbos or OTRA_ORDEN.search(entre := frase[verbos[-1].end():]):
+        if not verbos or OTRA_ORDEN.search(SENALA_LUGAR.sub(" ", entre := frase[verbos[-1].end():])):
             return m.group(0)
         citado = _sin_signos(m.group(1))
         return "«»" if len(entre) <= 30 or (len(citado) >= 8 and citado in dicho) else m.group(0)
@@ -205,7 +209,11 @@ def revisar(salida: dict, datos: dict) -> list[str]:
                                                              *salida["storyboard"], *pasos, *bueno, *mejoras])
     cita = (" — si es el anzuelo que hay que quitar, cítalo entre «comillas» tal como se dice en el video, "
             "sin describirlo con otras palabras") if salida.get("anzuelo_detectado", "ninguno") != "ninguno" else ""
-    problemas += [f"{r['regla']} (frases: {', '.join(r['frases'])}){cita}" for r in integridad.revisar(texto)]
+    campos = {"que_cambiar": [salida["que_cambiar"]], "lo_que_funciona": [salida["lo_que_funciona"]], "storyboard": salida["storyboard"],
+              "pasos": pasos, "lo_bueno": bueno, "mejoras_opcionales": mejoras}
+    for r in integridad.revisar(texto):  # se dice en qué campo: sin eso, el modelo corrige el que no es
+        donde = [c for c, v in campos.items() if any(integridad.revisar(sin_citas_a_quitar(t, datos)) for t in v)]
+        problemas.append(f"{r['regla']} (frases: {', '.join(r['frases'])}; en {', '.join(donde)}){cita}")
     if t := toca_intocable(" ".join([salida["que_cambiar"], *pasos])):
         problemas.append(f"la sugerencia toca algo intocable: {', '.join(t)}")
     for i, m in enumerate(mejoras, 1):  # una por una: cada mejora es un cambio aparte
@@ -263,7 +271,7 @@ def cuerpo(datos: dict, aviso: str = "", esfuerzo: str = "high") -> dict:
         "model": MODELO,
         "reasoning": {"effort": esfuerzo},
         "max_output_tokens": 16000,
-        "prompt_cache_key": "retina-explicar-v8",  # gitleaks:allow (etiqueta de caché, no es llave)
+        "prompt_cache_key": "retina-explicar-v9",  # gitleaks:allow (etiqueta de caché, no es llave)
         "store": False,
         "text": {"format": {"type": "json_schema", "name": "explicacion_v5", "strict": True, "schema": esquema()}},
         "input": [
@@ -369,7 +377,7 @@ def explicar(carpeta: Path, arranque: dict, motor: str = "", nombre: str = "expl
     from . import baseten
     salida["licencia"] = {"modelo": baseten.MODELO if quien == "abierto" else MODELO,
                           "servido_por": "Baseten" if quien == "abierto" else "Meta Model API",
-                          "instrucciones": "skills/explicar.md (explicar-v8)",
+                          "instrucciones": "skills/explicar.md (explicar-v9)",
                           "reglas": integridad.reglas()["version"], "intentos": intentos,
                           "rescate": quien != MOTORES[motor][0]}
     (carpeta / nombre).write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")

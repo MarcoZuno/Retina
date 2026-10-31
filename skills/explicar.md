@@ -1,6 +1,6 @@
 ---
 estacion: explicar
-version: explicar-v8
+version: explicar-v9
 fecha: 2026-10-29
 duenio: Jossafat Ruvalcaba
 modelo: muse-spark-1.3 (Standard), reasoning_effort high
@@ -72,7 +72,8 @@ Reglas:
    «anzuelo_momento_s» el segundo donde aparece, y en «que_cambiar» di cómo
    quitarlo: cítalo entre «comillas» tal como se dice o se ve en el video, sin
    describirlo con tus palabras («el pedido de compartir», «sin pedir que
-   compartan»), porque esas palabras se bloquean. Sin anzuelo:
+   compartan»), porque esas palabras se bloquean. En «pasos» también va citado,
+   con la frase completa. En «storyboard» no lo menciones. Sin anzuelo:
    «anzuelo_detectado» en «ninguno», «anzuelo_frase» vacía y
    «anzuelo_momento_s» en -1.
 7. Nunca sugieras quitar, tapar o cambiar: el logo o la marca de la página,

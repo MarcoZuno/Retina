@@ -79,7 +79,7 @@ cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
 PYTHONPATH=src python -m retina.app     # Windows PowerShell: $env:PYTHONPATH="src"; python -m retina.app
 ```
 
-The app opens at `http://127.0.0.1:8790`. Drop a video, write its title, and the review is ready in about 3 minutes (about USD 0.10). Then
+The app opens at `http://127.0.0.1:8790`. Drop a video, write its title, and the review is ready in 3 to 5 minutes (about USD 0.10), and you can watch what each model is doing. Then
 press **Fix the opening**: you watch each step happen, and in 1 to 4 minutes you get the before and after (USD 0.05 to 0.25, only when you
 press the button). Your spending cap is `RETINA_TOPE_USD` in `.env`. With the contest's free credits, Meta may use what you send; a
 company that does not want to send drafts can set `RETINA_SOLO_PUBLICADOS=1`.

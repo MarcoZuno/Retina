@@ -74,7 +74,7 @@ closed list and refuses any person word, before calling the API.
 
 The upload screen takes optionally who is on camera and a production code (a date, code or name at the start of the file name, like
 `2026-01-15 XYZ0000001 Title.mp4`, is filled in; useful only to a company with its own private model). The pipeline runs in the
-background, one video at a time, and the card opens in the panel when it is ready (about 3 minutes). The app listens only on 127.0.0.1,
+background, one video at a time, and the panel shows what each model is doing and opens the card when it is ready (3 to 5 minutes). The app listens only on 127.0.0.1,
 accepts uploads only from its own page and only video files: MP4 and MOV are used as they are; WebM, MKV, AVI and FLV are converted to MP4
 with ffmpeg. It honours the published-only lock (`RETINA_SOLO_PUBLICADOS`) set in the `.env`.
 

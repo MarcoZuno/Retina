@@ -46,6 +46,15 @@ class FiltroDeAnzuelos(unittest.TestCase):
         self.assertEqual(ids(explicar.sin_citas_a_quitar("Quita «compártelo con tu familia» del segundo 25")), [])
         self.assertTrue(ids(explicar.sin_citas_a_quitar("Di «comenta abajo» al inicio")))
 
+    def test_senalar_el_anzuelo_que_dice_el_video_no_cuenta(self):
+        datos = {"frases": [{"dice": "Soy veterinaria. Comparte esta información con todas las personas que tengan perros."}]}
+        for texto in ("Ubica en el segundo 11.3 la frase «Comparte esta información con todas las personas que tengan perros».",
+                      'Ubica el audio del segundo 11.3 donde empieza "Comparte esta información...".'):
+            self.assertEqual(ids(explicar.sin_citas_a_quitar(texto, datos)), [], texto)
+
+    def test_senalar_lo_que_el_video_no_dice_si_cuenta(self):
+        self.assertTrue(ids(explicar.sin_citas_a_quitar("Ubica aquí y di: «comparte con todos tus amigos de la colonia».", {"frases": [{"dice": "Hola"}]})))
+
 
 def tarjeta(**cambios) -> dict:
     t = dict(por_que="Del segundo 0.6 al 4.9 no se ve la pila de tortillas.", lo_que_funciona="",
