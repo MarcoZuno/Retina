@@ -169,9 +169,9 @@ The day-by-day diary is in [`BUILD-LOG.md`](BUILD-LOG.md), in Spanish, with an E
 Built for the Meta Global AI Developer Hackathon 2026, theme *Build for Your World*.
 
 **Jossafat Ruvalcaba** built Retina, directing Claude Code, which the organizers allow. **Marco Zuno**, COO of Badabun, is the team's
-representative and owns this repository. Commits carry Jossafat's name. Badabun's editors gave feedback as users of the tool.
+representative and owns this repository. Commits carry Jossafat's name.
 
 ## License
 
-The code is under the [MIT License](LICENSE). The weights in `modelos/retina-publico.json` are not: they follow the Muse Model License.
+The code is under the [MIT License](LICENSE). The weights in `modelos/retina-publico.json` are not: they follow the [Muse Model License](LICENSE-MUSE.md).
 See [`NOTICE`](NOTICE). Built with Muse Spark Open.

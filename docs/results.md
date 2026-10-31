@@ -119,7 +119,7 @@ How to read it:
 **Why the second test is only a regression test.** It shows the fix for the first failure worked, not that the method holds up.
 We removed the words SAM could not find (53 of 167 can no longer be checked with SAM). The code told Muse Image to draw the promised
 object "large and centered", and that same object is what SAM then looked for. Five of the eight failures of the first test could no
-longer happen. A reviewer estimated that passing was the likely result, about 96 times in 100. Ten of the 30 cases were a dog or an
+longer happen. A later review estimated that passing was the likely result, about 96 times in 100. Ten of the 30 cases were a dog or an
 animal, across 23 distinct words, so the 95 % interval of 83 % to 99 % treats as independent cases that are not. It used title and
 speech, without the video, and had no group without a visible promise.
 

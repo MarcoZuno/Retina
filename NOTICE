@@ -11,7 +11,7 @@ Third-party materials
   and Baseten's Model API under their own terms.
 - modelos/retina-publico.json: fixed weights fitted from Facebook retention curves owned by Badabun and from notes written by Muse Spark
   Open. Because they were trained with its outputs, they are not under the MIT License: they follow the Muse Model License and its Usage
-  Policy (Exhibit A), Copyright (c) 2026 Meta Platforms, Inc.:
+  Policy (Exhibit A), Copyright (c) 2026 Meta Platforms, Inc. A copy is in LICENSE-MUSE.md. The original is at:
   https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B/blob/main/LICENSE.md
 - The images in panel/fondos/, docs/img/ and casos/ were generated with Muse Image and are labeled as AI-generated. The MIT License does not
   add any right over them beyond what Meta's terms allow.
