@@ -672,3 +672,20 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **Lo que esto no mide.** Si la apertura nueva retiene más gente. El juez es un modelo, no una persona ni una audiencia. No hay video. D ya no es independiente del lazo: es el mismo modelo
   que hace la lectura de fidelidad, con casi las mismas preguntas, así que un D alto dice menos que antes.
 - **Si no pasa.** Se publica igual y no se reajusta en estos casos. Estos 50 casos no se vuelven a usar para esto.
+
+## 31-oct-2026 · Quinta medición: resultado
+
+- **Pasó las nueve condiciones a la primera.** La regla es la sección anterior, que no se tocó; no se reajustó nada.
+  - A: 25 de 30, pedía 24. B: 18 de 20, pedía 16. C: 10 de 10, pedía 9.
+  - D: 42 de 43 fieles (IC 95 % 88 a 100), pedía 80 %. E: 42 de 43 dejan algo (88 a 100), pedía 80 %. Las dos a la vez: 41 de 43.
+  - F: la nueva ganó 35 de 37 pares firmes (95 %), pedía 60 % con al menos 20; 2 para la real y 6 cambiaron con el orden.
+  - G: 10 de 10 mentiras rechazadas, pedía 9. H: 8 de 10 resúmenes marcados como que no dejan nada, pedía 7. I: 0 de 50 inicios dados por buenos, pedía 10 o menos.
+- **A pasó por un caso.** 25 contra un mínimo de 24, con intervalo de 66 a 93. La condición se cumplió; no da para decir más que eso.
+- **Trampa cercana: 8 de 10.** «Store» pasó en una tienda y «dog» pasó en un cuadro pedido como animal, los dos muy cerca de ser lo mismo. Los pares cambian de una medición a otra.
+- **«Tu inicio ya funciona» no se ejercitó.** Salió 0 veces en 50, y 0 en los 6 del piloto.
+- **Correcciones.** De las 43 aprobadas, 27 a la primera, 12 tras una y 4 tras dos. Se corrigió: una sola prueba 13, fidelidad 8, promesa 7, nombres 3, anzuelos 2, cuadros 2. Las 7 que fallaron no
+  salieron: 4 por fidelidad, 1 por promesa, 1 por cuadros y 1 por una sola prueba. La lectura de fidelidad regresó 11 de las 50 al menos una vez. Spark revisó 104 cuadros, los 104 coinciden en las aprobadas. No quedó nada sin comprobar.
+- **Tema.** 125 de 234 títulos revisados quedaron fuera por fuera de alcance o consejos de salud. La medición describe lo que queda, no todo el archivo.
+- **Costo.** USD 4.82 en reescribir, unos USD 0.10 por video, más el juez.
+- **Lo mismo que antes sigue sin medirse:** si la apertura nueva retiene más gente. El juez es un modelo, en D y E sabe que lee la nueva, y D ya no es independiente del lazo.
+- **Código.** La medición corrió desde una copia congelada en `9e2f146`. Lo que cambió después son textos del panel, ejemplos y documentos: no toca instrucciones, reglas ni la apertura.

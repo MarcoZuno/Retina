@@ -24,7 +24,7 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 | `apertura.despues` | `voz`, `cuadros` e `imagenes`. `null` si no pasó: nada sin comprobar llega a la persona. | «Después» |
 | `apertura.aprobada` | Si pasó todas las comprobaciones. | Resumen |
 | `apertura.vueltas` | Cuántas correcciones necesitó (máximo 2). | Resumen |
-| `apertura.comprobaciones` | Lista de `{id, paso}`: anzuelos, intocables, cifras, nombres, tema, largo, cuadros y promesa. | Lista con palomitas |
+| `apertura.comprobaciones` | Lista de `{id, paso}`: anzuelos, saludo, intocables, cifras, nombres, tema, largo, una_prueba, fidelidad, cuadros y promesa. Solo trae las que sí corrieron. | Lista con palomitas |
 | `apertura.intentos` | Qué falló en cada intento. Nunca trae el texto rechazado. | La historia de correcciones |
 | `apertura.ya_funciona`, `apertura.motivo` | Spark Open dijo que el inicio ya funciona y el código lo confirmó. `despues` es null. | Estado verde |
 | `apertura.modo` | `voz` o `texto_en_pantalla`, en videos sin voz. | Rótulo y si se lee en voz alta |
@@ -32,7 +32,8 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 | `titulo_contra_video` | `cumple` si, parcial, no o null, y `por_que`. | Aviso solo con parcial o no |
 | `normas.no_verificado` | Un hallazgo no se pudo comprobar por el alfabeto. | «No pudimos comprobarlo», nunca «sin riesgos» |
 | `apertura.otro_alfabeto` | Solo si el video no está en alfabeto latino: Retina no gastó y lo dice. | Resumen |
-| `apertura.no_comprobe` | Lo que no se pudo revisar (por ejemplo, si SAM no contestó). | Lista |
+| `apertura.fuera_de_alcance` | `fuera` o `salud`: Retina no reescribe ese video y lo dice. `despues` es null. | Resumen |
+| `apertura.no_comprobe` | Lo que no se pudo revisar (`tema_sensible`, `fidelidad`, `promesa`). Si trae algo, el panel dice que el resultado salió incompleto. | Aviso y lista |
 | `apertura.licencia` | Qué modelo escribió, dibujó y revisó. | Resumen |
 
 ## Lo que muestra la tarjeta

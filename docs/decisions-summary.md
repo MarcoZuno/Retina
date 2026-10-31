@@ -50,6 +50,14 @@ sealed first, it passed all nine conditions on its first run: 27 of 30, 20 of 20
 something (43 of 47 both), 36 of 41 firm pairs, and the judge caught 10 of 10 planted lies and 9 of 10 planted summaries. The near trap fell
 to 7 of 10, and "already works" never came up. Whether the new opening keeps more people was not measured.
 
+**31 Oct, fifth test.** A review read as a jury would found that the fourth test's version rewrote out-of-scope topics and health advice, had nothing in the
+product to stop an unfaithful opening, and let greetings and 18-word openings through. The version became `apertura-v4`: Muse Spark 1.3 declines
+those topics before spending and reads each opening against the video before it is drawn, a code rule rejects greetings, and the minimum rose to 25
+words. On 50 new videos, with the rule sealed first and the same nine conditions, it passed on its first run: 25 of 30, 18 of 20, 10 of 10
+far traps, 42 of 43 faithful, 42 of 43 leaving something (41 of 43 both), 35 of 37 firm pairs, and the judge caught 10 of 10 planted lies and 8 of 10
+planted summaries. The near trap was 8 of 10, and "already works" never came up. Of 234 videos reviewed, 125 were left alone as out-of-scope topics or health
+advice. This is the version published here. Whether the new opening keeps more people was not measured.
+
 ## How to read the record
 
 - A rule written first means written in `decisiones.md` before the run. From 29-Oct, sealed by a commit before measuring.

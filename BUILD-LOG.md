@@ -553,3 +553,11 @@ quien habla, Muse Spark 1.3 revisa los cuadros que SAM no ve y Spark Open puede 
 aviso de a dónde sale el video y cuánto cuesta, y la historia de correcciones a la vista. El panel abre en el idioma del navegador y los textos ya no dan a entender
 que el número es del inicio nuevo. Se endureció el despliegue y se quitaron pesos que el público no usa. La cuarta medición, con 50 videos nuevos y regla sellada, pasó
 sus nueve condiciones, con control negativo del juez. La trampa cercana bajó a 7 de 10 y se reporta. Costo: USD 4.12 más el juez.
+
+## 31-oct-2026 · apertura-v4 y la quinta medición
+
+Una revisión con ojos de jurado encontró cuatro cosas que cambiaban el producto: Retina reescribía fuera de alcance y salud, nada en el producto frenaba una apertura infiel, y pasaban saludos y aperturas
+de 18 palabras. El inicio pasó a apertura-v4: Muse Spark 1.3 decide antes de gastar si el video es de fuera de alcance o de consejos de salud, lee cada apertura contra lo que dice el video antes de dibujarla, una
+regla de código rechaza saludos y el mínimo sube a 25 palabras. El panel pone el inicio arriba del número, avisa cuando un resultado salió incompleto y dice qué es inventado en el ejemplo. El ejemplo se
+rehízo con el lazo real y el número real. La quinta medición, con 50 videos nuevos, regla sellada y las mismas nueve condiciones, pasó a la primera: 25 de 30, 18 de 20, 10 de 10, 42 de 43, 42 de 43,
+35 de 37, 10 de 10, 8 de 10 y 0 de 50. Trampa cercana 8 de 10. De 234 títulos revisados, 125 quedaron fuera por tema. Costo: USD 4.82 más el juez.

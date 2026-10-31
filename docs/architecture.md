@@ -15,9 +15,10 @@ draft MP4 ─► segmentar ─► 40 stretches + WAV + light MP4
                └─► explicar     (Muse Spark Open, validator; Muse Spark 1.3 rescues) ─► card ─► panel
 
 press «Fix the opening» ─► apertura:
-    Muse Spark Open writes ─► rules in code ─► Muse Image draws frame 1 ─► SAM 3.1 looks for the promise
-          ▲                       │ fails                                        │ fails
-          └───────────────────────┴──── exact list of failures, up to 2 times ───┘
+    Muse Spark 1.3 reads the topic ─► out-of-scope topics or health advice: not rewritten, and the panel says so
+    Muse Spark Open writes ─► rules in code ─► Muse Spark 1.3 reads it against the video ─► Muse Image draws frame 1 ─► SAM 3.1 looks for the promise
+          ▲                       │ fails                  │ adds something                                                │ fails
+          └───────────────────────┴────────────────────────┴───────── exact list of failures, up to 2 times ─────────────┘
                                   │ all pass
                                   └─► Muse Image draws frames 2 and 3 ─► Muse Spark 1.3 looks at every frame SAM did not check
                                          │ a frame does not show what was written: back to the writer
@@ -34,7 +35,7 @@ If a service is not in this table, it does not exist.
 | `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ |
 | `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | ≈ USD 0.05 / 100 s | ✅ |
 | `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | research: no gain on the risk level |
-| `apertura` | title + what was seen and said → new opening, rules, frames, SAM and Spark checks, up to 2 corrections; or "your opening already works", confirmed by code | **Muse Spark Open**, Muse Image 1.0, SAM 3.1, Muse Spark 1.3 | ≈ USD 0.05 to 0.25 | ✅ · the core of Retina |
+| `apertura` | title + what was seen and said → topic check, new opening, rules, read-back against the video, frames, SAM and Spark checks, up to 2 corrections; or "your opening already works", confirmed by code | **Muse Spark Open**, Muse Image 1.0, SAM 3.1, Muse Spark 1.3 | ≈ USD 0.05 to 0.25 | ✅ · the core of Retina |
 | `titulo` | title + what is said and shown → does the video deliver it? A warning only; the title is never touched | Muse Spark 1.3 | less than USD 0.01 | ✅ |
 | `normas` | what is seen and said → possible breaches of 18 public rules, with second and evidence | Muse Spark 1.3 + code | ≈ USD 0.01 | ✅ |
 | `publico` | title, speech and opening sheet → 41-point curve vs. videos of the same length | small fitted formula, [`numero.md`](numero.md) | 0 | ✅ |

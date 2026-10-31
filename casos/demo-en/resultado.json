@@ -8,122 +8,125 @@
   "talento": ""
  },
  "prediccion": {
-  "margen_personas": 11,
   "curva_predicha": [
    1.0,
-   0.8829,
-   0.7937,
-   0.725,
-   0.6713,
-   0.6287,
-   0.5942,
-   0.5656,
-   0.5415,
-   0.5207,
-   0.5022,
-   0.4916,
-   0.4824,
-   0.4742,
-   0.4668,
-   0.46,
-   0.4537,
-   0.4478,
-   0.4422,
-   0.4369,
-   0.4318,
-   0.4269,
-   0.4221,
-   0.4175,
-   0.4131,
-   0.4088,
-   0.4046,
-   0.4005,
-   0.3965,
-   0.3926,
-   0.3888,
-   0.3851,
-   0.3816,
-   0.3781,
-   0.3746,
-   0.3713,
-   0.3681,
-   0.3649,
-   0.3618,
-   0.3588,
-   0.3559
+   1.0,
+   0.7886,
+   0.6061,
+   0.4859,
+   0.4141,
+   0.3609,
+   0.3245,
+   0.3031,
+   0.281,
+   0.2604,
+   0.2472,
+   0.2388,
+   0.2249,
+   0.2177,
+   0.2063,
+   0.1975,
+   0.1907,
+   0.1851,
+   0.1795,
+   0.1751,
+   0.1713,
+   0.167,
+   0.1616,
+   0.1567,
+   0.154,
+   0.1501,
+   0.1464,
+   0.1413,
+   0.1362,
+   0.1337,
+   0.1307,
+   0.1253,
+   0.1211,
+   0.117,
+   0.1135,
+   0.1099,
+   0.1034,
+   0.0957,
+   0.0912,
+   0.0836
   ],
   "curva_parecidos": [
-   1.0,
-   0.8889,
-   0.8057,
-   0.743,
-   0.6953,
-   0.6587,
-   0.6302,
-   0.6076,
-   0.5895,
-   0.5747,
-   0.5622,
-   0.5516,
-   0.5424,
-   0.5342,
-   0.5268,
-   0.52,
-   0.5137,
-   0.5078,
-   0.5022,
-   0.4969,
-   0.4918,
-   0.4869,
-   0.4821,
-   0.4775,
-   0.4731,
-   0.4688,
-   0.4646,
-   0.4605,
-   0.4565,
-   0.4526,
-   0.4488,
-   0.4451,
-   0.4416,
-   0.4381,
-   0.4346,
-   0.4313,
-   0.4281,
-   0.4249,
-   0.4218,
-   0.4188,
-   0.4159
+   0.9996,
+   0.9999,
+   0.7877,
+   0.589,
+   0.4693,
+   0.3985,
+   0.3515,
+   0.3169,
+   0.2915,
+   0.269,
+   0.2518,
+   0.238,
+   0.2268,
+   0.2169,
+   0.209,
+   0.2013,
+   0.1945,
+   0.1885,
+   0.1821,
+   0.1764,
+   0.1718,
+   0.1665,
+   0.1616,
+   0.1573,
+   0.1527,
+   0.1484,
+   0.1445,
+   0.1403,
+   0.137,
+   0.1327,
+   0.1289,
+   0.125,
+   0.1216,
+   0.1176,
+   0.1131,
+   0.1082,
+   0.1033,
+   0.0985,
+   0.091,
+   0.0834,
+   0.0739
   ],
+  "margen_personas": 11,
+  "tramo_riesgo": 5,
+  "caida_predicha_pp": 5.3,
+  "caida_parecidos_pp": 4.7,
   "regla_de_parecidos": "publica",
   "n_parecidos": null,
   "uso_video": false,
-  "datos_hasta": "2026-10-27",
   "cerebro": "cualquier_video",
   "conoce_al_creador": false,
   "uso_voz": true,
   "formato_poco_conocido": false,
-  "otro_idioma": false
+  "datos_hasta": "2026-10-24",
+  "otro_idioma": true
  },
  "arranque": {
   "nivel": "sin_nivel",
-  "exceso_arranque_pp": 6.0,
+  "exceso_arranque_pp": 0.0,
   "bloques": [
    {
-    "bloque": "hook (0-10 %)",
+    "bloque": "gancho (0-10 %)",
     "tramos": [
      0,
      4
     ],
-    "caida_parecidos_pp": 30.5
+    "caida_parecidos_pp": 53.0
    },
    {
-    "bloque": "first quarter (10-25 %)",
+    "bloque": "primer cuarto (10-25 %)",
     "tramos": [
      4,
      10
     ],
-    "caida_parecidos_pp": 13.3
+    "caida_parecidos_pp": 21.7
    },
    {
     "bloque": "25-50 %",
@@ -131,7 +134,7 @@
      10,
      20
     ],
-    "caida_parecidos_pp": 7.0
+    "caida_parecidos_pp": 8.0
    },
    {
     "bloque": "50-75 %",
@@ -147,11 +150,13 @@
      30,
      40
     ],
-    "caida_parecidos_pp": 3.3
+    "caida_parecidos_pp": 5.5
    }
   ],
   "uso_voz": false,
-  "entrenado_con": 30000
+  "entrenado_con": 0,
+  "comparado_con_su_tipo": false,
+  "sin_formula": true
  },
  "explicacion": {
   "por_que": "From second 0.0 to 7.2 the host says hello and gives her name before saying what the video is about, and the on-screen text doesn't mention the bread until second 9.6.",
@@ -289,7 +294,7 @@
   "curiosidad": 3
  },
  "apertura": {
-  "version": "apertura-v3",
+  "version": "apertura-v4",
   "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
   "idioma": "inglés",
   "objeto": "bread",
@@ -303,13 +308,13 @@
    }
   },
   "aprobada": true,
-  "vueltas": 1,
+  "vueltas": 2,
   "despues": {
-   "voz": "These are tricks to keep sweet bread from going stale. The first trick is to keep it in a cloth bag, never in plastic, so it stays soft longer for your morning coffee.",
+   "voz": "Keeping sweet bread from going stale comes down to three tricks. One is to keep it in a cloth bag, never in plastic. Next is where to store it.",
    "cuadros": [
-    "A loaf of sweet bread centered large on a light wooden kitchen table, its golden crust and soft top clearly visible.",
-    "An open beige cloth bag on the same table with the sweet bread nestled inside, fabric folds around it.",
-    "A close-up of the soft crumb of sweet bread beside a plain white mug on the counter, showing its tender texture."
+    "A round loaf of sweet bread centered large on a wooden kitchen counter, filling most of the frame with its golden sugared top visible.",
+    "A cloth bag on the same kitchen counter with the sweet bread half inside, the bag open and resting flat.",
+    "An open kitchen pantry shelf with containers and empty space where the cloth bag can be stored, soft light on the tidy area."
    ],
    "imagenes": [
     "apertura-cuadro1-ilustracion-ia.webp",
@@ -330,6 +335,10 @@
   "comprobaciones": [
    {
     "id": "anzuelos",
+    "paso": true
+   },
+   {
+    "id": "saludo",
     "paso": true
    },
    {
@@ -357,6 +366,10 @@
     "paso": true
    },
    {
+    "id": "fidelidad",
+    "paso": true
+   },
+   {
     "id": "cuadros",
     "paso": true
    },
@@ -364,17 +377,13 @@
     "id": "promesa",
     "paso": true,
     "objeto": "bread",
-    "pct_maximo_del_cuadro": 74.2
+    "pct_maximo_del_cuadro": 77.8
    }
   ],
   "intentos": [
    {
     "vuelta": 0,
     "problemas": [
-     {
-      "id": "cifras",
-      "detalle": "cifras que no vienen en los datos del video: 2"
-     },
      {
       "id": "una_prueba",
       "detalle": "enumeras varias cosas: da una sola prueba y deja lo demás al video"
@@ -383,6 +392,15 @@
    },
    {
     "vuelta": 1,
+    "problemas": [
+     {
+      "id": "fidelidad",
+      "detalle": "lo que dice el video no sostiene esto: Agrega que la tela deja respirar sin resecar para que dure suave más tiempo, explicación que el video no dice.. Usa solo lo que el video dice, sin agregar ni exagerar"
+     }
+    ]
+   },
+   {
+    "vuelta": 2,
     "problemas": []
    }
   ],
@@ -392,7 +410,7 @@
    "servido_por": "Baseten",
    "dibujo": "muse-image-1.0",
    "reviso": "sam-3.1",
-   "instrucciones": "skills/apertura.md (apertura-v3)",
+   "instrucciones": "skills/apertura.md (apertura-v4)",
    "reglas": "anzuelos-v1"
   },
   "modo": "voz"

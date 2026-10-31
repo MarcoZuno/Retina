@@ -7,12 +7,72 @@ unless a figure is given here.
 
 [`decisions-summary.md`](decisions-summary.md) tells the same story in order, in English.
 
-## The fourth test, the current version
+## The fifth test, the version published here
+
+A review of the fourth test's version, read as a jury would, found four things that changed the product. Retina was rewriting out-of-scope topics and
+health advice, and nothing filtered them: 25 of that test's 50 videos would no longer be rewritten. Nothing in the product stopped an
+unfaithful opening; the judge existed only in the tests, and 3 of 47 would have reached the person. Greetings passed, and so did openings
+of 18 words, which is about 6 seconds. So the fourth test no longer described what we publish, and the version changed (`apertura-v4`).
+Muse Spark 1.3 now declines out-of-scope topics and health advice before spending, and reads each opening against what the video says before it is
+drawn. A code rule rejects greetings and the minimum rose to 25 words. The rule and the list of videos were sealed before running, with the
+same nine conditions and the same numbers as the fourth test.
+
+| Fifth test | Rule | Result |
+|---|---|---|
+| A. With a visible promise | At least 24 of 30 pass everything in 2 corrections or fewer, or the opening is confirmed as already good | **25 of 30** (95 % interval 66 % to 93 %) |
+| B. Without a visible promise | At least 16 of 20 pass the same, without SAM | **18 of 20** (70 % to 97 %) |
+| C. Far trap | SAM rejects at least 9 of 10 approved frames asked for an object of another family | **10 of 10** |
+| D. Judge: faithful, reading everything the video says | At least 80 % of approved openings | **42 of 43** (88 % to 100 %) |
+| E. Judge: leaves something important for the rest of the video | At least 80 % of approved openings | **42 of 43** (88 % to 100 %) |
+| F. Judge against the real first 15 seconds, labels hidden, in both orders | The new one wins at least 60 % of firm pairs, with at least 20 decided | **35 of 37 firm pairs** (95 %); 2 for the real opening, 6 changed with the order |
+| G. Negative control: 10 openings with an invented fact planted | The judge rejects at least 9 as not faithful | **10 of 10** |
+| H. Negative control: 10 summaries of the whole video used as the opening | The judge says at least 7 leave nothing | **8 of 10** |
+| I. Spark Open does not take the easy way out | At most 10 of 50 openings are declared already good | **0 of 50** |
+
+Reported, not conditions:
+
+- **What Retina left alone.** Picking these 50 meant reviewing 234 titles and speech; 125 were out as out-of-scope topics or health advice. Every figure
+  above describes the rest.
+- **Near trap: 8 of 10 rejected.** "Store" passed on a shop and "dog" passed on a frame asked for an animal, both close to the same thing.
+  The pairs change between tests, so read this with the fourth test's 7 of 10.
+- **Corrections.** Of the 43 approved, 27 passed on the first try, 12 after one correction and 4 after two. What got corrected: more than one
+  proof given at once (13), something the video does not say (8), the promise (7), a name (3), engagement bait (2), frames (2).
+- **The 7 that failed were withheld:** four where the read-back kept finding something the video does not say, and one each for the promise, the
+  frames and more than one proof.
+- **The read-back in the product.** It sent back 11 of the 50 openings at least once. Nothing was left unchecked: no check failed to run.
+- **Frames.** All 104 frames that SAM did not check matched what was written, in the approved openings. No frame was left unchecked.
+- **Cost.** USD 4.82 for the rewriting, or about USD 0.10 per video, plus the judge.
+
+How to read it:
+
+- **A passed by one case:** 25 against a minimum of 24. The condition was met, and that is all it shows.
+- **Do not read D to H as people's opinion.** The judge is Muse Spark 1.3, a model. No person and no audience judged these openings.
+- **D is no longer independent of the loop.** The judge is the same model that reads the opening inside Retina, with almost the same
+  questions, so a high D says less than it did in earlier tests.
+- **The judge is blind only in F.** In D and E it knows it is reading the new opening.
+- **41 of 43 passed D and E together.** One opening was faithful but left nothing, and one left something but was not faithful.
+- **F favors the new opening.** It compares clean writing with raw transcribed speech.
+- **G and H are planted, obvious failures.** They show the judge can say no, not that it catches every subtle one.
+- **"Already good" was not exercised.** It came up 0 times in 50 here and 0 times in the 6 tuning cases, so condition I says nothing about
+  how good that verdict is.
+- **There was no video.** This test used the title and the speech.
+- **The cases are not independent.** 13 of the 30 with a promise are animals, and 21 distinct objects cover the 30.
+- The instructions were tuned on 6 separate cases, run once and left unchanged, which are not part of this test.
+- **Whether the new opening keeps more people was not measured.**
+
+**About the seals.** A seal is a git commit in this repository's own history, made before the run, and that history was recreated for
+publication ([`hash-map.md`](hash-map.md) gives the new hashes). Nothing outside the repository timestamps it. The list of videos is
+private, so you can check its fingerprint in [`decisiones.md`](decisiones.md) only against that list. The rule, the conditions and the
+results are public. The code that ran the fifth test, the instructions and the rules are the same ones published here.
+
+## Earlier tests of the opening fix
+
+### The fourth test, the version before this one (`apertura-v3`)
 
 The third test showed the openings pass. A review of its results then found two real ones that were worse than the original: they listed
 every sign the video was about to explain and erased the speaker's authority. Frames 2 and 3 were never checked, and the judge had never
 seen a bad opening planted on purpose. So the instructions changed (`apertura-v3`), a code rule now rejects lists, Muse Spark 1.3 checks
-the frames SAM does not, and the judge got a negative control. The rule and the list of videos were sealed before running.
+the frames SAM does not, and the judge got a negative control. The rule and the list of videos were sealed before running. It no longer describes what we publish: see the fifth test.
 
 | Fourth test | Rule | Result |
 |---|---|---|
@@ -29,7 +89,7 @@ the frames SAM does not, and the judge got a negative control. The rule and the 
 Reported, not conditions:
 
 - **Near trap: 7 of 10 rejected.** "School" passed on a drawn house twice, because both are searched as "building", and "medicine" passed
-  on a pill. The third test's 10 of 10 used other pairs, so this is the number to trust.
+  on a pill. The third test's 10 of 10 used other pairs.
 - **Corrections.** Of the 47 approved, 37 passed on the first try, 8 after one correction and 2 after two. What got corrected: the promise
   (5), more than one proof given at once (5), engagement bait (3), frames (2), a number, a name and the topic (1 each).
 - **The 3 that failed were withheld:** two where SAM did not find the promise and one with a name the rules rejected.
@@ -49,13 +109,6 @@ How to read it:
 - **The cases are not independent.** 8 of the 30 with a promise are pets or animals, and 20 distinct objects cover the 30.
 - The instructions were tuned on 6 separate cases, run twice, which are not part of this test.
 - **Whether the new opening keeps more people was not measured.**
-
-**About the seals.** A seal is a git commit in this repository's own history, made before the run, and that history was recreated for
-publication ([`hash-map.md`](hash-map.md) gives the new hashes). Nothing outside the repository timestamps it. The list of videos is
-private, so you can check its fingerprint in [`decisiones.md`](decisiones.md) only against that list. The rule, the conditions and the
-results are public. The code that ran the fourth test, the instructions and the rules are the same ones published here.
-
-## Earlier tests of the opening fix
 
 | Question | Rule written first | Result |
 |---|---|---|
@@ -157,6 +210,12 @@ often (mostly a text over 220 characters or an engagement-bait phrase). It fixes
 tools, Spark Open is clearly weaker than Spark 1.3 (28 of 50 cards passed the validator on the first try, against 46;
 [`eval/casos_spark_open.py`](../eval/casos_spark_open.py)), and raising its reasoning effort did not help there (22 of 50). What closed
 the gap was letting it work as an agent.
+
+## Opening tactics
+
+| Question | Rule written first | Result |
+|---|---|---|
+| Which ways of opening go with more retention and reach? ([`eval/tacticas_gancho.py`](../eval/tacticas_gancho.py)) | None: descriptive | What the review card notes about tactics comes from this. It compares different videos with each other, so it describes what happened, not a cause, and it is not a test of the rewrite |
 
 ## Not measured
 
