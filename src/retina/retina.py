@@ -36,7 +36,7 @@ from .curvas import cubeta, tramo_exceso
 from .segmentar import Aviso, segmentar
 
 # Lo que se paga y depende del video: si el video cambia, se borra para no explicar otro.
-PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4", "apertura.json", "normas.json")
+PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4", "apertura.json", "normas.json", "resultado-es.json", "resultado-en.json")
 
 
 def solo_publicados() -> bool:

@@ -202,7 +202,7 @@ body[data-tema="claro"] .gente .va, body[data-tema="claro"] .leyenda-gente .va {
 .texto-gente p { margin: 0 0 6px; }
 .texto-gente .frase { font-size: 19px; line-height: 1.35; }
 .texto-gente .frase .intro { color: var(--suave); }
-.texto-gente .frase .num { font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
+.texto-gente .frase .num { display: block; font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif; font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -.02em; }
 .texto-gente .comparo { color: var(--suave); font-size: 16px; }
 .texto-gente .dif { display: inline-block; font-weight: 650; padding: 4px 12px; border-radius: 999px; font-size: 15px; }
 .texto-gente .dif.menos { background: var(--rojo-vidrio); color: var(--rojo-letra); }
@@ -214,6 +214,11 @@ body[data-tema="claro"] .gente .va, body[data-tema="claro"] .leyenda-gente .va {
 .leyenda-gente span { display: inline-flex; align-items: center; gap: 6px; }
 .leyenda-gente i { width: 10px; height: 10px; }
 .nota-gente { margin: 10px 0 0; font-size: 13px; color: var(--tenue); }
+.de-donde { margin-top: 12px; }
+.de-donde summary { font-size: 14px; }
+.mas-detalles { padding: 16px 20px; border-radius: 22px; }
+.mas-detalles > summary { font-size: 16px; }
+.dentro-detalles { display: grid; gap: 14px; margin-top: 14px; }
 .momento .que { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--texto); }
 .barra { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 10px; margin: 7px 0; font-size: 13px; color: var(--suave); }
 .barra .pista { height: 10px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
@@ -392,7 +397,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
         </div>
         <h1 id="t-subir" data-t="subir_titulo">Revisa tu video antes de publicarlo</h1>
-        <p id="d-subir" data-t="subir_p">Elige o arrastra el video. Retina te dice si el inicio va a perder gente, por qué y qué cambiar.</p>
+        <p id="d-subir" data-t="subir_p">Elige o arrastra tu video. Retina te escribe un inicio nuevo y calcula cuánta gente se quedaría.</p>
         <p id="video-elegido" class="nota-vacio"></p>
         <input type="file" id="archivo-video" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi" hidden>
       </div>
@@ -460,6 +465,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
     <section id="resultado" class="pantalla" aria-labelledby="titular" aria-live="polite">
       <div class="tarjetas">
         <p class="ejemplo oculto" id="aviso-ejemplo" role="note"></p>
+        <p class="ejemplo oculto" id="aviso-idioma" role="status"></p>
         <div class="veredicto vidrio">
           <span class="chip"><i></i><span id="semaforo"></span></span>
           <h1 id="titular"></h1>
@@ -468,9 +474,9 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         </div>
 
         <div class="bloque vidrio oculto" id="bloque-apertura">
-          <h2 data-t="apertura_t">Tu arranque, arreglado</h2>
-          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema">Retina reescribe tus primeros 10 a 15 segundos, los dibuja y los comprueba con reglas fijas y SAM 3.1. El título no se toca.</p>
-          <button class="boton" id="arreglar" type="button" data-t="arreglar">Arreglar mi arranque (unos USD 0.10)</button>
+          <h2 data-t="apertura_t">El inicio de tu video</h2>
+          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema">Retina escribe un inicio nuevo para tu video, lo dibuja y lo revisa antes de enseñártelo. Tu título no cambia.</p>
+          <button class="boton" id="arreglar" type="button" data-t="arreglar">Arreglar el inicio (unos USD 0.10)</button>
           <p class="avance-apertura oculto" id="apertura-avance" aria-live="polite"></p>
           <div class="antes-despues oculto" id="antes-despues"></div>
           <p class="resumen-apertura oculto" id="apertura-resumen"></p>
@@ -488,16 +494,6 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           </div>
           <div class="escala" id="escala"></div>
           <p class="texto-linea" id="texto-linea"></p>
-        </div>
-
-        <div class="vidrio ficha oculto" id="ficha">
-          <h2 class="cabeza" data-t="ficha_t">Cómo arranca tu video, según Muse Spark Open</h2>
-          <div class="ficha-chips" id="ficha-chips"></div>
-          <div class="tacticas oculto" id="tacticas">
-            <h3 data-t="tacticas_t">Lo que pasó con videos que arrancan como el tuyo</h3>
-            <ul id="tacticas-lista"></ul>
-            <p class="nota" data-t="tacticas_nota">En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.</p>
-          </div>
         </div>
 
         <div class="bloque vidrio">
@@ -539,6 +535,20 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <p class="nota" data-t="normas_nota">Es una revisión previa, no una garantía: un video sin avisos aquí también puede tener problemas. Quien decide es Meta.</p>
         </div>
 
+        <details class="mas-detalles vidrio" id="mas-detalles">
+          <summary data-t="mas_detalles">Más detalles de la revisión</summary>
+          <div class="dentro-detalles">
+
+        <div class="vidrio ficha oculto" id="ficha">
+          <h2 class="cabeza" data-t="ficha_t">Cómo arranca tu video, según Muse Spark Open</h2>
+          <div class="ficha-chips" id="ficha-chips"></div>
+          <div class="tacticas oculto" id="tacticas">
+            <h3 data-t="tacticas_t">Lo que pasó con videos que arrancan como el tuyo</h3>
+            <ul id="tacticas-lista"></ul>
+            <p class="nota" data-t="tacticas_nota">En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.</p>
+          </div>
+        </div>
+
         <div class="bloque vidrio oculto" id="bloque-meta">
           <h2 data-t="segun_meta">Según lo que recomienda Meta</h2>
           <ul class="meta" id="meta"></ul>
@@ -559,6 +569,9 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
             </div>
           </details>
         </div>
+
+          </div>
+        </details>
 
         <button class="boton vidrio otra" id="otra" type="button" data-t="otra">Volver al inicio</button>
       </div>
@@ -600,10 +613,10 @@ const TEXTOS = {
       bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
               sub: "Igual revisa el detalle antes de publicar." },
       sin_nivel: { semaforo: "Revisión", titular: "Esto es lo que vimos al inicio de tu video",
-                   sub: "Todo lo de aquí sale de ver y oír tu video." },
+                   sub: "" },
     },
     sin_formula_gente: "En este modo el número es el promedio de videos de su duración; Retina no lo ajusta a tu video.",
-    formato_poco: "Retina vio pocos reels y pocos videos de menos de 30 segundos: toma el número con más cuidado.",
+    formato_poco: "Retina ha visto pocos reels y pocos videos de menos de 30 segundos: aquí el número es menos seguro.",
     otro_idioma: "Retina aprendió con videos en español: con otro idioma, el número es una referencia más débil.",
     falta_ffmpeg: "A este equipo le falta ffmpeg y sin él no se puede revisar ningún video. Instálalo (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) y vuelve a abrir Retina.",
     falta_llave: "Falta la llave de la Meta Model API (MODEL_API_KEY en el archivo .env): sin ella Retina no puede ver ni oír el video.",
@@ -627,7 +640,7 @@ const TEXTOS = {
     idioma_boton: "English", idioma_destino: "en", idioma_titulo: "Ver el panel en inglés",
     fondo: "Fondo", elige_fondo: "Elige el fondo", legible: "Más legible",
     subir_titulo: "Revisa tu video antes de publicarlo",
-    subir_p: "Elige o arrastra el video (MP4, MOV, WebM, MKV o AVI). Retina te dice si el inicio va a perder gente, por qué y qué cambiar.",
+    subir_p: "Elige o arrastra tu video (MP4, MOV, WebM, MKV o AVI). Retina te escribe un inicio nuevo y calcula cuánta gente se quedaría.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · toca para cambiarlo`,
     campo_acceso: "Código de acceso",
     nota_en_linea: "Tu video se manda a la API de Meta y a Baseten para revisarlo, y se borra de aquí a las 24 horas. No subas nada confidencial.",
@@ -684,20 +697,22 @@ const TEXTOS = {
         saludo: "saludo", historia: "historia", tutorial: "tutorial", otro: "otro", sin_voz: "sin voz" },
       emociones: { neutra: "neutra", sorpresa: "sorpresa", humor: "humor", indignacion: "indignación", ternura: "ternura", miedo: "miedo",
         tristeza: "tristeza", alegria: "alegría" } },
-    franjas: " Abajo, en verde lo que funciona y en ámbar lo flojo, según lo que vio Retina.",
+    franjas: " Verde: lo que funciona. Ámbar: lo flojo.",
     no_copio: "No se pudo copiar: selecciona el texto",
     ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
     normas_t: "Normas de Facebook", normas_nota: "Es una revisión previa, no una garantía: un video sin avisos aquí también puede tener problemas. Quien decide es Meta.",
     normas_sin: (n) => `No encontré riesgos claros en las ${n} normas que revisé.`,
     normas_con: (n) => (n === 1 ? "Encontré 1 punto que conviene revisar antes de publicar:" : `Encontré ${n} puntos que conviene revisar antes de publicar:`),
     empieza_aqui: "Empieza por este.",
-    por_que_importa: "Por qué importa: en los videos pasados de una página grande de Facebook, el tercio que mejor retuvo su primer cuarto llegó a unas 3.5 veces más gente que el tercio que peor lo retuvo. Eso es con la retención real, ya publicada; con lo que se predijo antes de publicar la diferencia fue de unas 1.5 veces. Es una relación, no una promesa.",
-    margen_nota: (m) => `Este número es una referencia: suele fallar por unas ${m} personas de cada 100.`,
-    nota_3s: "Retina no ve a quien se va en los primeros 3 segundos: los datos de Facebook parecen empezar a contar desde ahí.",
+    por_que_importa: "Por qué importa: en una página grande de Facebook, los videos que mejor retuvieron a la gente al inicio llegaron a unas 3.5 veces más personas que los que peor la retuvieron. Con lo que se predijo antes de publicar, la diferencia fue de unas 1.5 veces. Es una relación, no una promesa.",
+    margen_nota: (m) => `Es una estimación: puede fallar por unas ${m} personas de cada 100.`,
+    nota_3s: "Solo cuenta a quienes pasan los primeros 3 segundos: Facebook parece empezar a contar desde ahí, así que Retina no ve a quien se va antes.",
+    de_donde: "¿De dónde sale este número?", mas_detalles: "Más detalles de la revisión",
+    traduciendo: "Traduciendo la revisión…", no_traduje: "No pude traducir la revisión: sigue en su idioma original.",
     ver_arranque: "▶ Ver y oír el arranque nuevo", parar_arranque: "■ Parar",
-    apertura_t: "Tu arranque, reescrito y comprobado",
-    apertura_lema: "Retina reescribe tus primeros 10 a 15 segundos, los dibuja y los comprueba con reglas fijas y SAM 3.1. El título no se toca.",
-    arreglar: "Arreglar mi arranque (unos USD 0.10)",
+    apertura_t: "El inicio de tu video",
+    apertura_lema: "Retina escribe un inicio nuevo para tu video, lo dibuja y lo revisa antes de enseñártelo. Tu título no cambia.",
+    arreglar: "Arreglar el inicio (unos USD 0.10)",
     apertura_pasos: { en_fila: "En fila…", escribiendo: "Muse Spark Open está escribiendo tu arranque…", dibujando: "Muse Image está dibujando el primer cuadro…",
       buscando: "SAM 3.1 está buscando lo que promete el título…", corrigiendo: "Algo no pasó las comprobaciones. Muse Spark Open lo está corrigiendo…",
       terminando: "Pasó todo. Muse Image está dibujando los otros dos cuadros…" },
@@ -721,22 +736,15 @@ const TEXTOS = {
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
     como_reviso: "Cómo lo revisó Retina", ver_detalle: "Ver detalle", otra: "Volver al inicio",
-    gente_intro: "De cada 100 personas que pasen los primeros 3 segundos,",
-    gente_siguen: (s, m) => `más o menos ${m}, seguirán viéndolo a los ${s} segundos.`,
-    gente_otros: (n) => `En videos como el tuyo, siguen ${n}.`,
-    gente_menos: (n) => `Perderías a ${n} ${n === 1 ? "persona" : "personas"} más de cada 100.`,
-    gente_mas: (n) => `Se quedarían ${n} ${n === 1 ? "persona" : "personas"} más que en videos como el tuyo.`,
-    gente_igual: "Parecido a videos como el tuyo: la diferencia es menor que el margen.",
-    gente_ejemplo_menos: (n, s) => `Por ejemplo, si 10,000 personas pasan los primeros 3 segundos, a los ${s} segundos serían ${n} menos.`,
-    gente_ejemplo_mas: (n, s) => `Por ejemplo, si 10,000 personas pasan los primeros 3 segundos, a los ${s} segundos serían ${n} más.`,
+    gente_de_100: (n) => `${n} de cada 100`,
+    gente_siguen: (s) => `personas que pasan los primeros 3 segundos seguirían viendo tu video a los ${s} segundos.`,
+    gente_menos: (n, o) => `Son ${n} menos que en videos como el tuyo, donde siguen ${o}.`,
+    gente_mas: (n, o) => `Son ${n} más que en videos como el tuyo, donde siguen ${o}.`,
+    gente_igual: (o) => `Es parecido a videos como el tuyo, donde siguen ${o}.`,
+    gente_ejemplo: (m, s) => `Por ejemplo: si 10,000 personas pasan esos 3 segundos, unas ${m} seguirían viendo a los ${s}.`,
     gente_real: (n) => `Ya está publicado: de verdad siguieron ${n} de cada 100.`,
-    ley_siguen: "siguen viendo", ley_normal: "se van (como en videos como el tuyo)",
+    ley_siguen: "siguen viendo", ley_normal: "se van",
     ley_de_mas: "se irían de más", ley_gana: "se quedarían de más",
-    momento_fin: (t) => `Al terminar el inicio (${t}), de cada 100 que pasaron los primeros 3 segundos siguen viendo:`,
-    barra_tuyo: "Tu video", barra_otros: "Videos como el tuyo", barra_real: "De verdad",
-    momento_igual: "Parecido a videos como el tuyo.",
-    momento_menos: (n) => `Tu video pierde ${n} ${n === 1 ? "persona" : "personas"} más.`,
-    momento_mas: (n) => `Tu video retiene ${n} ${n === 1 ? "persona" : "personas"} más.`,
     como_tuyo_es: (x) => `«Videos como el tuyo» son ${x}.`,
     reglas_meta: { gancho_3s: "Algo que detenga a la gente en los primeros 3 segundos",
       mensaje_3s: "El mensaje principal aparece pronto (en texto o en voz)",
@@ -748,10 +756,10 @@ const TEXTOS = {
       "cubeta 90 d": "de la misma duración de los últimos 90 días",
       "cubeta+talento": "del mismo talento y duración", cubeta: "de la misma duración",
       publica: "de la misma duración en una página grande de Facebook en México" }[regla] || "publicados"),
-    creador_nuevo: "Retina todavía no conoce a este creador. Calculó con lo que trae cualquier video (duración, formato, título y cómo arranca la voz) y lo comparó con videos de una página grande de Facebook en México. Tómalo como referencia: lo que está bien y lo que cambiarías sale de ver tu video.",
-    creador_nuevo_sin_voz: "Retina todavía no conoce a este creador y no pudo escuchar la voz, así que el número es el de videos de su duración en una página grande de Facebook en México. Lo que está bien y lo que cambiarías sale de ver tu video.",
-    t_linea_seg: (n) => `Los primeros ${n} segundos`, t_linea_mm: (t) => `El inicio: de 0:00 a ${t}`,
-    linea_texto: (t) => `El inicio de tu video, de 0:00 a ${t}.`, partes: (l) => ` Partes a revisar: ${l}.`,
+    creador_nuevo: "Retina todavía no conoce a este creador: calculó con la duración, el formato, el título y cómo empieza la voz.",
+    creador_nuevo_sin_voz: "Retina todavía no conoce a este creador y no oyó voz: el número es el promedio de videos de esa duración.",
+    t_linea_seg: (n) => `Cómo se va la gente en los primeros ${n} segundos`, t_linea_mm: (t) => `Cómo se va la gente de 0:00 a ${t}`,
+    linea_texto: () => "", partes: (l) => `Partes a revisar: ${l}.`,
     tramo: (a, b) => `${a} a ${b}`, castiga_en: (t) => ` Lo que Meta castiga aparece en ${t}.`,
     grafica_aria: (d) => `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${d}, según Retina y según videos parecidos.`,
     cumple: "Cumple", no_cumple: "No cumple", sin_dato: "Sin dato", fuente_meta: "Fuente de Meta",
@@ -800,10 +808,10 @@ const TEXTOS = {
       bajo: { semaforo: "No clear problem", titular: "We don't see a clear problem in the opening",
               sub: "Still, check the details before publishing." },
       sin_nivel: { semaforo: "Review", titular: "Here is what we saw at the start of your video",
-                   sub: "Everything here comes from watching and listening to your video." },
+                   sub: "" },
     },
     sin_formula_gente: "In this mode the number is the average for videos of this length; Retina doesn't adjust it to your video.",
-    formato_poco: "Retina has seen few reels and few videos under 30 seconds: treat the number with extra care.",
+    formato_poco: "Retina has seen few reels and few videos under 30 seconds: the number is less certain here.",
     otro_idioma: "Retina learned from videos in Spanish: in another language, the number is a weaker reference.",
     falta_ffmpeg: "This computer is missing ffmpeg, and without it no video can be reviewed. Install it (Windows: winget install Gyan.FFmpeg · Mac: brew install ffmpeg · Linux: apt install ffmpeg) and open Retina again.",
     falta_llave: "The Meta Model API key is missing (MODEL_API_KEY in the .env file): without it Retina can't watch or hear the video.",
@@ -828,7 +836,7 @@ const TEXTOS = {
     idioma_boton: "Español", idioma_destino: "es", idioma_titulo: "View the panel in Spanish",
     fondo: "Background", elige_fondo: "Choose a background", legible: "Easier to read",
     subir_titulo: "Check your video before you publish it",
-    subir_p: "Choose or drop the video (MP4, MOV, WebM, MKV or AVI). Retina tells you if the start will lose people, why, and what to change.",
+    subir_p: "Choose or drop your video (MP4, MOV, WebM, MKV or AVI). Retina writes you a new opening and estimates how many people would stay.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · tap to change it`,
     campo_acceso: "Access code",
     nota_en_linea: "Your video goes to Meta's API and to Baseten for the review, and it's deleted from here after 24 hours. Don't upload anything confidential.",
@@ -885,20 +893,22 @@ const TEXTOS = {
         saludo: "greeting", historia: "story", tutorial: "how-to", otro: "other", sin_voz: "no voice" },
       emociones: { neutra: "neutral", sorpresa: "surprise", humor: "humor", indignacion: "outrage", ternura: "tenderness", miedo: "fear",
         tristeza: "sadness", alegria: "joy" } },
-    franjas: " Below, green is what works and amber what is weak, according to what Retina saw.",
+    franjas: " Green: what works. Amber: what is weak.",
     no_copio: "Couldn't copy: select the text instead",
     ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
     normas_t: "Facebook's rules", normas_nota: "This is a first check, not a guarantee: a video with no warnings here can still have problems. Meta makes the final call.",
     normas_sin: (n) => `I found no clear risks in the ${n} rules I checked.`,
     normas_con: (n) => (n === 1 ? "I found 1 point worth checking before you publish:" : `I found ${n} points worth checking before you publish:`),
     empieza_aqui: "Start here.",
-    por_que_importa: "Why it matters: among past videos of a large Facebook page, the third that best held its first quarter reached about 3.5 times more people than the third that held it worst. That's with real retention, after publishing; with what was predicted before publishing, the gap was about 1.5 times. It's a relation, not a promise.",
-    margen_nota: (m) => `This number is a reference: it's usually off by about ${m} people out of 100.`,
-    nota_3s: "Retina can't see people who leave in the first 3 seconds: Facebook's data seems to start counting from there.",
+    por_que_importa: "Why it matters: on a large Facebook page, the videos that best held people at the start reached about 3.5 times more people than the ones that held them worst. With what was predicted before publishing, the gap was about 1.5 times. It's a relation, not a promise.",
+    margen_nota: (m) => `It's an estimate: it can be off by about ${m} people out of 100.`,
+    nota_3s: "It only counts people who get past the first 3 seconds: Facebook seems to start counting there, so Retina can't see who leaves earlier.",
+    de_donde: "Where does this number come from?", mas_detalles: "More review details",
+    traduciendo: "Translating the review…", no_traduje: "I couldn't translate the review: it stays in its original language.",
     ver_arranque: "▶ Watch and hear the new opening", parar_arranque: "■ Stop",
-    apertura_t: "Your opening, rewritten and checked",
-    apertura_lema: "Retina rewrites your first 10 to 15 seconds, draws them and checks them with fixed rules and SAM 3.1. Your title stays as it is.",
-    arreglar: "Fix my opening (about USD 0.10)",
+    apertura_t: "Your video's opening",
+    apertura_lema: "Retina writes a new opening for your video, draws it and checks it before showing it to you. Your title stays as it is.",
+    arreglar: "Fix the opening (about USD 0.10)",
     apertura_pasos: { en_fila: "In line…", escribiendo: "Muse Spark Open is writing your opening…", dibujando: "Muse Image is drawing the first frame…",
       buscando: "SAM 3.1 is looking for what the title promises…", corrigiendo: "Something didn't pass the checks. Muse Spark Open is fixing it…",
       terminando: "Everything passed. Muse Image is drawing the other two frames…" },
@@ -922,22 +932,15 @@ const TEXTOS = {
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
     como_reviso: "How Retina reviewed it", ver_detalle: "See details", otra: "Back to the start",
-    gente_intro: "Out of every 100 people who get past the first 3 seconds,",
-    gente_siguen: (s, m) => `give or take ${m}, will still be watching at ${s} seconds.`,
-    gente_otros: (n) => `In videos like yours, ${n} are still watching.`,
-    gente_menos: (n) => `You'd lose ${n} more ${n === 1 ? "person" : "people"} out of every 100.`,
-    gente_mas: (n) => `${n} more ${n === 1 ? "person" : "people"} would stay than in videos like yours.`,
-    gente_igual: "Similar to videos like yours: the difference is smaller than the margin.",
-    gente_ejemplo_menos: (n, s) => `For example, if 10,000 people get past the first 3 seconds, ${n} fewer would still be watching at ${s} seconds.`,
-    gente_ejemplo_mas: (n, s) => `For example, if 10,000 people get past the first 3 seconds, ${n} more would still be watching at ${s} seconds.`,
+    gente_de_100: (n) => `${n} out of 100`,
+    gente_siguen: (s) => `people who get past the first 3 seconds would still be watching your video at ${s} seconds.`,
+    gente_menos: (n, o) => `That's ${n} fewer than in videos like yours, where ${o} stay.`,
+    gente_mas: (n, o) => `That's ${n} more than in videos like yours, where ${o} stay.`,
+    gente_igual: (o) => `That's similar to videos like yours, where ${o} stay.`,
+    gente_ejemplo: (m, s) => `For example: if 10,000 people get past those 3 seconds, about ${m} would still be watching at ${s}.`,
     gente_real: (n) => `Already published: ${n} out of 100 actually stayed.`,
-    ley_siguen: "still watching", ley_normal: "leave (as in videos like yours)",
+    ley_siguen: "still watching", ley_normal: "leave",
     ley_de_mas: "extra people lost", ley_gana: "extra people kept",
-    momento_fin: (t) => `At the end of the opening (${t}), out of every 100 who got past the first 3 seconds, still watching:`,
-    barra_tuyo: "Your video", barra_otros: "Videos like yours", barra_real: "Actual",
-    momento_igual: "Similar to videos like yours.",
-    momento_menos: (n) => `Your video loses ${n} more ${n === 1 ? "person" : "people"}.`,
-    momento_mas: (n) => `Your video keeps ${n} more ${n === 1 ? "person" : "people"}.`,
     como_tuyo_es: (x) => `“Videos like yours” means ${x}.`,
     reglas_meta: { gancho_3s: "Something that stops people in the first 3 seconds",
       mensaje_3s: "The main message shows up early (as text or voice)",
@@ -949,10 +952,10 @@ const TEXTOS = {
       "cubeta 90 d": "videos of the same length from the last 90 days",
       "cubeta+talento": "videos with the same person on camera and length", cubeta: "videos of the same length",
       publica: "videos of the same length on a large Facebook page in Mexico" }[regla] || "published videos"),
-    creador_nuevo: "Retina doesn't know this creator yet. It used what any video has (length, format, title and how the voice opens) and compared it with videos from a large Facebook page in Mexico. Take the number as a reference: what works and what to change come from watching your video.",
-    creador_nuevo_sin_voz: "Retina doesn't know this creator yet and couldn't hear the voice, so the number is the one for videos of this length on a large Facebook page in Mexico. What works and what to change come from watching your video.",
-    t_linea_seg: (n) => `The first ${n} seconds`, t_linea_mm: (t) => `The opening: 0:00 to ${t}`,
-    linea_texto: (t) => `Your video's opening, from 0:00 to ${t}.`, partes: (l) => ` Parts to check: ${l}.`,
+    creador_nuevo: "Retina doesn't know this creator yet: it used the length, format, title and how the voice opens.",
+    creador_nuevo_sin_voz: "Retina doesn't know this creator yet and heard no voice: the number is the average for videos of that length.",
+    t_linea_seg: (n) => `How people leave in the first ${n} seconds`, t_linea_mm: (t) => `How people leave from 0:00 to ${t}`,
+    linea_texto: () => "", partes: (l) => `Parts to check: ${l}.`,
     tramo: (a, b) => `${a} to ${b}`, castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
     grafica_aria: (d) => `Out of every 100 people who get past the first 3 seconds, how many are still watching at each moment of a ${d} video, according to Retina and to similar videos.`,
     cumple: "Meets it", no_cumple: "Doesn't meet it", sin_dato: "No data", fuente_meta: "Meta source",
@@ -1010,7 +1013,7 @@ const RECHAZOS = [  // los problemas los escribe el validador en español; aquí
   [/no trae un cambio/, "sin_cambio"],
 ];
 // carpeta: de dónde vino el caso (solo si vino de casos/ por http); porOmision: es el ejemplo del idioma (cambia con él)
-let actual = null, carpeta = null, porOmision = false, ultimoFallo = null;
+let actual = null, original = null, carpeta = null, porOmision = false, ultimoFallo = null;  // original: la revisión como se escribió
 
 function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
 
@@ -1047,7 +1050,7 @@ const momentoPrincipal = (dur) => (dur >= 30 ? 15 : Math.max(3, Math.round(dur /
 
 function cifras(r) {
   // Lo principal en una frase, con 100 personas dibujadas; los otros dos momentos, con barras.
-  const p = r.prediccion, dur = r.video.duracion_s, fin = dur / 4, s = momentoPrincipal(dur);
+  const p = r.prediccion, dur = r.video.duracion_s, s = momentoPrincipal(dur);
   const en100 = (c, x) => Math.round(100 * en(c, dur, x));
   const tuyo = en100(p.curva_predicha, s), otros = en100(p.curva_parecidos, s), margen = p.margen_personas ?? MARGEN_POR_OMISION;
   const dif = Math.abs(tuyo - otros) < margen ? 0 : tuyo - otros;  // lo que queda dentro del margen no es una diferencia
@@ -1063,46 +1066,26 @@ function cifras(r) {
 
   const texto = nodo("div", "texto-gente");
   const frase = nodo("p", "frase");
-  frase.append(nodo("span", "intro", t("gente_intro")), " ", nodo("b", "num", String(tuyo)), ", ", t("gente_siguen", s, margen));
-  const comparo = nodo("p", "comparo", t("gente_otros", otros));
+  frase.append(nodo("b", "num", t("gente_de_100", tuyo)), " ", t("gente_siguen", s));
   const sinFormula = !!(r.licencia && r.licencia.sin_formula);
-  const veredicto = sinFormula ? nodo("p", "dif igual", t("sin_formula_gente")) : dif === 0 ? nodo("p", "dif igual", t("gente_igual"))
-    : nodo("p", `dif ${dif < 0 ? "menos" : "mas"}`, t(dif < 0 ? "gente_menos" : "gente_mas", Math.abs(dif)));
-  texto.append(frase, comparo, veredicto);
-  if (!sinFormula && dif !== 0) texto.append(nodo("p", "ejemplo-gente", t(dif < 0 ? "gente_ejemplo_menos" : "gente_ejemplo_mas", miles(Math.abs(dif)), s)));
+  const veredicto = sinFormula ? nodo("p", "dif igual", t("sin_formula_gente")) : dif === 0 ? nodo("p", "comparo", t("gente_igual", otros))
+    : nodo("p", `dif ${dif < 0 ? "menos" : "mas"}`, t(dif < 0 ? "gente_menos" : "gente_mas", Math.abs(dif), otros));
+  texto.append(frase, veredicto, nodo("p", "ejemplo-gente", t("gente_ejemplo", miles(tuyo), s)), nodo("p", "ejemplo-gente", t("margen_nota", margen)));
   if (conReal(r)) texto.append(nodo("p", "real-gente", t("gente_real", en100(r.realidad.curva, s))));
   const principal = nodo("div", "cifra vidrio grande personas");
   const fila = nodo("div", "fila-gente"); fila.append(gente, texto);
-  principal.append(fila, leyenda, nodo("p", "nota-gente", t("margen_nota", margen)), nodo("p", "nota-gente", t("nota_3s")), nodo("p", "nota-gente", t("por_que_importa")));
-  const l = r.licencia || {};
-  if (comparadoCon(l)) principal.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
-  if (l.formato_poco_conocido) principal.append(nodo("p", "nota-gente", t("formato_poco")));
-  if (l.otro_idioma) principal.append(nodo("p", "nota-gente", t("otro_idioma")));
+  const l = r.licencia || {}, doblado = nodo("details", "de-donde");
+  doblado.append(nodo("summary", "", t("de_donde")), nodo("p", "nota-gente", t("nota_3s")));
+  if (comparadoCon(l)) doblado.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
+  if (l.formato_poco_conocido) doblado.append(nodo("p", "nota-gente", t("formato_poco")));
+  if (l.otro_idioma) doblado.append(nodo("p", "nota-gente", t("otro_idioma")));
   if (l.conoce_al_creador === false && !sinFormula)  // en el plan B la frase de arriba ya lo explica
-    principal.append(nodo("p", "nota-gente", t(l.cerebro === "cualquier_video" ? "creador_nuevo" : "creador_nuevo_sin_voz")));
+    doblado.append(nodo("p", "nota-gente", t(l.cerebro === "cualquier_video" ? "creador_nuevo" : "creador_nuevo_sin_voz")));
+  doblado.append(nodo("p", "nota-gente", t("por_que_importa")));
+  principal.append(fila, leyenda, doblado);
 
-  const momento = (x, titulo) => {
-    const caja = nodo("div", "cifra vidrio momento");
-    caja.append(nodo("div", "que", titulo));
-    const barras = [[t("barra_tuyo"), en100(p.curva_predicha, x), "tuyo"], [t("barra_otros"), en100(p.curva_parecidos, x), "otros"]];
-    if (conReal(r)) barras.push([t("barra_real"), en100(r.realidad.curva, x), "real"]);
-    for (const [nombre, v, clase] of barras) {
-      const b = nodo("div", `barra ${clase}`), relleno = nodo("i");
-      relleno.style.width = `${Math.max(0, Math.min(100, v))}%`;
-      const pista = nodo("span", "pista"); pista.append(relleno);
-      b.append(nodo("span", "nombre", nombre), pista, nodo("span", "valor", String(v)));
-      caja.append(b);
-    }
-    const d = barras[0][1] - barras[1][1];
-    if (sinFormula) return caja;  // sin fórmula las dos barras son iguales por definición: no hay veredicto
-    const dentro = Math.abs(d) < margen;
-    caja.append(nodo("p", `dif-momento ${dentro ? "igual" : d < 0 ? "menos" : "mas"}`,
-      dentro ? t("momento_igual") : t(d < 0 ? "momento_menos" : "momento_mas", Math.abs(d))));
-    return caja;
-  };
-  const otrosMomentos = fin > 3 ? [momento(fin, t("momento_fin", mmss(fin)))] : [];
   $("cifras").className = "cifras";
-  $("cifras").replaceChildren(principal, ...otrosMomentos);
+  $("cifras").replaceChildren(principal);
 }
 
 function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos): curvas, partes a revisar y anzuelo
@@ -1277,7 +1260,7 @@ function revisado(r) {
   $("correccion").classList.toggle("oculto", !regresos.length);
   $("correccion").textContent = regresos.length ? t("correccion", regresos.length, porque.join("; ")) : "";
   const cuadros = (!r.apertura && e && e.storyboard) || [], dibujos = ilustraciones(e);  // la apertura ya los enseña
-  $("ver-storyboard").classList.toggle("oculto", !cuadros.length);
+  $("ver-storyboard").classList.toggle("oculto", !cuadros.length || !dibujos.some(Boolean));  // con puro texto no enseña nada que el arranque nuevo no enseñe mejor
   $("ver-storyboard").textContent = t(dibujos.some(Boolean) ? "ver_storyboard_ia" : "ver_storyboard");
   $("storyboard").replaceChildren(...cuadros.map((c, i) => {
     const d = nodo("div");
@@ -1441,7 +1424,7 @@ function mostrar(r) {
   if (e) {
     conTiempos($("porque"), reloj(e.por_que));
     conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar) : t(nivel === "bajo" ? "sin_cambio_bajo" : "sin_sugerencia"));
-    $("funciona").classList.toggle("oculto", !e.lo_que_funciona);
+    $("funciona").classList.toggle("oculto", !e.lo_que_funciona || lista_(e, "lo_bueno").length > 0);  // sin repetir lo que ya está en la lista de arriba
     $("funciona").replaceChildren(nodo("b", "", t("ya_funciona")), conTiempos(nodo("span"), reloj(e.lo_que_funciona || "")));
     const hay = e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno";
     $("anzuelo").classList.toggle("oculto", !hay);
@@ -1513,7 +1496,7 @@ function fallo(motivo) {  // motivo: una clave de TEXTOS o un texto ya escrito (
 
 async function leer(archivo) {
   carpeta = null;  // un archivo elegido a mano no trae su carpeta: el storyboard se ve solo en texto
-  try { mostrar(JSON.parse(await archivo.text())); porOmision = false; }
+  try { original = JSON.parse(await archivo.text()); mostrar(original); porOmision = false; }
   catch (err) { fallo(err.clave || err.message || "no_se_leyo"); }
 }
 
@@ -1521,8 +1504,33 @@ async function abrir(ruta, ejemplo = false) {  // ejemplo: es el caso de muestra
   const r = await fetch(ruta);
   if (!r.ok) throw falla("no_encontre");
   carpeta = new URL(".", r.url);
-  mostrar(await r.json());
+  original = await r.json();
+  mostrar(original);
   porOmision = ejemplo;
+  await enSuIdioma();
+}
+
+// Lo que escribió el modelo viene en el idioma de la revisión. Si el panel está en el otro, se traduce una vez y se guarda.
+async function enSuIdioma() {
+  const base = original, id = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname), aviso = $("aviso-idioma");
+  aviso.classList.add("oculto");
+  if (!base || !base.idioma || porOmision) return;
+  if (base.idioma === idioma) { if (actual !== base) repintar({ ...base, apertura: actual.apertura }); return; }
+  if (!conSubida || !id) return;
+  aviso.textContent = t("traduciendo"); aviso.classList.remove("oculto");
+  try {
+    const x = await fetch(`/api/traducir/${id[1]}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma, ...acceso() } });
+    const r = await x.json().catch(() => ({}));
+    if (!x.ok) throw new Error(r.error || t("no_traduje"));
+    if (original === base && r.idioma === idioma) { repintar({ ...r, apertura: actual.apertura }); aviso.classList.add("oculto"); }
+  } catch (e) { aviso.textContent = e.message || t("no_traduje"); }
+}
+
+function repintar(r) {  // otra vez lo mismo en pantalla: sin perder los pasos marcados ni el lugar
+  const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo"));
+  mostrar(r);
+  [...$("pasos").children].forEach((li, i) => { if (hechos[i]) li.querySelector(".hecho").click(); });
+  window.scrollTo(0, y);
 }
 
 $("arreglar").onclick = async () => {
@@ -1879,10 +1887,8 @@ $("idioma").onclick = async () => {
   history.replaceState(history.state, "", `${location.pathname}${q.toString() ? `?${q}` : ""}${location.hash}`);
   aplicarTextos();
   if (document.body.dataset.estado === "resultado" && actual) {
-    const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo"));
-    try { if (porOmision) await abrir(DEMO(), true); else mostrar(actual); } catch (_) { mostrar(actual); }
-    [...$("pasos").children].forEach((li, i) => { if (hechos[i]) li.querySelector(".hecho").click(); });
-    window.scrollTo(0, y);
+    if (porOmision) { try { await abrir(DEMO(), true); } catch (_) { repintar(actual); } }
+    else { repintar(actual); await enSuIdioma(); }
   } else if (document.body.dataset.estado === "comparacion" && comparacionActual) {
     const y = window.scrollY; pintarComparacion(comparacionActual); window.scrollTo(0, y);
   } else if (!$("error").classList.contains("oculto") && ultimoFallo) fallo(ultimoFallo);

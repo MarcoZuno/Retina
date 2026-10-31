@@ -13,7 +13,7 @@ draft MP4 ─► segmentar ─► 40 stretches + WAV + light MP4
                ├─► número       (fixed formula, docs/numero.md)  how many of 100 may stay
                └─► explicar     (Muse Spark Open, validator; Muse Spark 1.3 rescues) ─► card ─► panel
 
-press «Fix my opening» ─► apertura:
+press «Fix the opening» ─► apertura:
     Muse Spark Open writes ─► rules in code ─► Muse Image draws frame 1 ─► SAM 3.1 looks for the promise
           ▲                       │ fails                                        │ fails
           └───────────────────────┴──── exact list of failures, up to 2 times ───┘
@@ -39,6 +39,7 @@ If a service is not in this table, it does not exist.
 | `explicar` | opening + descriptors + speech → why + one edit (one shot, validated; the agent's fallback) | Muse Spark Open or 1.3 (`RETINA_MOTOR`) | ≈ USD 0.03 | ✅ |
 | `agente` | case folder → card, with tools and the validator in the loop | **Muse Spark Open** (open weights, Baseten); Muse Spark 1.3 rescues | ≈ USD 0.04 | ✅ |
 | `sam` | first 3 s or a drawn frame + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.01 | ✅ |
+| `traducir` | a review → the same review in the other panel language, once, with numbers checked | Muse Spark 1.3 | less than USD 0.01 | ✅ |
 | `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ |
 | `storyboard` | a card's suggestion → 3 illustrations, from the command line (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | not built (after the event) |

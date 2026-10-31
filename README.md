@@ -80,7 +80,7 @@ PYTHONPATH=src python -m retina.app     # Windows PowerShell: $env:PYTHONPATH="s
 ```
 
 The app opens at `http://127.0.0.1:8790`. Drop a video, write its title, and the review is ready in about 3 minutes (about USD 0.10). Then
-press **Fix my opening**: you watch each step happen, and in 1 to 4 minutes you get the before and after (USD 0.05 to 0.25, only when you
+press **Fix the opening**: you watch each step happen, and in 1 to 4 minutes you get the before and after (USD 0.05 to 0.25, only when you
 press the button). Your spending cap is `RETINA_TOPE_USD` in `.env`. With the contest's free credits, Meta may use what you send; a
 company that does not want to send drafts can set `RETINA_SOLO_PUBLICADOS=1`.
 
@@ -102,6 +102,7 @@ Tests need no key and no private data: `pip install -r requirements.txt`, then `
 | Checking Facebook's rules | Muse Spark 1.3 | Meta Model API | Reads the description and transcript against a closed list of 18 public rules; code drops any warning without real evidence |
 | Watching and listening | Muse Spark 1.3, Muse Voice Transcribe 1.0 | Meta Model API | What is on screen, speech with timestamps and silences |
 | Reading the opening, writing the card | **Muse Spark Open** (open weights) | Baseten Model API | Fills a fixed sheet about how the opening starts; writes what works and what is weak, checked by a validator. Muse Spark 1.3 rescues |
+| Switching language | Muse Spark 1.3 | Meta Model API | Translates the review when you change the language, once. A translation that changes a number or adds bait is dropped |
 
 ### What is not a Meta model
 

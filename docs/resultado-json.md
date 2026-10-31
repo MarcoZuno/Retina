@@ -6,6 +6,11 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 
 *The panel reads only this file. The example is made up, with no real data.*
 
+## Otro idioma
+
+`idioma` dice en qué idioma escribieron los modelos. Si la persona cambia de idioma, `retina.traducir` deja `resultado-es.json` o
+`resultado-en.json` junto al original, con lo que escribió el modelo traducido. Lo que sale del video no se traduce.
+
 ## La apertura arreglada
 
 `apertura` solo existe si la persona apretó «Arreglar mi arranque» (`retina.apertura`). También queda en

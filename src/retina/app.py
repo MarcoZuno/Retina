@@ -78,6 +78,8 @@ TEXTOS = {
     "es": {
         "falta_titulo": "Escribe el título del video (300 caracteres como máximo).",
         "muy_corto": "El video dura menos de 5 segundos: en tan poco no hay arranque que revisar.",
+        "traduccion_falla": "No pude traducir la revisión ({tipo}). Sigue en su idioma original.",
+        "sin_revision": "No encuentro esa revisión.",
         "sin_a": "No encontré la versión A para comparar; la tarjeta de esta versión sí quedó.",
         "a_fallo": "La versión A no se pudo revisar, así que no se pudo comparar con esta. Lo que pasó con la versión A: {detalle}",
         "a_tarde": "La versión A no terminó su revisión a tiempo y no se pudo comparar; la tarjeta de esta versión sí quedó.",
@@ -114,6 +116,8 @@ TEXTOS = {
     "en": {
         "falta_titulo": "Type the video's title (300 characters at most).",
         "muy_corto": "The video is under 5 seconds long: there is no opening to review in so little time.",
+        "traduccion_falla": "I couldn't translate the review ({tipo}). It stays in its original language.",
+        "sin_revision": "I can't find that review.",
         "sin_a": "I couldn't find version A to compare; this version's card is ready.",
         "a_fallo": "Version A couldn't be reviewed, so it couldn't be compared with this one. What happened with version A: {detalle}",
         "a_tarde": "Version A didn't finish its review in time, so they couldn't be compared; this version's card is ready.",
@@ -273,6 +277,22 @@ def pedir_apertura(carpeta: Path, fila, idioma: str) -> tuple[int, dict]:
         _APERTURAS[carpeta.name] = {"estado": "en_fila"}
     fila.submit(arreglar, carpeta, idioma)
     return 202, {"estado": "en_fila"}
+
+
+def pedir_traduccion(carpeta: Path, idioma: str) -> tuple[int, dict]:
+    """Lo que escribió el modelo, en el idioma del panel. Tarda unos segundos y se hace una sola vez por idioma."""
+    from . import meta_api, traducir
+    if not (carpeta / "resultado.json").is_file():
+        return 404, {"error": texto(idioma, "sin_revision")}
+    if not (carpeta / f"resultado-{idioma}.json").exists() and not salud()["llave"]:
+        return 503, {"error": texto(idioma, "sin_llave")}
+    try:
+        return 200, traducir.traducir(carpeta, idioma)
+    except meta_api.TopeAlcanzado:
+        return 503, {"error": texto(idioma, "tope")}
+    except Exception as e:  # noqa: BLE001 — la revisión sigue en su idioma; el detalle queda en error.txt
+        (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
+        return 503, {"error": texto(idioma, "traduccion_falla", tipo=type(e).__name__)}
 
 
 def arreglar(carpeta: Path, idioma: str) -> None:
@@ -574,6 +594,11 @@ class ConSubida(SoloElPanel):
             if not self._puerta(idioma):
                 return None
             return self._json(*pedir_apertura(self.casos / m.group(1), self.fila, idioma))
+        m = re.match(r"^/api/traducir/([0-9a-f]{12})$", self.path)
+        if m and self._local() and self._propio():
+            if not self._puerta(idioma):
+                return None
+            return self._json(*pedir_traduccion(self.casos / m.group(1), idioma))
         if self.path != "/api/revisar" or not self._local() or not self._propio():
             return self.send_error(404)
         if not self._puerta(idioma):
