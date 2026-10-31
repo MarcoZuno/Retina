@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .segmentar import N_TRAMOS, _ffmpeg, duracion_s
+from .segmentar import N_TRAMOS, PROTOCOLOS, _ffmpeg, duracion_s, entorno_ffmpeg, tiempo_maximo_s
 
 MODELO = os.environ.get("RETINA_VJEPA", "facebook/vjepa2-vitl-fpc64-256")
 CUADROS_POR_TRAMO = 2
@@ -51,11 +51,11 @@ def cuadros_y_audio(video: Path, rapido: bool = False, gpu: bool = True) -> tupl
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         wav = Path(tmp) / "audio.raw"
-        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", *entrada, "-i", str(video),
+        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", *PROTOCOLOS, *entrada, "-i", str(video),
                             "-map", "0:v:0", "-vf", filtro, "-frames:v", str(n), "-f", "rawvideo",
                             "-pix_fmt", "rgb24", "pipe:1",
                             "-map", "0:a:0?", "-ac", "1", "-ar", str(TASA_AUDIO), "-f", "s16le", str(wav)],
-                           capture_output=True)
+                           capture_output=True, env=entorno_ffmpeg(), timeout=tiempo_maximo_s())
         if p.returncode != 0:
             raise RuntimeError(p.stderr.decode(errors="replace")[-400:])
         audio = np.fromfile(wav, dtype=np.int16) if wav.exists() else np.zeros(0, dtype=np.int16)
@@ -205,8 +205,9 @@ def rellenar_audio(salida: Path, hilos: int = 4) -> None:
         codigo, ruta = item
         if not ruta:
             return codigo, "sin archivo"
-        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-i", ruta, "-vn",
-                            "-ac", "1", "-ar", str(TASA_AUDIO), "-f", "s16le", "pipe:1"], capture_output=True)
+        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", *PROTOCOLOS, "-i", ruta, "-vn",
+                            "-ac", "1", "-ar", str(TASA_AUDIO), "-f", "s16le", "pipe:1"],
+                           capture_output=True, env=entorno_ffmpeg(), timeout=tiempo_maximo_s())
         np.save(salida / f"{codigo}.audio.npy", rasgos_audio(np.frombuffer(p.stdout, dtype=np.int16)))
         return codigo, "ok"
 

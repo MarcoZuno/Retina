@@ -45,3 +45,6 @@ estado.json
 # Registro de gasto del equipo: revela horarios y ritmo
 docs/costos-equipo.jsonl
 docs/costos-equipo.reservas
+
+# Llaves sueltas, por si alguien las copia aquí
+token*.txt

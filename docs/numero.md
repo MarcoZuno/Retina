@@ -23,7 +23,7 @@ fixed numbers that plain Python multiplies and adds, in `ModeloPublico.predecir`
 - **Who owns it:** Badabun, the company behind this entry. The raw data stays private and is not in this repository.
 - **What was left out:** videos with eligibility or no record of it, and videos about out-of-scope topics or out-of-scope topics
   ([`reglas/alcance-v1.json`](../reglas/alcance-v1.json), checked against the title and the first 40 spoken
-  words). Revenue was never read.
+  words; the published list leaves out people's proper names, which were also used). Revenue was never read.
 - **What was used:** 23,710 videos. Of those, 974 have no speech and 9,003 have no opening sheet: they enter with zeros in those inputs.
 - **What was removed:** creator names, from both the title and the words the model learns.
 
@@ -43,8 +43,9 @@ For each video, 1,703 numbers, all built by plain code ([`src/retina/predecir.py
 | Opening sheet | 26 | What **Muse Spark Open** noted: hook, emotion, clarity, curiosity and five yes/no questions |
 | Intercept | 1 | |
 
-Speech comes from **Muse Voice Transcribe** when Retina runs. To build the training set we transcribed the archive offline with
-Whisper (`transcribir_local.py`); that never runs in the app. The sheets used for training were written with no fixed temperature, 20
+Speech comes from **Muse Voice Transcribe** when Retina runs. For the training set we used Whisper transcripts of the archive: 30,467
+of them already existed before the event and the rest were made offline during it with `transcribir_local.py`, which never runs in the
+app. The code that matches curves with files and transcripts reads internal file names, so it is not in this repository. The sheets used for training were written with no fixed temperature, 20
 videos per call; the app asks for one video at temperature 0, so the two are not identical and we have not measured the difference.
 
 ## The training
@@ -59,9 +60,6 @@ videos per call; the app asks for one video at temperature 0, so the two are not
    no other randomness.
 4. **Prediction.** `curve = baseline + x · W`, clipped between 0 and 1.
 
-The file also holds the weights of an opening risk level. The public version does not use them: that traffic light did not pass
-its rule ([`docs/decisiones.md`](decisiones.md)).
-
 To rebuild the file, with access to the private data:
 
 ```bash
@@ -70,7 +68,7 @@ python -m retina.publico --base BASE.csv --voz VOZ.jsonl --fichas FICHAS.jsonl -
 
 ## The fixed weights
 
-[`modelos/retina-publico.json`](../modelos/retina-publico.json) is about 770 KB of plain JSON, so opening it runs no code. It holds
+[`modelos/retina-publico.json`](../modelos/retina-publico.json) is about 660 KB of plain JSON, so opening it runs no code. It holds
 the 1,703 × 41 weight matrix, five average curves by length and the settings above. It has no videos, titles, creators, production
 codes, per-video figures or revenue.
 
@@ -81,9 +79,12 @@ Modest, and we say so. Results are in the README and every rule is in [`docs/dec
 - **The margin.** On creators hidden from training, at the moment the panel shows (15 s, or mid-video under 30 s), it missed by 8.9
   people out of 100 on average, against 10.4 for the fixed curve alone (23,710 videos, 5 groups). The harder check also hid the future:
   fitted before 2026 and measured on 1,992 later videos, it missed by 10.2, against 11.7. The panel uses the larger figure, rounded up:
-  **give or take 11 people out of 100** ([`eval/margen_numero.py`](../eval/margen_numero.py)).
-- **Most videos come out "similar".** In about 9 of 10 videos the number moves less than 9 people away from the fixed curve, which is
-  less than the margin, so the panel says "similar to videos like yours" instead of inventing a difference.
+  **usually off by about 11 people out of 100** ([`eval/margen_numero.py`](../eval/margen_numero.py)). That is an average, not a
+  limit: in the harder check 57 % of videos fell within 11, so about 4 in 10 miss by more (1 in 5 by more than 16, 1 in 20 by more than 23).
+- **Most videos show no difference.** In 96 to 98 % of videos the number stays closer to the fixed curve than the margin, so the panel
+  says "we see no difference from the curve for its length" instead of inventing one. That does not mean the video will behave like
+  that curve: among those, 40 to 46 % ended 11 or more points away from it in reality.
+- **The longest videos are weak.** The curve for over 4 minutes comes from 20 videos, so the panel flags those as a weaker reference.
 - Against the fixed curve, on two held-out periods and over the whole curve, the formula gains 5 to 8 people per 1,000. Reading the
   opening accounts for 1.4 to 2 of those. That whole-curve gain is small next to the error at one moment.
 - Against a fresh average of the previous 90 days, which most creators don't have, for creators it had never seen, it lost one

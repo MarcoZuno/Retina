@@ -289,7 +289,7 @@
   "curiosidad": 3
  },
  "apertura": {
-  "version": "apertura-v2",
+  "version": "apertura-v3",
   "titulo": "Ejemplo inventado: tres trucos para que el pan dulce no se endurezca",
   "idioma": "español",
   "objeto": "bread",
@@ -303,18 +303,28 @@
    }
   },
   "aprobada": true,
-  "vueltas": 0,
+  "vueltas": 1,
   "despues": {
-   "voz": "Tres trucos para que el pan dulce no se endurezca empiezan en casa por cómo lo guardas hoy. Guárdalo en bolsa de tela, nunca en plástico, como nos pasa a todos en casa con el pan dulce.",
+   "voz": "El pan dulce no se endurece con estos trucos para guardarlo. Guárdalo en una bolsa de tela, nunca en plástico, para que mantenga su suavidad por más tiempo en casa.",
    "cuadros": [
-    "Pan dulce variado sobre una charola de madera en el centro de una cocina iluminada, grande y centrado en el encuadre.",
-    "Bolsa de tela clara abierta sobre mesa de cocina, lista para recibir el pan.",
-    "Pan dulce deslizándose dentro de la bolsa de tela, mientras una bolsa de plástico vacía queda apartada a un lado."
+    "Varias piezas de pan dulce dorado al centro y en primer plano sobre una mesa de madera, grandes y nítidas, con azúcar espolvoreada visible.",
+    "Bolsa de tela clara abierta sobre la encimera con pan dulce dentro, y una bolsa de plástico vacía doblada a un lado como contraste.",
+    "Trozo de pan dulce grupo sobre un plato blanco mostrando la miga blanda y esponjosa a la luz natural de la cocina."
    ],
    "imagenes": [
     "apertura-cuadro1-ilustracion-ia.webp",
     "apertura-cuadro2-ilustracion-ia.webp",
     "apertura-cuadro3-ilustracion-ia.webp"
+   ],
+   "cuadros_revisados": [
+    {
+     "cuadro": 2,
+     "coincide": true
+    },
+    {
+     "cuadro": 3,
+     "coincide": true
+    }
    ]
   },
   "comprobaciones": [
@@ -343,6 +353,10 @@
     "paso": true
    },
    {
+    "id": "una_prueba",
+    "paso": true
+   },
+   {
     "id": "cuadros",
     "paso": true
    },
@@ -356,6 +370,15 @@
   "intentos": [
    {
     "vuelta": 0,
+    "problemas": [
+     {
+      "id": "promesa",
+      "detalle": "en el primer cuadro no se ve «bread»: tiene que ser lo principal de la escena, grande y al centro"
+     }
+    ]
+   },
+   {
+    "vuelta": 1,
     "problemas": []
    }
   ],
@@ -365,9 +388,10 @@
    "servido_por": "Baseten",
    "dibujo": "muse-image-1.0",
    "reviso": "sam-3.1",
-   "instrucciones": "skills/apertura.md (apertura-v2)",
+   "instrucciones": "skills/apertura.md (apertura-v3)",
    "reglas": "anzuelos-v1"
-  }
+  },
+  "modo": "voz"
  },
  "normas": {
   "version": "normas-v1",

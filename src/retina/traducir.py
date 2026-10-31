@@ -22,7 +22,7 @@ from pathlib import Path
 from . import explicar, integridad, meta_api, normas
 
 MODELO = "muse-spark-1.3"
-VERSION = 4  # una traducción guardada de otra versión se vuelve a hacer
+VERSION = 5  # una traducción guardada de otra versión se vuelve a hacer
 IDIOMAS = {"es": "español", "en": "inglés"}
 TEXTOS = ("por_que", "lo_que_funciona", "que_cambiar")
 LISTAS = ("lo_bueno", "lo_flojo", "pasos", "mejoras_opcionales", "storyboard")  # no_pude_verificar no se muestra: no se paga
@@ -43,6 +43,14 @@ def lugares(r: dict) -> list[tuple]:
             salida += [(lista, i) for i, x in enumerate(lista) if isinstance(x, str) and x.strip()]
     salida += [(x, "por_que") for x in (r.get("normas") or {}).get("hallazgos", []) if isinstance(x, dict) and x.get("por_que")]
     salida += [(x, "evidencia") for x in r.get("revision_meta") or [] if isinstance(x, dict) and x.get("evidencia")]
+    no_pude = (r.get("licencia") or {}).get("no_pude_revisar")
+    if isinstance(no_pude, list):
+        salida += [(no_pude, i) for i, x in enumerate(no_pude) if isinstance(x, str) and x.strip()]
+    comparacion = r.get("comparacion") or {}
+    if comparacion.get("por_que"):
+        salida.append((comparacion, "por_que"))
+    for d in comparacion.get("diferencias") or []:
+        salida += [(d, k) for k in ("aspecto", "a", "b") if isinstance(d, dict) and isinstance(d.get(k), str) and d[k].strip()]
     for clave, campo in (("apertura", "motivo"), ("titulo_contra_video", "por_que")):  # pueden faltar o ser null
         x = r.get(clave)
         if isinstance(x, dict) and isinstance(x.get(campo), str) and x[campo].strip():
@@ -98,7 +106,9 @@ def traducir(carpeta: Path, idioma: str) -> dict:
         raise ValueError("Idioma no válido.")
     ruta = carpeta / f"resultado-{idioma}.json"
     crudo = (carpeta / "resultado.json").read_bytes()
-    huella = hashlib.sha256(crudo).hexdigest()[:16]  # si el resultado cambia (terminó la revisión, arreglaron el inicio), se rehace
+    comparacion = carpeta / "comparacion.json"  # el veredicto de dos versiones vive en la carpeta de la B
+    extra = comparacion.read_bytes() if comparacion.exists() else b""
+    huella = hashlib.sha256(crudo + extra).hexdigest()[:16]  # si el resultado cambia (terminó la revisión, arreglaron el inicio), se rehace
     if ruta.exists():
         hecha = json.loads(ruta.read_text(encoding="utf-8"))
         if hecha.get("traduccion") == VERSION and hecha.get("origen") == huella:
@@ -106,6 +116,8 @@ def traducir(carpeta: Path, idioma: str) -> dict:
     r = json.loads(crudo.decode("utf-8"))
     if r.get("idioma") == idioma:
         return r
+    if extra:
+        r["comparacion"] = json.loads(extra.decode("utf-8"))
     donde = lugares(r)
     textos = [c[k] for c, k in donde]
     if textos:

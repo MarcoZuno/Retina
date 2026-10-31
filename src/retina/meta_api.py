@@ -71,9 +71,15 @@ def _llave() -> str:
     return llave
 
 
+BASE_META = "https://api.meta.ai/"
+
+
 def base() -> str:
     _cargar_env()
-    return os.environ.get("META_API_BASE", "https://api.meta.ai/v1")
+    url = os.environ.get("META_API_BASE", BASE_META + "v1")
+    if not url.startswith((BASE_META, "http://127.0.0.1", "http://localhost")):
+        raise ValueError("META_API_BASE solo puede ser la API de Meta o una prueba en este equipo: la llave no sale a otro sitio.")
+    return url
 
 
 def costos() -> Path:

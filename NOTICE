@@ -1,5 +1,7 @@
 Retina
-Copyright (c) 2026 Badabun. Code and the fixed weights in modelos/retina-publico.json are under the MIT License (see LICENSE).
+Copyright (c) 2026 Badabun. The code is under the MIT License (see LICENSE).
+
+Built with Muse Spark Open.
 
 Third-party materials
 
@@ -7,6 +9,10 @@ Third-party materials
   Meta Platforms, Inc. and affiliates. Retina calls SAM 3.1 through the Meta Model API, and Meta's acceptable use policy applies.
 - Muse Spark 1.3, Muse Spark Open, Muse Image 1.0, SAM 3.1 and Muse Voice Transcribe 1.0 are Meta's models, used through the Meta Model API
   and Baseten's Model API under their own terms.
+- modelos/retina-publico.json: fixed weights fitted from Facebook retention curves owned by Badabun and from notes written by Muse Spark
+  Open. Because they were trained with its outputs, they are not under the MIT License: they follow the Muse Model License and its Usage
+  Policy (Exhibit A), Copyright (c) 2026 Meta Platforms, Inc.:
+  https://huggingface.co/meta-models/Muse-Spark-Open-816B-A42B/blob/main/LICENSE.md
 - The images in panel/fondos/, docs/img/ and casos/ were generated with Muse Image and are labeled as AI-generated. The MIT License does not
   add any right over them beyond what Meta's terms allow.
 - ffmpeg is called as an external program and is not included in this repository.

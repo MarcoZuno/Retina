@@ -266,7 +266,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
 
     escribir()  # lo gratuito queda aunque la API falle después
     if not con_api:
-        no_pude.append("Por qué y qué cambiar en el arranque (se corrió sin la API de Meta).")
+        no_pude.append("Por qué y qué cambiar en el inicio (se corrió sin la API de Meta).")
         no_pude.append("La voz y los silencios (se corrió sin la API de Meta).")
     else:
         from . import describir, explicar, transcribir
@@ -299,15 +299,15 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         if (salida / "describir.json").exists():
             if voz is not None and m is not None and m.filas:  # el agente lee resultado.json y busca en la historia de la casa
                 from .agente import cargar_voz, correr_agente
-                resultado["explicacion"] = paso("agente", "Por qué y qué cambiar en el arranque", correr_agente, salida, m, cargar_voz(voz), motor, idioma=idioma)
+                resultado["explicacion"] = paso("agente", "Por qué y qué cambiar en el inicio", correr_agente, salida, m, cargar_voz(voz), motor, idioma=idioma)
             else:
                 # Sin agente, SAM revisa igual si lo que promete el título se ve en los primeros 3 segundos.
                 from .sam import medir_promesa
                 paso("sam", "Si lo que promete el título se ve al inicio (SAM 3.1)", medir_promesa, salida, titulo)
-                resultado["explicacion"] = paso("explicar", "Por qué y qué cambiar en el arranque",
+                resultado["explicacion"] = paso("explicar", "Por qué y qué cambiar en el inicio",
                                                 explicar.explicar, salida, riesgo_arranque, motor, "explicar.json", idioma)
         else:
-            no_pude.append("Por qué y qué cambiar en el arranque (no hubo descripción del video).")
+            no_pude.append("Por qué y qué cambiar en el inicio (no hubo descripción del video).")
         if (salida / "describir.json").exists():
             # Lo que Meta recomienda para los primeros segundos, calculado en código (no llama a la API).
             from .revision_meta import revisar

@@ -1,0 +1,10 @@
+.git
+.env*
+!.env.example
+deploy/*.env
+mis-revisiones
+*.pkl
+casos/*
+!casos/demo
+!casos/demo-en
+docs/costos-equipo*

@@ -15,11 +15,11 @@ mostrando casos que ya se procesaron. Son archivos estáticos.
 
 ```bash
 docker build -f deploy/Dockerfile -t retina-demo .
-docker run -d --name retina-demo -p 8080:8080 --read-only \
-  --tmpfs /tmp --tmpfs /var/cache/nginx --restart unless-stopped retina-demo
+docker run -d --name retina-demo -p 127.0.0.1:8080:8080 --read-only --cap-drop ALL --security-opt no-new-privileges \
+  --tmpfs /tmp:uid=101,gid=101 --tmpfs /var/cache/nginx:uid=101,gid=101 --restart unless-stopped retina-demo
 ```
 
-Entrar a `http://SERVIDOR:8080/`: abre el panel con el caso de ejemplo. Otro caso:
+Queda solo en este equipo: se publica detrás de un proxy con TLS. Entrar a `http://127.0.0.1:8080/`: abre el panel con el caso de ejemplo. Otro caso:
 `/panel/?caso=/casos/NOMBRE/resultado.json`.
 
 Sin Docker sirve cualquier servidor de archivos estáticos con `panel/` y `casos/`, usando las

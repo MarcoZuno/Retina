@@ -526,7 +526,7 @@ están selladas; lo que estaba mal se corrige aquí.
 - **Erratas de entradas anteriores.**
   - «Unas 2 personas de cada 1,000» era solo lo que aporta la ficha (2.0 y 1.4). La fórmula completa contra la curva fija gana de 5 a 8
     de cada 1,000 en toda la curva.
-  - «Unos 30 mil videos» son 23,710 de 32,906: fuera, el resto queda fuera por elegibilidad o temas. De los
+  - «Unos 30 mil videos» son 23,710 de 32,906: lo demás queda fuera por elegibilidad o temas. De los
     que entraron, 9,003 no tienen ficha y 974 no tienen voz.
   - λ = 300 no se eligió con 10 grupos de creadores escondidos: se eligió con el último 20 % por fecha, en la variante C, no elegibles y
     sin ficha, y no se volvió a elegir para el archivo publicado.

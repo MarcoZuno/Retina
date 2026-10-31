@@ -16,3 +16,5 @@ nunca la lista de videos ni sus curvas.
 - `juez_aperturas.py`: juez ciego de las aperturas: fieles al video, dejan algo al resto y contra el arranque real.
 - `delta_numero.py`: exploratorio. El número antes y después de reescribir el arranque, sin retención real.
 - `margen_numero.py`: de cuánto suele ser el error del número, con creadores escondidos. De aquí sale el margen del panel.
+
+- `apertura_v3.py`, `juez_control.py`: cuarta medición de la apertura, con los tres dibujos revisados y control negativo del juez.

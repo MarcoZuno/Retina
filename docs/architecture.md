@@ -10,7 +10,8 @@ draft MP4 ─► segmentar ─► 40 stretches + WAV + light MP4
                ├─► ficha        (Muse Spark Open)  how the opening starts
                ├─► sam          (Muse Spark 1.3 + SAM 3.1)  does the title's promise show in the first 3 s?
                ├─► normas       (Muse Spark 1.3 + code)  possible breaches of Facebook's rules, with evidence
-               ├─► número       (fixed formula, docs/numero.md)  how many of 100 may stay
+               ├─► titulo       (Muse Spark 1.3)  does the video deliver what the title promises?
+               ├─► número       (fixed formula, docs/numero.md)  how many of 100 may stay, on the current video
                └─► explicar     (Muse Spark Open, validator; Muse Spark 1.3 rescues) ─► card ─► panel
 
 press «Fix the opening» ─► apertura:
@@ -18,7 +19,9 @@ press «Fix the opening» ─► apertura:
           ▲                       │ fails                                        │ fails
           └───────────────────────┴──── exact list of failures, up to 2 times ───┘
                                   │ all pass
-                                  └─► Muse Image draws frames 2 and 3 ─► before and after in the panel
+                                  └─► Muse Image draws frames 2 and 3 ─► Muse Spark 1.3 looks at every frame SAM did not check
+                                         │ a frame does not show what was written: back to the writer
+                                         └─► before and after in the panel
 ```
 
 ## Service catalog
@@ -31,15 +34,16 @@ If a service is not in this table, it does not exist.
 | `transcribir` | WAV → speech turns with time (JSON) | Muse Voice Transcribe 1.0 | ≈ USD 0.005 / video | ✅ |
 | `describir` | MP4 (file_id) → JSON per stretch, schema `tramo-v1` | Muse Spark 1.3 (Standard) | ≈ USD 0.05 / 100 s | ✅ |
 | `embeber` | 80 frames (2 per stretch) → one 1,024-d vector per stretch | V-JEPA 2 ViT-L (open weights, local GPU) | 0 | research: no gain on the risk level |
-| `apertura` | title + what was seen and said → new opening, rules, frames, SAM check, up to 2 corrections | **Muse Spark Open**, Muse Image 1.0, SAM 3.1 | ≈ USD 0.05 to 0.25 | ✅ · the core of Retina |
+| `apertura` | title + what was seen and said → new opening, rules, frames, SAM and Spark checks, up to 2 corrections; or "your opening already works", confirmed by code | **Muse Spark Open**, Muse Image 1.0, SAM 3.1, Muse Spark 1.3 | ≈ USD 0.05 to 0.25 | ✅ · the core of Retina |
+| `titulo` | title + what is said and shown → does the video deliver it? A warning only; the title is never touched | Muse Spark 1.3 | less than USD 0.01 | ✅ |
 | `normas` | what is seen and said → possible breaches of 18 public rules, with second and evidence | Muse Spark 1.3 + code | ≈ USD 0.01 | ✅ |
 | `publico` | title, speech and opening sheet → 41-point curve vs. videos of the same length | small fitted formula, [`numero.md`](numero.md) | 0 | ✅ |
 | `predecir` | metadata (+ vectors) → 41-point curve vs. similar videos | own regression, private layer | 0 | research |
-| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, saved as JSON | 0 | research: the traffic light is not shown |
+| `arranque` | curve of similar videos + metadata → opening risk (high / medium / low) | own regression, private layer | 0 | research: not in the public version |
 | `explicar` | opening + descriptors + speech → why + one edit (one shot, validated; the agent's fallback) | Muse Spark Open or 1.3 (`RETINA_MOTOR`) | ≈ USD 0.03 | ✅ |
 | `agente` | case folder → card, with tools and the validator in the loop | **Muse Spark Open** (open weights, Baseten); Muse Spark 1.3 rescues | ≈ USD 0.04 | ✅ |
 | `sam` | first 3 s or a drawn frame + a noun phrase (never a person) → appears?, from when, how big | SAM 3.1 | ≈ USD 0.01 | ✅ |
-| `traducir` | a review → the same review in the other panel language, once, with numbers checked | Muse Spark 1.3 | less than USD 0.01 | ✅ |
+| `traducir` | a review or comparison → the same text in the other panel language, once, with numbers checked | Muse Spark 1.3 | less than USD 0.01 | ✅ |
 | `integridad` | suggestion → blocked rules (rules decide, never the model) | none (code) | 0 | ✅ |
 | `storyboard` | a card's suggestion → 3 illustrations, from the command line (needs human approval) | Muse Image 1.0 | USD 0.03 | ✅ |
 | `publicar` | approved piece → scheduled post on a **test** page | Graph API (human approval) | 0 | not built (after the event) |

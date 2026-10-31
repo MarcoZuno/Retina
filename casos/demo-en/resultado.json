@@ -289,7 +289,7 @@
   "curiosidad": 3
  },
  "apertura": {
-  "version": "apertura-v2",
+  "version": "apertura-v3",
   "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
   "idioma": "inglés",
   "objeto": "bread",
@@ -303,18 +303,28 @@
    }
   },
   "aprobada": true,
-  "vueltas": 0,
+  "vueltas": 1,
   "despues": {
-   "voz": "Three tricks to keep sweet bread from going stale start at home. The first is to keep it in a cloth bag, never in plastic.",
+   "voz": "These are tricks to keep sweet bread from going stale. The first trick is to keep it in a cloth bag, never in plastic, so it stays soft longer for your morning coffee.",
    "cuadros": [
-    "A loaf of sweet bread sits large and centered on a light wooden kitchen counter, its golden crust facing forward.",
-    "An open beige cloth bag holds the bread on the counter, with a folded clear plastic bag set aside nearby.",
-    "The cloth bag loosely closed around the bread rests on the kitchen counter in soft daylight."
+    "A loaf of sweet bread centered large on a light wooden kitchen table, its golden crust and soft top clearly visible.",
+    "An open beige cloth bag on the same table with the sweet bread nestled inside, fabric folds around it.",
+    "A close-up of the soft crumb of sweet bread beside a plain white mug on the counter, showing its tender texture."
    ],
    "imagenes": [
     "apertura-cuadro1-ilustracion-ia.webp",
     "apertura-cuadro2-ilustracion-ia.webp",
     "apertura-cuadro3-ilustracion-ia.webp"
+   ],
+   "cuadros_revisados": [
+    {
+     "cuadro": 2,
+     "coincide": true
+    },
+    {
+     "cuadro": 3,
+     "coincide": true
+    }
    ]
   },
   "comprobaciones": [
@@ -343,6 +353,10 @@
     "paso": true
    },
    {
+    "id": "una_prueba",
+    "paso": true
+   },
+   {
     "id": "cuadros",
     "paso": true
    },
@@ -350,12 +364,25 @@
     "id": "promesa",
     "paso": true,
     "objeto": "bread",
-    "pct_maximo_del_cuadro": 76.8
+    "pct_maximo_del_cuadro": 74.2
    }
   ],
   "intentos": [
    {
     "vuelta": 0,
+    "problemas": [
+     {
+      "id": "cifras",
+      "detalle": "cifras que no vienen en los datos del video: 2"
+     },
+     {
+      "id": "una_prueba",
+      "detalle": "enumeras varias cosas: da una sola prueba y deja lo demás al video"
+     }
+    ]
+   },
+   {
+    "vuelta": 1,
     "problemas": []
    }
   ],
@@ -365,9 +392,10 @@
    "servido_por": "Baseten",
    "dibujo": "muse-image-1.0",
    "reviso": "sam-3.1",
-   "instrucciones": "skills/apertura.md (apertura-v2)",
+   "instrucciones": "skills/apertura.md (apertura-v3)",
    "reglas": "anzuelos-v1"
-  }
+  },
+  "modo": "voz"
  },
  "normas": {
   "version": "normas-v1",

@@ -124,5 +124,20 @@ class Traducir(unittest.TestCase):
         self.assertEqual(app.pedir_traduccion(self.d / "no-existe", "es")[0], 404)
 
 
+
+
+class Comparacion(unittest.TestCase):
+    def test_el_veredicto_de_dos_versiones_tambien_se_traduce(self):
+        from retina import traducir
+        r = {"comparacion": {"veredicto": "A", "por_que": "Arranca mejor.", "diferencias": [{"aspecto": "Tema", "a": "Claro", "b": "Tarde", "mejor": "A"}]}}
+        textos = [c[k] for c, k in traducir.lugares(r)]
+        self.assertEqual(textos, ["Arranca mejor.", "Tema", "Claro", "Tarde"])
+
+    def test_lo_que_no_se_pudo_revisar_tambien(self):
+        from retina import traducir
+        r = {"licencia": {"no_pude_revisar": ["La música: no se analiza."]}}
+        self.assertEqual([c[k] for c, k in traducir.lugares(r)], ["La música: no se analiza."])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -30,16 +30,18 @@ rewrites the opening, Muse Image draws it, fixed rules and SAM 3.1 check it, and
 
 **30 Oct, audit.** Five independent reviews rejected the entry as it stood. What came out of it:
 
-- The training set is 23,710 videos, not "about 30,000". The exact breakdown is now published.
+- The training set is 23,710 videos, not "about 30,000".
 - Facebook's curve seems to count only people past the first 3 seconds, so "out of every 100 people who start" was wrong.
 - A difference smaller than the error was being shown as a difference. The margin is now measured and shown.
 - The rule "bring the promise to the start" was emptying the video. Rule 3 changed to giving the first proof.
-- The code was ordering the drawing to contain what SAM would look for. That order is gone.
-- Nobody had judged the openings. A blind judge was added, with a sealed rule, on new videos.
+- The code was ordering the drawing to contain what SAM would look for. That order moved to the writer: the writer is told what will be
+  looked for and must describe it, and the drawing comes from that text.
+- Nobody had judged the openings. A model judge was added, with a sealed rule, on new videos. It is blind only in the side-by-side
+  comparison.
 
 **30 Oct, third test.** With the final instructions, the order to the drawing removed and 50 new videos, it passed all six conditions on its
-first run: 29 of 30, 17 of 20, 10 of 10 far traps, and a blind judge found 45 of 46 faithful, 45 of 46 leaving something for the rest of the
-video, and preferred the new opening in 37 of 42 firm pairs. The judge is a model. Whether the new opening keeps more people was not measured.
+first run: 29 of 30, 17 of 20, 10 of 10 far traps, and a model judge found 45 of 46 faithful, 45 of 46 leaving something for the rest of the
+video (44 of 46 both), and preferred the new opening in 37 of 42 firm pairs. The judge is a model. Whether the new opening keeps more people was not measured.
 
 ## How to read the record
 
