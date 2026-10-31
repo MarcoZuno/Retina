@@ -41,3 +41,7 @@ estado.json
 *.candado
 *.reservas
 *.reservas.tmp
+
+# Registro de gasto del equipo: revela horarios y ritmo
+docs/costos-equipo.jsonl
+docs/costos-equipo.reservas

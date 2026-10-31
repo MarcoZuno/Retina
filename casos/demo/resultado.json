@@ -8,7 +8,7 @@
   "talento": ""
  },
  "prediccion": {
-    "margen_personas": 11,
+  "margen_personas": 11,
   "curva_predicha": [
    1.0,
    0.8829,
@@ -289,7 +289,7 @@
   "curiosidad": 3
  },
  "apertura": {
-  "version": "apertura-v1",
+  "version": "apertura-v2",
   "titulo": "Ejemplo inventado: tres trucos para que el pan dulce no se endurezca",
   "idioma": "español",
   "objeto": "bread",
@@ -305,11 +305,11 @@
   "aprobada": true,
   "vueltas": 0,
   "despues": {
-   "voz": "Tres trucos para que el pan dulce no se endurezca. Guárdalo en bolsa de tela, nunca en plástico. Mételo al refrigerador solo si tardas más de tres días, y caliéntalo diez segundos en el comal y queda como recién hecho.",
+   "voz": "Tres trucos para que el pan dulce no se endurezca empiezan en casa por cómo lo guardas hoy. Guárdalo en bolsa de tela, nunca en plástico, como nos pasa a todos en casa con el pan dulce.",
    "cuadros": [
-    "Pan dulce en primer plano grande y al centro sobre una mesa de cocina.",
-    "Bolsa de tela abierta sobre la mesa con pan dulce dentro, junto a una bolsa de plástico vacía a un lado.",
-    "Pan dulce sobre un comal caliente en la estufa, con el refrigerador de la cocina al fondo."
+    "Pan dulce variado sobre una charola de madera en el centro de una cocina iluminada, grande y centrado en el encuadre.",
+    "Bolsa de tela clara abierta sobre mesa de cocina, lista para recibir el pan.",
+    "Pan dulce deslizándose dentro de la bolsa de tela, mientras una bolsa de plástico vacía queda apartada a un lado."
    ],
    "imagenes": [
     "apertura-cuadro1-ilustracion-ia.webp",
@@ -350,7 +350,7 @@
     "id": "promesa",
     "paso": true,
     "objeto": "bread",
-    "pct_maximo_del_cuadro": 78.2
+    "pct_maximo_del_cuadro": 100.0
    }
   ],
   "intentos": [
@@ -365,7 +365,7 @@
    "servido_por": "Baseten",
    "dibujo": "muse-image-1.0",
    "reviso": "sam-3.1",
-   "instrucciones": "skills/apertura.md (apertura-v1)",
+   "instrucciones": "skills/apertura.md (apertura-v2)",
    "reglas": "anzuelos-v1"
   }
  },

@@ -8,7 +8,7 @@
   "talento": ""
  },
  "prediccion": {
-    "margen_personas": 11,
+  "margen_personas": 11,
   "curva_predicha": [
    1.0,
    0.8829,
@@ -289,7 +289,7 @@
   "curiosidad": 3
  },
  "apertura": {
-  "version": "apertura-v1",
+  "version": "apertura-v2",
   "titulo": "Made-up example: three tricks to keep sweet bread from going stale",
   "idioma": "inglés",
   "objeto": "bread",
@@ -305,11 +305,11 @@
   "aprobada": true,
   "vueltas": 0,
   "despues": {
-   "voz": "Three tricks to keep sweet bread from going stale: keep it in a cloth bag, never plastic. Use the fridge only if you need more than three days, and warm it on a griddle for ten seconds.",
+   "voz": "Three tricks to keep sweet bread from going stale start at home. The first is to keep it in a cloth bag, never in plastic.",
    "cuadros": [
-    "A pile of sweet bread centered large on a wooden kitchen table, crust and crumb clearly visible in close up.",
-    "A cloth bag open on the kitchen counter right next to the sweet bread, with no plastic in sight.",
-    "A griddle heating on a stovetop with a slice of sweet bread on it, with a refrigerator visible in the kitchen background."
+    "A loaf of sweet bread sits large and centered on a light wooden kitchen counter, its golden crust facing forward.",
+    "An open beige cloth bag holds the bread on the counter, with a folded clear plastic bag set aside nearby.",
+    "The cloth bag loosely closed around the bread rests on the kitchen counter in soft daylight."
    ],
    "imagenes": [
     "apertura-cuadro1-ilustracion-ia.webp",
@@ -350,7 +350,7 @@
     "id": "promesa",
     "paso": true,
     "objeto": "bread",
-    "pct_maximo_del_cuadro": 669.2
+    "pct_maximo_del_cuadro": 76.8
    }
   ],
   "intentos": [
@@ -365,7 +365,7 @@
    "servido_por": "Baseten",
    "dibujo": "muse-image-1.0",
    "reviso": "sam-3.1",
-   "instrucciones": "skills/apertura.md (apertura-v1)",
+   "instrucciones": "skills/apertura.md (apertura-v2)",
    "reglas": "anzuelos-v1"
   }
  },
