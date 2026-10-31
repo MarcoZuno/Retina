@@ -65,6 +65,12 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(cuerpo)
             return
+        if ruta == "/" and host in self.hosts:  # quien escribe la dirección a mano llega igual al panel
+            self.send_response(302)
+            self.send_header("Location", "/panel/")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if host not in self.hosts or not PERMITIDO.match(ruta):
             self.send_error(404)
             return

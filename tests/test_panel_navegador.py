@@ -79,6 +79,12 @@ class Navegador(unittest.TestCase):
         cls.servidor.shutdown()
         cls.servidor.server_close()
 
+    def test_la_direccion_sin_panel_lleva_al_panel(self):
+        import urllib.request
+        with urllib.request.urlopen(self.url.removesuffix("panel/")) as r:
+            self.assertEqual(r.status, 200)
+            self.assertTrue(r.geturl().endswith("/panel/"))
+
     def setUp(self):
         self.contextos = []
 
