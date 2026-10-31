@@ -267,6 +267,8 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .hecho { width: 44px; height: 44px; border-radius: 50%; border: 0; cursor: pointer; color: var(--texto); background: rgba(255,255,255,.1); box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.35); font-size: 18px; }
 .paso.listo { opacity: .62; } .paso.listo p { text-decoration: line-through; }
 .paso.listo .num, .paso.listo .hecho { background: var(--verde-vidrio); color: var(--verde); box-shadow: inset 0 0 0 1.5px var(--verde); }
+.hecho-arriba { margin-left: 10px; font-size: 12px; font-weight: 500; opacity: .8; }
+@media (max-width: 480px) { .hecho-arriba { display: none; } }
 .hecho-con { text-align: center; padding: 18px 16px 28px; font-size: 13px; color: var(--tenue); position: relative; }
 .pie-pasos { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; flex-wrap: wrap; color: var(--suave); font-size: 14px; }
 .funciona { margin: 14px 0 0; padding: 12px 16px; border-radius: var(--radio-chico); background: var(--verde-vidrio); box-shadow: inset 0 0 0 1px var(--verde-zona); }
@@ -416,7 +418,7 @@ p, li { text-wrap: pretty; }
 
 <div class="capa">
   <header>
-    <div class="marca vidrio"><span class="ojo" aria-hidden="true"></span>Retina</div>
+    <div class="marca vidrio"><span class="ojo" aria-hidden="true"></span>Retina<span class="hecho-arriba" lang="en">Built with Muse Spark Open</span></div>
     <span class="espacio"></span>
     <div class="menu-fondo">
       <button class="pastilla vidrio" id="abrir-fondos" type="button" aria-expanded="false" aria-controls="fondos" data-t="fondo">Fondo</button>
@@ -547,8 +549,6 @@ p, li { text-wrap: pretty; }
 
         <div class="bloque vidrio aviso-titulo oculto" id="aviso-titulo" role="note"></div>
 
-        <div class="cifras" id="cifras"></div>
-
         <div class="bloque vidrio oculto" id="bloque-apertura">
           <h2 data-t="apertura_t">El inicio de tu video</h2>
           <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema"></p>
@@ -569,6 +569,8 @@ p, li { text-wrap: pretty; }
             <p class="nota" id="apertura-nota" data-t="apertura_nota"></p>
           </details>
         </div>
+
+        <div class="cifras" id="cifras"></div>
 
         <div class="linea-bloque vidrio">
           <h2 class="cabeza"><span id="t-linea"></span>
@@ -774,12 +776,12 @@ const TEXTOS = {
     vacio_titulo: "Abre una revisión guardada",
     vacio_p: "Retina guarda cada revisión en un archivo resultado.json. Ábrelo aquí.",
     elegir: "Elegir archivo", ver_ejemplo: "Ver el ejemplo", nota_vacio: "El archivo no sale de tu computadora: el panel solo lo lee.",
-    video_actual: "Tu video actual", tu_video: "Tu video actual", parecidos: "Videos de la misma duración", lo_que_paso: "Lo que pasó",
+    video_actual: "Tu video tal como está hoy, antes de cualquier cambio", tu_video: "Tu video actual", parecidos: "Videos de la misma duración", lo_que_paso: "Lo que pasó",
     tu_video_pred: "Tu video actual (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
     por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado", bajar: "Bajar para el editor",
-    ficha_t: "Cómo empieza tu video, según Muse Spark Open",
+    ficha_t: "Cómo empieza tu video, según Muse Spark Open", ficha_t_ejemplo: "Cómo empieza este ejemplo (inventado)",
     tacticas_t: "Lo que pasó con videos que empiezan igual",
-    tacticas_nota: "En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.",
+    tacticas_nota: "En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo y no es una prueba del inicio nuevo.",
     tactica: { mas: (x) => `Los que ${x} retuvieron más gente en su primer cuarto que otros de su duración.`,
       menos: (x) => `Los que ${x} retuvieron menos gente en su primer cuarto que otros de su duración.`,
       presenta: "se presentan antes de decir el tema", presentacion: "arrancan con una presentación", saludo: "arrancan con un saludo",
@@ -816,6 +818,7 @@ const TEXTOS = {
     arreglar: "Arreglar el inicio (de USD 0.05 a 0.25)",
     apertura_pasos: { en_fila: "En fila…", escribiendo: "Muse Spark Open está escribiendo tu inicio…", dibujando: "Muse Image está dibujando el primer cuadro…",
       buscando: "SAM 3.1 está buscando lo que promete el título…", corrigiendo: "Algo no pasó las comprobaciones. Muse Spark Open lo está corrigiendo…",
+      leyendo: "Muse Spark 1.3 está leyendo el inicio contra lo que dice tu video…",
       terminando: "Pasó todo. Muse Image está dibujando los otros dos cuadros…",
       mirando: "Muse Spark 1.3 mira que cada dibujo muestre lo que dice…" },
     antes: "Antes", despues: "Después", sin_voz_antes: "Tu borrador no trae voz en esos segundos.", sin_imagen_antes: "Tu video",
@@ -823,7 +826,7 @@ const TEXTOS = {
     promesa_no: () => "Lo que promete el título no se ve en tus primeros 3 segundos.",
     promesa_si: (o, s) => `Lo que promete el título se ve desde el ${s}.`,
     promesa_nueva: () => "Lo que promete el título se ve desde el primer cuadro.",
-    titular_hecha: "Aquí tienes un inicio nuevo para tu video", sub_hecha: "Retina lo escribió y lo comprobó. Tu título no cambia.",
+    titular_hecha: "Aquí tienes un inicio nuevo para tu video", sub_hecha: "Retina lo escribió y lo comprobó. Tu título no cambia.", sub_incompleta: "Retina lo escribió, pero no pudo terminar de comprobarlo. Tu título no cambia.",
     titular_ya: "Tu inicio ya funciona", sub_ya: "Retina no lo reescribió: no hacía falta.",
     ya_t: "No hace falta cambiarlo", ya_sin_motivo: "Ya cumple con lo que Retina revisa.",
     titulo_parcial: "Tu video cumple tu título solo en parte", titulo_no: "Tu video no cumple lo que promete tu título",
@@ -832,18 +835,18 @@ const TEXTOS = {
     lazo_corrigio: (n) => (n === 1 ? "Retina lo rechazó una vez y lo corrigió" : `Retina lo rechazó ${n} veces y lo corrigió`),
     lazo_no: "No pasó, así que no te enseñamos ninguno",
     lazo_regla: "Cada intento pasa por reglas fijas y por los modelos de Meta. Si falla, se reescribe hasta 2 veces. Si sigue fallando, no se enseña.",
-    intento: (n) => `Intento ${n}`, intento_paso: "Pasó todas las comprobaciones.",
+    intento: (n) => `Intento ${n}`, intento_paso: "Pasó todas las comprobaciones automáticas.", intento_incompleto: "No se pudo comprobar todo.",
     motivos: {  // qué falló en cada intento: el motivo real, con su dato
       anzuelos: (x) => (x ? `Traía algo que Meta castiga: ${x}.` : "Traía algo que Meta castiga."), enlaces: "Traía un enlace.",
       intocables: (x) => `Tocaba algo que no se cambia${x ? `: ${x}` : ""}.`,
       cifras: (x) => `Usaba cifras que tu video no dice${x ? `: ${x}` : ""}.`, nombres: (x) => `Usaba nombres que tu video no dice${x ? `: ${x}` : ""}.`,
-      tema: () => "La primera frase no decía de qué trata el video.", una_prueba: () => "Enumeraba varias cosas en vez de dar una sola prueba.",
+      saludo: () => "Abría con un saludo.", fidelidad: () => "Muse Spark 1.3 encontró algo que tu video no dice.", tema: () => "La primera frase no decía de qué trata el video.", una_prueba: () => "Enumeraba varias cosas en vez de dar una sola prueba.",
       largo: (n, a, b) => (n ? `Medía ${n} palabras y debe medir de ${a} a ${b}.` : "No cabía en el tiempo del inicio."),
       cuadros: () => "Los cuadros no cumplían lo que se pide.", dibujo: "Muse Image no pudo dibujar un cuadro.",
       cuadro_mal: (x) => `El dibujo del cuadro ${x} no mostraba lo que describe.`,
       promesa: () => "En el primer cuadro no se veía lo que promete el título.", formato: () => "El modelo no devolvió una respuesta válida.",
       ya_funciona: () => "El modelo dijo que el inicio ya funcionaba, pero las reglas no lo confirmaron.", otro: "No pasó una comprobación." },
-    apertura_incompleta: () => "Pasó las reglas de texto, pero SAM 3.1 no pudo revisar el primer cuadro.",
+    apertura_incompleta: () => "Pasó lo que se pudo comprobar, pero algunas comprobaciones no corrieron. Mira la lista de abajo.", apertura_fuera: { fuera: "Retina no reescribe videos de fuera de alcance, así que no se escribió ni se dibujó nada. El resto de la revisión sigue aquí.", salud: "Retina no reescribe consejos de salud: un modelo no debe elegir qué dato médico va primero. No se escribió ni se dibujó nada. El resto de la revisión sigue aquí." },
     apertura_no: "No logramos un inicio que pasara todas las comprobaciones.",
     apertura_alfabeto: "Por ahora Retina reescribe inicios en español e inglés. Este video parece estar en otro idioma, así que no se gastó nada.",
     apertura_corta: "Es un boceto. Nadie ha medido si este inicio retiene a más gente.",
@@ -852,10 +855,10 @@ const TEXTOS = {
     apertura_nota: "Es un boceto, con la voz de tu navegador y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si este inicio hará que se quede más gente: eso no se ha medido.",
     apertura_error: "No se pudo terminar. Intenta otra vez.",
     apertura_editor: "Inicio nuevo (lo que se dice): ", apertura_editor_texto: "Inicio nuevo (texto en pantalla): ",
-    comprobada: { anzuelos: "Sin los anzuelos que Meta castiga", intocables: "No toca logos, avisos legales ni créditos", cifras: "Cada cifra sale de tu video",
-      nombres: "Cada nombre sale de tu video", tema: "El tema del título llega en la primera frase", largo: "Cabe en el tiempo del inicio",
+    comprobada: { anzuelos: "Nada de nuestra lista de lo que Meta castiga", saludo: "No abre con un saludo", fidelidad: "Muse Spark 1.3 lo leyó contra tu video y no encontró nada agregado", intocables: "No toca logos, avisos legales ni créditos", cifras: "Cada cifra sale de tu video",
+      nombres: "Cada nombre sale de tu video", tema: "El tema del título llega en la primera frase", largo: "Cabe en unos 10 a 15 segundos",
       una_prueba: "Da una sola prueba, no toda la lista",
-      cuadros: "Tres cuadros dibujados", promesa: () => "SAM 3.1 encontró en el primer cuadro lo que promete el título", promesa_falta: "SAM 3.1 no pudo revisar el primer cuadro esta vez",
+      cuadros: "Tres cuadros dibujados", promesa: () => "SAM 3.1 encontró en el primer cuadro lo que promete el título", promesa_falta: "SAM 3.1 no pudo revisar el primer cuadro esta vez", fidelidad_falta: "Muse Spark 1.3 no pudo leerlo contra tu video esta vez", tema_falta: "Retina no pudo revisar si es fuera de alcance o consejo de salud",
       cuadros_ok: (l, n) => (n === 1 ? `El dibujo del cuadro ${l} muestra lo que dice` : `Los dibujos de los cuadros ${l} muestran lo que dicen`),
       cuadros_mal: (l, n) => (n === 1 ? `El dibujo del cuadro ${l} no muestra lo que dice` : `Los dibujos de los cuadros ${l} no muestran lo que dicen`),
       cuadros_sin: (l, n) => (n === 1 ? `El cuadro ${l} no se pudo revisar` : `Los cuadros ${l} no se pudieron revisar`),
@@ -895,7 +898,7 @@ const TEXTOS = {
     confianza_txt: (c) => `Qué tan segura está Retina de la explicación: ${c}.`,
     sin_api: "Esta revisión se hizo sin los modelos de Meta.",
     traza_pre: (q) => `Para escribir esto, Retina${q ? ` (${q})` : ""}: `,
-    compara: (c, d) => `La alerta compara el inicio de tu video (el primer cuarto) con ${c}. Datos al ${d}.`,
+    compara: (c, d) => `Retina compara el inicio de tu video (el primer cuarto) con ${c}. Datos al ${d}.`,
     parecidos_def: "videos de la misma duración",
     no_promete: "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.",
     no_revise: (n) => `No revisamos: ${n}`, no_verifique: (n) => `No pudimos comprobar: ${n}`,
@@ -906,7 +909,7 @@ const TEXTOS = {
     paso_aria: (on, i) => `${on ? "Desmarcar" : "Marcar"} el paso ${i} como hecho`,
     progreso: (h, n) => `${h} de ${n} hechos`,
     no_es_revision: "Este archivo no es una revisión de Retina.",
-    aviso_ejemplo: "Ejemplo inventado: no es un video real. Sirve para ver cómo se ve una revisión de Retina.",
+    aviso_ejemplo: "Ejemplo inventado: no es un video real. El borrador, la tarjeta y la revisión de normas son inventados. El inicio nuevo salió del proceso real y el número, de la fórmula real.",
     sin_cambio_bajo: "No hace falta cambiar el inicio.",
     sin_sugerencia: "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano.",
     balance_t: "Lo que está bien y lo que está flojo", bien_t: "Lo que está bien", flojo_t: "Lo que está flojo",
@@ -1008,12 +1011,12 @@ const TEXTOS = {
     vacio_titulo: "Open a saved review",
     vacio_p: "Retina saves each review in a resultado.json file. Open it here.",
     elegir: "Choose file", ver_ejemplo: "See the example", nota_vacio: "The file never leaves your computer: the panel only reads it.",
-    video_actual: "Your current video", tu_video: "Your current video", parecidos: "Videos of the same length", lo_que_paso: "What happened",
+    video_actual: "Your video as it is today, before any change", tu_video: "Your current video", parecidos: "Videos of the same length", lo_que_paso: "What happened",
     tu_video_pred: "Your current video (Retina's prediction)", lo_que_paso_real: "What actually happened",
     por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied", bajar: "Download for the editor",
-    ficha_t: "How your video opens, according to Muse Spark Open",
+    ficha_t: "How your video opens, according to Muse Spark Open", ficha_t_ejemplo: "How this example opens (made up)",
     tacticas_t: "What happened with videos that open the same way",
-    tacticas_nota: "Across thousands of videos from a large Facebook page in Mexico. It describes what happened with other videos; it promises nothing about yours.",
+    tacticas_nota: "Across thousands of videos from a large Facebook page in Mexico. It describes what happened with other videos; it promises nothing about yours, and it is not a test of the new opening.",
     tactica: { mas: (x) => `Videos that ${x} kept more people through their first quarter than others of their length.`,
       menos: (x) => `Videos that ${x} kept fewer people through their first quarter than others of their length.`,
       presenta: "introduce the speaker before saying the topic", presentacion: "open with an introduction", saludo: "open with a greeting",
@@ -1050,6 +1053,7 @@ const TEXTOS = {
     arreglar: "Fix the opening (USD 0.05 to 0.25)",
     apertura_pasos: { en_fila: "In line…", escribiendo: "Muse Spark Open is writing your opening…", dibujando: "Muse Image is drawing the first frame…",
       buscando: "SAM 3.1 is looking for what the title promises…", corrigiendo: "Something didn't pass the checks. Muse Spark Open is fixing it…",
+      leyendo: "Muse Spark 1.3 is reading the opening against what your video says…",
       terminando: "Everything passed. Muse Image is drawing the other two frames…",
       mirando: "Muse Spark 1.3 checks each drawing shows what it says…" },
     antes: "Before", despues: "After", sin_voz_antes: "Your draft has no voice in those seconds.", sin_imagen_antes: "Your video",
@@ -1057,7 +1061,7 @@ const TEXTOS = {
     promesa_no: (o) => `“${o}” doesn't show in your first 3 seconds.`,
     promesa_si: (o, s) => `“${o}” shows from ${s}.`,
     promesa_nueva: (o) => `“${o}” shows from the first frame.`,
-    titular_hecha: "Here's a new opening for your video", sub_hecha: "Retina wrote it and checked it. Your title stays the same.",
+    titular_hecha: "Here's a new opening for your video", sub_hecha: "Retina wrote it and checked it. Your title stays the same.", sub_incompleta: "Retina wrote it but couldn't finish checking it. Your title stays the same.",
     titular_ya: "Your opening already works", sub_ya: "Retina didn't rewrite it: it didn't need to.",
     ya_t: "It doesn't need changing", ya_sin_motivo: "It already meets what Retina checks.",
     titulo_parcial: "Your video only partly delivers your title", titulo_no: "Your video doesn't deliver what your title promises",
@@ -1066,18 +1070,21 @@ const TEXTOS = {
     lazo_corrigio: (n) => (n === 1 ? "Retina rejected it once and fixed it" : `Retina rejected it ${n} times and fixed it`),
     lazo_no: "It didn't pass, so we're not showing you one",
     lazo_regla: "Every attempt goes through fixed rules and Meta's models. If it fails, it's rewritten up to 2 times. If it still fails, you don't see it.",
-    intento: (n) => `Attempt ${n}`, intento_paso: "Passed every check.",
+    intento: (n) => `Attempt ${n}`, intento_paso: "Passed every automatic check.", intento_incompleto: "Not fully checked.",
     motivos: {
       anzuelos: (x) => (x ? `It had something Meta penalizes: ${x}.` : "It had something Meta penalizes."), enlaces: "It had a link.",
       intocables: (x) => `It touched something that can't change${x ? `: ${x}` : ""}.`,
       cifras: (x) => `It used numbers your video doesn't say${x ? `: ${x}` : ""}.`, nombres: (x) => `It used names your video doesn't say${x ? `: ${x}` : ""}.`,
+      saludo: () => "It opened with a greeting.", fidelidad: () => "Muse Spark 1.3 found something your video doesn't say.",
       tema: () => "The first sentence didn't say what the video is about.", una_prueba: () => "It listed several things instead of giving one proof.",
       largo: (n, a, b) => (n ? `It was ${n} words long and must be ${a} to ${b}.` : "It didn't fit the opening's time."),
       cuadros: () => "The frames didn't meet the rules.", dibujo: "Muse Image couldn't draw a frame.",
       cuadro_mal: (x) => `The drawing for frame ${x} didn't show what it describes.`,
       promesa: () => "The first frame didn't show what the title promises.", formato: () => "The model didn't return a valid answer.",
       ya_funciona: () => "The model said the opening already worked, but the rules didn't confirm it.", otro: "It failed a check." },
-    apertura_incompleta: () => "It passed the text rules, but SAM 3.1 couldn't check the first frame.",
+    apertura_incompleta: () => "It passed what could be checked, but some checks couldn't run. See the list below.",
+    apertura_fuera: { fuera: "Retina doesn't rewrite out-of-scope videos, so nothing was written or drawn. The rest of the review is still here.",
+      salud: "Retina doesn't rewrite health advice: a model shouldn't choose which medical fact goes first. Nothing was written or drawn. The rest of the review is still here." },
     apertura_no: "We couldn't get an opening to pass every check.",
     apertura_alfabeto: "For now Retina rewrites openings in Spanish and English. This video seems to be in another language, so nothing was spent.",
     apertura_corta: "This is a sketch. Nobody has measured whether this opening keeps more people watching.",
@@ -1086,10 +1093,10 @@ const TEXTOS = {
     apertura_nota: "This is a sketch, with your browser's voice and drawings, not a filmed video. Retina checks that numbers and names come from your video, not that they are true. And it doesn't know whether this opening keeps more people watching: that hasn't been measured.",
     apertura_error: "It couldn't be finished. Try again.",
     apertura_editor: "New opening (what is said): ", apertura_editor_texto: "New opening (on-screen text): ",
-    comprobada: { anzuelos: "None of the bait Meta penalizes", intocables: "Doesn't touch logos, legal notices or credits", cifras: "Every number comes from your video",
-      nombres: "Every name comes from your video", tema: "The title's topic arrives in the first sentence", largo: "Fits the time of the opening",
+    comprobada: { anzuelos: "None of the bait on our list of what Meta penalizes", saludo: "Doesn't open with a greeting", fidelidad: "Muse Spark 1.3 read it against your video and found nothing added", intocables: "Doesn't touch logos, legal notices or credits", cifras: "Every number comes from your video",
+      nombres: "Every name comes from your video", tema: "The title's topic arrives in the first sentence", largo: "Fits about 10 to 15 seconds",
       una_prueba: "Gives one proof, not the whole list",
-      cuadros: "Three frames drawn", promesa: (o) => `SAM 3.1 found “${o}” in the first frame`, promesa_falta: "SAM 3.1 couldn't check the first frame this time",
+      cuadros: "Three frames drawn", promesa: (o) => `SAM 3.1 found “${o}” in the first frame`, promesa_falta: "SAM 3.1 couldn't check the first frame this time", fidelidad_falta: "Muse Spark 1.3 couldn't read it against your video this time", tema_falta: "Retina couldn't check whether this is out-of-scope topics or health advice",
       cuadros_ok: (l, n) => (n === 1 ? `The drawing for frame ${l} shows what it says` : `The drawings for frames ${l} show what they say`),
       cuadros_mal: (l, n) => (n === 1 ? `The drawing for frame ${l} doesn't show what it says` : `The drawings for frames ${l} don't show what they say`),
       cuadros_sin: (l, n) => (n === 1 ? `Frame ${l} couldn't be checked` : `Frames ${l} couldn't be checked`),
@@ -1129,7 +1136,7 @@ const TEXTOS = {
     confianza_txt: (c) => `How sure Retina is about this explanation: ${c}.`,
     sin_api: "This review was done without Meta's models.",
     traza_pre: (q) => `To write this, Retina${q ? ` (${q})` : ""}: `,
-    compara: (c, d) => `The alert compares your video's opening (the first quarter) with ${c}. Data through ${d}.`,
+    compara: (c, d) => `Retina compares your video's opening (the first quarter) with ${c}. Data through ${d}.`,
     parecidos_def: "videos of the same length",
     no_promete: "Retina doesn't promise the exact second people leave after the opening: Facebook's curve isn't that precise.",
     no_revise: (n) => `Not checked: ${n}`, no_verifique: (n) => `We couldn't verify: ${n}`,
@@ -1140,7 +1147,7 @@ const TEXTOS = {
     paso_aria: (on, i) => `${on ? "Unmark" : "Mark"} step ${i} as done`,
     progreso: (h, n) => `${h} of ${n} done`,
     no_es_revision: "This file isn't a Retina review.",
-    aviso_ejemplo: "Made-up example: not a real video. It shows what a Retina review looks like.",
+    aviso_ejemplo: "Made-up example: not a real video. The draft, the review card and the rules check are made up. The new opening came from the real pipeline and the number from the real formula.",
     sin_cambio_bajo: "No need to change the opening.",
     sin_sugerencia: "No suggestion passed our rules. Check the opening yourself.",
     balance_t: "What works and what is weak", bien_t: "What works", flojo_t: "What is weak",
@@ -1190,6 +1197,7 @@ async function traer(ruta, opciones = {}) {
   throw falla("sin_conexion");
 }
 const DEMO = () => (idioma === "en" ? "../casos/demo-en/resultado.json" : "../casos/demo/resultado.json");
+let ejemploActual = false;  // el ejemplo inventado no se firma como si lo hubiera escrito un modelo
 const casoDemo = () => !!(carpeta && /^\/casos\/demo(?:-en)?\/$/.test(carpeta.pathname));  // los dos ejemplos son el mismo caso en dos idiomas
 const RECHAZOS = [  // los problemas los escribe el validador en español; aquí solo se reconocen
   [/ mide \d+ caracteres/, "largo"],
@@ -1455,7 +1463,7 @@ function revisado(r) {
   item(ul, t("no_promete"));
   for (const n of l.no_pude_revisar || []) item(ul, t("no_revise", enIdioma(n)));
   for (const n of lista_(e, "no_pude_verificar")) item(ul, t("no_verifique", enIdioma(n)));
-  if (lx.modelo) item(ul, t("escribio", quien, lx.servido_por));
+  if (lx.modelo && !ejemploActual) item(ul, t("escribio", quien, lx.servido_por));
   if (lx.rescate) item(ul, t("rescate"));
   const regresos = traza.filter((x) => x.herramienta === "entregar_tarjeta" && x.resultado && x.resultado.aceptada === false);
   const textos = regresos.flatMap((x) => Array.isArray(x.resultado.problemas) ? x.resultado.problemas : []).map(String);
@@ -1546,7 +1554,7 @@ function pintarLazo(a, hecha) {
   $("lazo-lista").replaceChildren(...intentos.map((x, i) => {
     const malos = Array.isArray(x.problemas) ? x.problemas : [], li = nodo("li", malos.length ? "no" : "ok"), cuerpo = nodo("div");
     cuerpo.append(nodo("b", "", t("intento", i + 1)));
-    if (malos.length) cuerpo.append(...malos.map((p) => nodo("p", "", motivo(p)))); else cuerpo.append(nodo("p", "", t("intento_paso")));
+    if (malos.length) cuerpo.append(...malos.map((p) => nodo("p", "", motivo(p)))); else cuerpo.append(nodo("p", "", t(i === intentos.length - 1 && incompleta(a) ? "intento_incompleto" : "intento_paso")));
     li.append(nodo("span", "marca-lazo", malos.length ? "✕" : "✓"), cuerpo);
     return li;
   }));
@@ -1573,10 +1581,13 @@ function filasCuadros(a) {
   return filas;
 }
 
+// Lo que no se pudo revisar no se presenta como revisado.
+const incompleta = (a) => !!((a.no_comprobe || []).length || ((a.despues && a.despues.cuadros_revisados) || []).some((x) => x.coincide === null));
+
 function pintarEncabezado(r) {  // el titular es lo que Retina hizo por el video; el número va aparte y es del borrador
   const N = tx().niveles, n = N[de(N, r.arranque.nivel) ? r.arranque.nivel : "medio"], a = r.apertura;
   const [titular, sub] = a && a.ya_funciona ? [t("titular_ya"), t("sub_ya")]
-    : a && a.aprobada && a.despues ? [t("titular_hecha"), t("sub_hecha")] : [n.titular, n.sub];
+    : a && a.aprobada && a.despues ? [t("titular_hecha"), t(incompleta(a) ? "sub_incompleta" : "sub_hecha")] : [n.titular, n.sub];
   $("titular").textContent = titular; $("sub").textContent = sub; $("sub").classList.toggle("oculto", !sub);
 }
 
@@ -1641,7 +1652,8 @@ function pintarApertura(r) {
   }
   const modelo = a.licencia && /open/i.test(a.licencia.escribio || "") ? "Muse Spark Open" : "Muse Spark 1.3";
   const sinRevisar = (a.no_comprobe || []).includes("promesa");
-  const resumen = hecha ? [sinRevisar ? t("apertura_incompleta") : "", t("apertura_quien", modelo)].filter(Boolean).join(" ") : a.otro_alfabeto ? t("apertura_alfabeto") : "";
+  const fuera = a.fuera_de_alcance && tx().apertura_fuera[a.fuera_de_alcance];
+  const resumen = hecha ? [incompleta(a) ? t("apertura_incompleta") : "", t("apertura_quien", modelo)].filter(Boolean).join(" ") : a.otro_alfabeto ? t("apertura_alfabeto") : fuera || "";
   $("apertura-resumen").textContent = resumen;
   $("apertura-resumen").classList.toggle("oculto", !resumen);
   pintarLazo(a, hecha);
@@ -1654,6 +1666,8 @@ function pintarApertura(r) {
     return texto ? [nodo("li", c.paso ? "" : "no", texto)] : [];
   });
   if (sinRevisar) filas.push(nodo("li", "no", C.promesa_falta));
+  if ((a.no_comprobe || []).includes("fidelidad")) filas.push(nodo("li", "nd", C.fidelidad_falta));
+  if ((a.no_comprobe || []).includes("tema_sensible")) filas.push(nodo("li", "nd", C.tema_falta));
   lista.replaceChildren(...filas);
   $("apertura-doblado").classList.toggle("oculto", !filas.length);
 }
@@ -1710,6 +1724,8 @@ function mostrar(r) {
   if (avisoTitulo) $("aviso-titulo").replaceChildren(nodo("h2", "", t(tv.cumple === "no" ? "titulo_no" : "titulo_parcial")),
     ...(tv.por_que ? [conTiempos(nodo("p"), reloj(String(tv.por_que)))] : []), nodo("p", "nota", t("titulo_nota")));
   // El ejemplo del repo es inventado (también su traza): se dice siempre, arriba y a la vista.
+  ejemploActual = r.ejemplo_inventado === true;
+  document.querySelectorAll('[data-t="ficha_t"]').forEach((n) => { n.textContent = t(ejemploActual ? "ficha_t_ejemplo" : "ficha_t"); });
   $("aviso-ejemplo").classList.toggle("oculto", r.ejemplo_inventado !== true);
   $("aviso-ejemplo").textContent = r.ejemplo_inventado === true ? t("aviso_ejemplo") : "";
   document.querySelector(".linea-bloque").classList.toggle("oculto", !conNumero);

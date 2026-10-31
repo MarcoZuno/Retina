@@ -233,9 +233,8 @@ class Navegador(unittest.TestCase):
     # ---- X4, X5, X6: de qué es el número y cómo se dice ----
     def test_el_numero_es_del_video_actual(self):
         p = self.abre(demo())
-        self.assertEqual(self.texto(p, ".etiqueta-actual"), "Your current video")
+        self.assertEqual(self.texto(p, ".etiqueta-actual"), "Your video as it is today, before any change")
         principal = p.locator(".cifra.personas")
-        self.assertLess(principal.bounding_box()["y"], p.locator("#bloque-apertura").bounding_box()["y"])  # no cae debajo del «Después»
         self.assertIn("Usually off by about 11 of every 100 people; 4 in 10 times, by more.", principal.inner_text())
         p.locator(".de-donde summary").click()
         self.assertIn("It doesn't measure the new opening", principal.inner_text())
@@ -307,6 +306,32 @@ class Navegador(unittest.TestCase):
         r = demo()
         del r["apertura"]["despues"]["cuadros_revisados"]
         self.assertIn("Frames 2 and 3 weren't checked", self.texto(self.abre(r), "#apertura-comprobada"))
+
+    # ---- lo que encontró la revisión con ojos de jurado ----
+    def test_el_inicio_va_antes_que_el_numero(self):
+        p = self.abre(demo())
+        self.assertLess(p.locator("#bloque-apertura").bounding_box()["y"], p.locator("#cifras").bounding_box()["y"])
+
+    def test_salud_y_fuera_no_se_reescriben(self):
+        r = demo()
+        r["apertura"].update(aprobada=False, despues=None, vueltas=0, intentos=[], comprobaciones=[], fuera_de_alcance="salud")
+        p = self.abre(r)
+        self.assertIn("doesn't rewrite health advice", self.texto(p, "#apertura-resumen"))
+        self.assertFalse(self.visible(p, "#antes-despues"))
+
+    def test_lo_que_no_se_comprobo_no_dice_que_paso_todo(self):
+        r = demo()
+        r["apertura"]["no_comprobe"] = ["fidelidad"]
+        p = self.abre(r)
+        self.assertIn("couldn't finish checking it", self.texto(p, "#sub"))
+        self.assertIn("Not fully checked.", self.texto(p, "#apertura-lazo"))
+        self.assertIn("couldn't read it against your video", p.locator("#apertura-comprobada").inner_text())
+
+    def test_el_ejemplo_no_se_firma_como_de_un_modelo(self):
+        self.assertNotIn("according to Muse Spark Open", self.abre(demo()).locator("body").inner_text())
+
+    def test_el_credito_se_ve_arriba(self):
+        self.assertTrue(self.visible(self.abre(demo()), ".hecho-arriba"))
 
     # ---- apertura.ya_funciona y modo sin voz ----
     def test_el_inicio_que_ya_funciona_es_un_logro(self):

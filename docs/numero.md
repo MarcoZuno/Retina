@@ -81,9 +81,10 @@ Modest, and we say so. Results are in the README and every rule is in [`docs/dec
   fitted before 2026 and measured on 1,992 later videos, it missed by 10.2, against 11.7. The panel uses the larger figure, rounded up:
   **usually off by about 11 people out of 100** ([`eval/margen_numero.py`](../eval/margen_numero.py)). That is an average, not a
   limit: in the harder check 57 % of videos fell within 11, so about 4 in 10 miss by more (1 in 5 by more than 16, 1 in 20 by more than 23).
-- **Most videos show no difference.** In 96 to 98 % of videos the number stays closer to the fixed curve than the margin, so the panel
+- **Most videos show no difference.** In 97 to 98 % of videos the number stays closer to the fixed curve than the margin, so the panel
   says "we see no difference from the curve for its length" instead of inventing one. That does not mean the video will behave like
   that curve: among those, 40 to 46 % ended 11 or more points away from it in reality.
+  These figures come from [`eval/margen_numero.py`](../eval/margen_numero.py), run with the published list of topics, which counts 23,932 videos; the public file was fitted on 23,710.
 - **The longest videos are weak.** The curve for over 4 minutes comes from 20 videos, so the panel flags those as a weaker reference.
 - Against the fixed curve, on two held-out periods and over the whole curve, the formula gains 5 to 8 people per 1,000. Reading the
   opening accounts for 1.4 to 2 of those. That whole-curve gain is small next to the error at one moment.

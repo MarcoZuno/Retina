@@ -34,6 +34,14 @@ def ids(s, datos=DATOS) -> list[str]:
     return [p["id"] for p in apertura.revisar(s, datos)]
 
 
+def setUpModule():
+    """Estas pruebas no llaman a ningún modelo: el tema y la fidelidad se prueban en test_apertura_v3.py."""
+    for nombre, valor in (("tema_fuera", None), ("es_fiel", {"fiel": True, "que_agrega": ""})):
+        p = mock.patch.object(apertura, nombre, return_value=valor)
+        p.start()
+        unittest.addModuleCleanup(p.stop)
+
+
 class ReglasDeTexto(unittest.TestCase):
     def test_una_apertura_buena_pasa(self):
         self.assertEqual(ids(buena()), [])

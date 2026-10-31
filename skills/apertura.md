@@ -1,6 +1,6 @@
 ---
 estacion: apertura
-version: apertura-v3
+version: apertura-v4
 fecha: 2026-10-31
 duenio: Jossafat Ruvalcaba
 modelo: muse-spark-open-1026 (pesos abiertos, en Baseten)
@@ -62,7 +62,7 @@ Reglas (el código rechaza la apertura si no se cumplen, y te dice qué falló):
    escríbelo en el idioma de la apertura, sin mezclar dos idiomas en una frase.
 
 9. Lo que ya funciona se queda. Si quien habla dice quién es y eso le da autoridad
-   («soy veterinaria»), consérvalo. Si el arranque real tiene un giro o una
+   («soy panadera»), consérvalo. Si el arranque real tiene un giro o una
    sorpresa, no lo gastes ni lo aplanes.
 10. Ajusta el largo al video. Si «duracion_video_s» es corta, la voz cabe en esos
     segundos. Si «video_mudo» es true, nadie habla: no inventes un narrador; «voz»

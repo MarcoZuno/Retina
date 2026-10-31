@@ -31,6 +31,7 @@ from retina.predecir import LAMBDA_UNIVERSAL, ajustar_ridge, de_fuera, fijos_uni
 from retina.publico import motivo_fuera, nombres, patrones, titulo_publico  # noqa: E402
 
 GRUPOS = 5
+MARGEN = 11  # el que enseña el panel: publico.MARGEN_PERSONAS
 N_CUBETAS = len(CUBETAS) - 1
 
 
@@ -52,9 +53,14 @@ def errores(ent: np.ndarray, pru: np.ndarray, X0: np.ndarray, Y: np.ndarray, cub
 def resumen(r: dict) -> dict:
     real, num, prom = (np.array(r[k]) * 100 for k in ("real", "numero", "promedio"))
     e, b, d = np.abs(real - num), np.abs(real - prom), np.abs(num - prom)
+    sin_diferencia = d < MARGEN  # lo que el panel dice como «no vemos diferencia»
     return {"n": len(e), "error_medio": round(float(e.mean()), 2), "error_mediana": round(float(np.median(e)), 2),
-            "error_p80": round(float(np.percentile(e, 80)), 2), "error_medio_del_promedio": round(float(b.mean()), 2),
-            "se_aparta_del_promedio_p90": round(float(np.percentile(d, 90)), 2)}
+            "error_p80": round(float(np.percentile(e, 80)), 2), "error_p95": round(float(np.percentile(e, 95)), 2),
+            "error_medio_del_promedio": round(float(b.mean()), 2),
+            "se_aparta_del_promedio_p90": round(float(np.percentile(d, 90)), 2),
+            "dentro_del_margen_pct": round(float((e <= MARGEN).mean() * 100), 1),
+            "sin_diferencia_pct": round(float(sin_diferencia.mean() * 100), 1),
+            "de_esos_se_aparto_de_verdad_pct": round(float((b[sin_diferencia] >= MARGEN).mean() * 100), 1)}
 
 
 def main() -> None:

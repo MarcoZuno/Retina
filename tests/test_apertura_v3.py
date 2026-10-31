@@ -1,6 +1,8 @@
 """apertura-v3: una sola prueba, cifras reales, tres dibujos revisados y el inicio que ya funciona."""
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from retina import apertura, integridad, titulo
 
@@ -49,8 +51,8 @@ class Reglas(unittest.TestCase):
         self.assertIn("anzuelos", [p["id"] for p in apertura.revisar(s, datos())])
 
     def test_video_corto(self):
-        self.assertEqual(apertura.limites_de_voz({"duracion_video_s": 6}), (7, 15))
-        self.assertEqual(apertura.limites_de_voz({"duracion_video_s": 120}), (18, 45))
+        self.assertEqual(apertura.limites_de_voz({"duracion_video_s": 6}), (10, 15))
+        self.assertEqual(apertura.limites_de_voz({"duracion_video_s": 120}), (25, 45))
 
     def test_video_mudo(self):
         self.assertEqual(apertura.limites_de_voz({"video_mudo": True, "duracion_video_s": 60}), (5, 16))
@@ -157,6 +159,80 @@ class Titulo(unittest.TestCase):
         self.assertFalse(titulo.aceptable({"cumple": "no", "por_que": "Comenta abajo."}))
         self.assertFalse(titulo.aceptable({"cumple": "no", "por_que": "Mira http://x.com"}))
         self.assertFalse(titulo.aceptable({"cumple": "tal vez", "por_que": "Quién sabe."}))
+
+
+class Fidelidad(unittest.TestCase):
+    """Lo que las reglas no ven: una apertura sin cifras ni nombres nuevos que agrega algo. Corre antes de dibujar."""
+
+    def correr(self, veredictos, pedidos=None):
+        dibujados, cola = [], iter(veredictos)
+        pedidos = iter(pedidos or [{"voz": VOZ, "cuadros": CUADROS}] * 3)
+
+        def dibujar(i, c):
+            dibujados.append(i)
+            return Path(f"c{i}.png")
+
+        def fiel(voz, d):
+            v = next(cola)
+            if isinstance(v, Exception):
+                raise v
+            return v
+
+        r = apertura.lazo(datos(), None, lambda d, a: next(pedidos), dibujar, lambda i, c: {}, comprobar=lambda i, c: True, fiel=fiel)
+        return r, dibujados
+
+    def test_lo_infiel_se_regresa_y_no_se_dibuja(self):
+        r, dibujados = self.correr([{"fiel": False, "que_agrega": "el café de la mañana"}, {"fiel": True, "que_agrega": ""}])
+        self.assertTrue(r["aprobada"])
+        self.assertEqual(r["vueltas"], 1)
+        self.assertEqual(r["intentos"][0]["problemas"][0]["id"], "fidelidad")
+        self.assertIn("café", r["intentos"][0]["problemas"][0]["detalle"])
+        self.assertEqual(dibujados, [1, 2, 3])
+
+    def test_infiel_tres_veces_no_llega(self):
+        r, dibujados = self.correr([{"fiel": False, "que_agrega": "algo"}] * 3)
+        self.assertFalse(r["aprobada"])
+        self.assertEqual(dibujados, [])
+
+    def test_si_no_contesta_no_finge_que_paso(self):
+        r, _ = self.correr([RuntimeError("sin respuesta")])
+        self.assertTrue(r["aprobada"])
+        self.assertIn("fidelidad", r["no_comprobe"])
+        self.assertNotIn("fidelidad", [c["id"] for c in r["comprobaciones"]])
+
+
+class Saludo(unittest.TestCase):
+    def test_saludos(self):
+        for t in ("Good morning friends", "Hi guys", "Hey everyone", "Hola amigos", "Qué onda banda"):
+            self.assertIn("saludo", [p["id"] for p in apertura.revisar({"voz": f"{t}. {VOZ}", "cuadros": CUADROS}, datos())], t)
+
+    def test_sin_saludo(self):
+        self.assertNotIn("saludo", [p["id"] for p in apertura.revisar({"voz": VOZ, "cuadros": CUADROS}, datos())])
+
+    def test_palabra_parecida_no_es_saludo(self):
+        self.assertIsNone(apertura.SALUDO.search("hipotesis de la cholita"))
+
+
+class Tema(unittest.TestCase):
+    def armar(self, carpeta, tema):
+        (carpeta / "describir.json").write_text('{"tramos": []}', encoding="utf-8")
+        with mock.patch.object(apertura, "datos_de_apertura", return_value=datos(frases=[], resto_de_lo_que_se_dice="algo", idioma_de_la_apertura="español")), \
+                mock.patch.object(apertura, "tema_fuera", **tema), mock.patch.object(apertura, "lazo", return_value={
+                    "aprobada": False, "vueltas": 0, "despues": None, "comprobaciones": [], "intentos": [], "no_comprobe": []}) as lazo:
+            return apertura.armar(carpeta, "Título", None), lazo
+
+    def test_salud_no_se_reescribe_ni_se_gasta(self):
+        with tempfile.TemporaryDirectory() as t:
+            r, lazo = self.armar(Path(t), {"return_value": "salud"})
+        self.assertEqual(r["fuera_de_alcance"], "salud")
+        self.assertFalse(r["aprobada"])
+        lazo.assert_not_called()
+
+    def test_si_no_contesta_se_dice(self):
+        with tempfile.TemporaryDirectory() as t:
+            r, lazo = self.armar(Path(t), {"side_effect": RuntimeError("sin respuesta")})
+        lazo.assert_called_once()
+        self.assertIn("tema_sensible", r["no_comprobe"])
 
 
 if __name__ == "__main__":

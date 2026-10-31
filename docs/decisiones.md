@@ -639,3 +639,36 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **Costo.** USD 4.12 en reescribir, USD 0.08 por video, más el juez.
 - **Lo mismo que antes sigue sin medirse:** si la apertura nueva retiene más gente. El juez es un modelo y en D y E sabe que lee la nueva.
 - **Código.** La medición corrió desde una copia congelada en `aeb92f5`. Lo que cambió después no toca instrucciones, reglas ni la apertura.
+
+## 31-oct-2026 · Errata de cifras del número
+
+- La entrada del 30-oct decía que unos 9 de cada 10 videos salen sin diferencia. Son 96.8 % con creadores escondidos y 98.2 % además después del corte, y entre esos, 40.3 % y 46.4 % se
+  apartaron 11 o más de la curva en la realidad. Dentro del margen de 11 cae 66.9 % y 57.3 %. Salen de `eval/margen_numero.py`, que ya las calcula.
+- Esa corrida usa la lista de temas como se publica, sin nombres propios, por eso cuenta 23,932 videos. El archivo público se entrenó con 23,710. Las cifras se mueven en décimas.
+
+## 31-oct-2026 · Quinta medición: apertura-v4, la versión que se publica. Regla escrita antes de medir
+
+- **Por qué.** Una revisión con ojos de jurado sobre la versión medida ayer encontró cuatro cosas que cambian el producto. Retina reescribía videos de fuera de alcance y de salud, y ni la app ni las
+  mediciones los filtraban: 25 de los 50 de la cuarta medición ya no se reescribirían. Nada en el producto frenaba una apertura infiel: el juez solo existía en las pruebas, y 3 de 47 habrían
+  llegado a la persona. Pasaban saludos y aperturas de 18 palabras, que son 6 segundos. La cuarta medición ya no describe lo que se publica, así que no se usa como cifra principal.
+- **Qué cambió (apertura-v4).** Muse Spark 1.3 decide antes de gastar si el video es de fuera de alcance o de consejos de salud (`skills/tema.md`) y, si lo es, Retina no reescribe. Muse Spark 1.3 lee cada
+  apertura contra lo que dice el video antes de dibujarla (`skills/fidelidad.md`); si agrega algo, se corrige. Una regla de código rechaza saludos. El mínimo sube a 25 palabras. Más frases en la lista de anzuelos.
+- **Cómo se afinó.** Con 6 casos aparte (`--piloto`, semilla 20261104), corridos una vez, sin cambios después. No entran a esta medición.
+- **Qué se mide** (`eval/apertura_v4.py`, `eval/juez_aperturas.py`, `eval/juez_control.py`). Videos de jul-sep de 2026 de hasta 4 minutos que no están en ninguna medición ni piloto anterior, barajados con
+  la semilla 20261103, sin los que Retina no reescribiría: los primeros 30 cuyo título promete algo que SAM puede comprobar y los primeros 20 que no. De 234 títulos revisados, 125 quedaron fuera por tema.
+  Sin retención y sin video: el título y lo que se dice. La lista quedó fija antes de ver un resultado (sha256 de la lista privada: 08814e89364d2991556d75ac7526ed083f2c48bce16d4e7f70bd37c43856a4c9).
+- **Regla.** Las mismas nueve condiciones de la cuarta medición, con los mismos números. Todas tienen que pasar:
+  - A. Al menos 24 de los 30 con promesa pasan todo en 2 correcciones o menos, con SAM encontrando lo prometido, o el inicio se confirma como bueno.
+  - B. Al menos 16 de los 20 sin promesa pasan lo mismo menos SAM.
+  - C. Trampa lejana: SAM rechaza al menos 9 de 10 cuadros aprobados contra un objeto de otra familia.
+  - D. El juez, Muse Spark 1.3, con todo lo que se dice en el video: al menos 80 % de las aperturas aprobadas son fieles.
+  - E. El mismo juez: al menos 80 % dejan algo importante para el resto del video.
+  - F. El mismo juez compara sin saber cuál es cuál, en los dos órdenes, cada apertura con lo que el video dice en sus primeros 15 segundos. La nueva gana al menos 60 % de los pares
+    firmes decididos, con al menos 20 decididos.
+  - G. Control negativo: en 10 aperturas con un dato inventado plantado, el juez rechaza al menos 9 por infieles.
+  - H. Control negativo: en 10 resúmenes de todo el video usados como apertura, el juez dice en al menos 7 que no deja nada.
+  - I. Spark Open no se escapa: como máximo 10 de los 50 inicios se dan por buenos.
+- **Se reporta, sin ser condición.** Intervalos de Wilson, trampa cercana, correcciones, fallas, costo, cuántos cuadros revisó Spark, cuántas regresó la lectura de fidelidad y qué no se pudo comprobar.
+- **Lo que esto no mide.** Si la apertura nueva retiene más gente. El juez es un modelo, no una persona ni una audiencia. No hay video. D ya no es independiente del lazo: es el mismo modelo
+  que hace la lectura de fidelidad, con casi las mismas preguntas, así que un D alto dice menos que antes.
+- **Si no pasa.** Se publica igual y no se reajusta en estos casos. Estos 50 casos no se vuelven a usar para esto.
