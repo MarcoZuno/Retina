@@ -79,6 +79,21 @@ class Navegador(unittest.TestCase):
         cls.servidor.shutdown()
         cls.servidor.server_close()
 
+    def test_sin_tarjeta_grafica_la_pagina_no_queda_en_blanco(self):
+        for simular in ("", "document.getElementById('lienzo').dispatchEvent(new Event('webglcontextlost', {cancelable: true}))"):
+            navegador = self.pw.chromium.launch(args=["--use-gl=swiftshader", "--enable-webgl", "--ignore-gpu-blocklist"])
+            try:
+                p = navegador.new_context(locale="en-US").new_page()
+                p.goto(self.url)
+                p.wait_for_selector("#bloque-apertura", state="visible")
+                if simular:
+                    p.evaluate(simular)
+                self.assertTrue(p.evaluate("document.body.classList.contains('sin-gl')"))
+                self.assertEqual(p.evaluate("getComputedStyle(document.getElementById('lienzo')).display"), "none")
+                self.assertIn("fondo-", p.evaluate("document.body.style.backgroundImage"))
+            finally:
+                navegador.close()
+
     def test_la_direccion_sin_panel_lleva_al_panel(self):
         import urllib.request
         with urllib.request.urlopen(self.url.removesuffix("panel/")) as r:

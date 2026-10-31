@@ -2331,7 +2331,9 @@ const FONDOS = [
 const MAX = 24;
 const quieto = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const lienzo = $("lienzo");
-const gl = lienzo.getContext("webgl", { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: false });
+// Sin tarjeta gráfica el vidrio pierde el contexto y deja la página en blanco: ahí se usa el fondo fijo.
+const gl = lienzo.getContext("webgl", { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: false, failIfMajorPerformanceCaveat: true });
+lienzo.addEventListener("webglcontextlost", (e) => { e.preventDefault(); sinGL(); });
 let actualFondo = FONDOS[0], conGL = false;
 
 const VS = "attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";

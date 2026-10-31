@@ -62,8 +62,9 @@ nine of its conditions on the first run.
 ## Limits we say out loud
 
 - **Retina does not know whether the new opening keeps more people.** We never measured that, and it shows no number for the new opening.
-- **It leaves a lot of videos alone.** It does not rewrite out-of-scope topics or health advice. Of the 234 videos reviewed to pick the fifth test, 125
-  were out for that reason, so the results above describe the rest of that page's archive, not all of it.
+- **It leaves a lot of videos alone.** It does not rewrite out-of-scope topics or health advice, for people or for animals, and when in doubt it
+  declines. Of the 234 videos reviewed to pick the fifth test, 125 were out for that reason, so the results above describe the rest of
+  that page's archive, not all of it.
 - **The tests used the title and the speech, not the video,** on one page's archive. The intervals in the annex count as independent
   cases that are not: 13 of the 30 cases with a promise in the last test were animals.
 - **The "after" is a sketch,** drawings and voice, not a filmed video.
@@ -90,7 +91,8 @@ both run on that made-up script.
 
 ## Try it with your own video
 
-You need Python 3.12, ffmpeg and your own key for the Meta Model API.
+You need Python 3.12, ffmpeg and your own key for the Meta Model API. On Windows, keep the folder path short (such as `C:\retina`):
+in a very long path, `pip` cannot finish installing `openai`, and the review comes out without its card.
 
 ```bash
 pip install -r requirements.txt
