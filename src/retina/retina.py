@@ -15,7 +15,7 @@ publicados y hay que confirmarlo con --ya-publicado.
 
 Uso:
     python -m retina.retina VIDEO.mp4 --modelo MODELO.pkl --arranque ARRANQUE.json --salida CARPETA \
-        --codigo NOTB0000 --talento "NOMBRE" --fecha "2026-10-28 18:00" --titulo "..." \
+        --codigo XYZ0000 --talento "NOMBRE" --fecha "2026-10-28 18:00" --titulo "..." \
         [--con-api --ya-publicado [--voz VOZ.jsonl]]
 """
 from __future__ import annotations
@@ -26,6 +26,7 @@ import json
 import os
 import shutil
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -116,6 +117,23 @@ def tramos_de_voz(salida: Path) -> list[list] | None:
     return [[t["startMs"] / 1000, t["transcript"]] for t in turnos if t.get("transcript")] or None
 
 
+def es_otro_idioma(lengua: str | None) -> bool:
+    """Retina aprendió con videos en español: en cualquier otro idioma que se reconozca, el número es una referencia más débil."""
+    return lengua in ("en", "pt", "fr")
+
+
+def avisos_de_tramos(man: dict) -> list[str]:
+    """Lo que la revisión por tramos no alcanza a ver: un video muy corto deja tramos sin cuadros y uno largo los hace gruesos."""
+    avisos, n = [], man.get("n_tramos") or 40
+    if sin := man.get("tramos_sin_cuadros"):
+        avisos.append(f"{len(sin)} de {n} tramos del video no tienen cuadros (es muy corto): lo que se ve en ellos no se revisó.")
+    paso_s = man.get("duracion_s", 0) / n
+    if paso_s > 6:
+        avisos.append(f"Cada tramo del video dura {paso_s:.0f} s: lo que se ve y se dice en los primeros segundos se revisa por "
+                      "tramos de ese tamaño, sin el detalle de un video corto.")
+    return avisos
+
+
 def licencia(pred: dict | None, no_pude: list) -> dict:
     if pred is None:  # sin cerebro: no hay número ni contra qué comparar
         return {"comparado_con": None, "regla": None, "n_parecidos": None, "datos_hasta": None, "vio_el_video": False,
@@ -144,12 +162,18 @@ def licencia(pred: dict | None, no_pude: list) -> dict:
 def anotar_avance(salida: Path, nombre: str, tiempos: dict) -> None:
     """Qué está haciendo Retina ahora y cuánto tardó lo anterior: el panel lo enseña en vivo."""
     temporal = salida / "avance.json.tmp"
-    temporal.write_text(json.dumps({"paso": nombre, "tiempos": tiempos}, ensure_ascii=False), encoding="utf-8")
-    os.replace(temporal, salida / "avance.json")
+    for intento in range(5):  # en Windows el panel puede tener el archivo abierto justo ahora (PermissionError)
+        try:
+            temporal.write_text(json.dumps({"paso": nombre, "tiempos": tiempos}, ensure_ascii=False), encoding="utf-8")
+            os.replace(temporal, salida / "avance.json")
+            return
+        except OSError:
+            time.sleep(0.05 * (intento + 1))
+    # El avance es solo para el panel: una revisión ya pagada no se tumba por no poder anotarlo.
 
 
-def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
-    """Corre un paso de la API; si falla, lo anota y sigue con lo demás."""
+def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args, carpeta: Path | None = None):
+    """Corre un paso de la API; si falla, lo anota y sigue con lo demás. Con `carpeta`, el detalle queda en error-<paso>.txt."""
     t = time.time()
     try:
         salida = funcion(*args)
@@ -158,6 +182,11 @@ def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args):
     except meta_api.TopeAlcanzado:  # no es una falla del paso: sin presupuesto la revisión no está completa y hay que decirlo
         raise
     except Exception as e:  # noqa: BLE001 — cualquier falla de un paso no debe tumbar la revisión
+        if carpeta is not None:
+            try:
+                (carpeta / f"error-{nombre}.txt").write_text(traceback.format_exc(), encoding="utf-8")
+            except OSError:
+                pass
         no_pude.append(f"{que} (falló: {type(e).__name__}).")
         return None
 
@@ -173,11 +202,12 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
 
     def paso(nombre: str, que: str, funcion, *args):
         anotar_avance(salida, nombre, tiempos)
-        return _paso(nombre, tiempos, no_pude, que, funcion, *args)
+        return _paso(nombre, tiempos, no_pude, que, funcion, *args, carpeta=salida)
 
     anotar_avance(salida, "segmentar", tiempos)
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)
 
+    no_pude += avisos_de_tramos(man)
     emb = audio = None
     solo_meta = solo_modelos_meta()
     if ver_video and not solo_meta and Path(modelo or "").suffix == ".pkl":  # V-JEPA 2 solo alimenta el modelo privado
@@ -211,11 +241,11 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
     elif solo_meta:
         riesgo_arranque = sin_nivel(pred)
     else:
-        from .arranque import Arranque
-        arr = Arranque.cargar(arranque) if arranque else m.arranque()  # el público trae su propio riesgo
-        riesgo_arranque = arr.predecir(v, np.array(pred["curva_parecidos"]))
-        if not getattr(m, "semaforo", True):  # solo se muestra donde está medido (el público: no, ver publico.py)
-            riesgo_arranque = {**riesgo_arranque, "nivel": "sin_nivel"}
+        if not getattr(m, "semaforo", True):  # solo se calcula donde está medido (el público: no, ver publico.py)
+            riesgo_arranque = sin_nivel(pred)
+        else:
+            from .arranque import Arranque
+            riesgo_arranque = Arranque.cargar(arranque).predecir(v, np.array(pred["curva_parecidos"]))
 
     resultado = {
         "version": "retina-v1",
@@ -261,7 +291,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             t = time.time(); pred = m.predecir(v, emb, audio, tramos, resultado["ficha"]); tiempos["predecir"] = round(time.time() - t, 1)
             # Retina aprendió las palabras en español: con otro idioma el número es una referencia más débil.
             dichas = " ".join(x for _, x in tramos).split()[:60]
-            pred["otro_idioma"] = transcribir.idioma_de(titulo + " " + " ".join(dichas)) == "en"
+            pred["otro_idioma"] = es_otro_idioma(transcribir.idioma_detectado(titulo + " " + " ".join(dichas)))
             resultado["prediccion"], resultado["licencia"] = pred, licencia(pred, no_pude)
             escribir()
         if not (salida / "describir.json").exists():
@@ -269,7 +299,7 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         if (salida / "describir.json").exists():
             if voz is not None and m is not None and m.filas:  # el agente lee resultado.json y busca en la historia de la casa
                 from .agente import cargar_voz, correr_agente
-                resultado["explicacion"] = paso("agente", "Por qué y qué cambiar en el arranque", correr_agente, salida, m, cargar_voz(voz), motor)
+                resultado["explicacion"] = paso("agente", "Por qué y qué cambiar en el arranque", correr_agente, salida, m, cargar_voz(voz), motor, idioma=idioma)
             else:
                 # Sin agente, SAM revisa igual si lo que promete el título se ve en los primeros 3 segundos.
                 from .sam import medir_promesa
@@ -284,6 +314,13 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
             resultado["revision_meta"] = paso("revision_meta", "Las recomendaciones de Meta para el inicio", revisar, salida, idioma) or []
             from . import normas
             resultado["normas"] = paso("normas", "Las normas de Facebook", normas.revisar, salida, idioma, titulo)
+            # ¿El video da lo que promete su título? Es un aviso: el título no se toca y sin respuesta no hay aviso.
+            from . import titulo as titulo_mod
+            dicho = " ".join(x for _, x in tramos or [])
+            pantalla = " ".join(str(d.get("texto_en_pantalla") or "") for d in
+                                json.loads((salida / "describir.json").read_text(encoding="utf-8")).get("tramos", []))
+            resultado["titulo_contra_video"] = paso("titulo", "Si el video da lo que promete el título", titulo_mod.revisar,
+                                                    titulo, dicho, pantalla, idioma)
     no_pude.append("La música: no se analiza la letra ni la licencia.")
     escribir()
     (salida / "avance.json").unlink(missing_ok=True)
@@ -303,7 +340,7 @@ def main() -> None:
     ap.add_argument("--con-api", action="store_true", help="Usa la Meta Model API (cuesta).")
     ap.add_argument("--ya-publicado", action="store_true", help="Confirma que el video ya está publicado (lo pide el candado RETINA_SOLO_PUBLICADOS=1).")
     ap.add_argument("--arranque", type=Path, help="Modelo del riesgo del arranque (JSON de retina.arranque). "
-                    "Con el cerebro público (modelos/retina-publico.json) no hace falta: ya lo trae.")
+                    "Con el cerebro público (modelos/retina-publico.json) no hace falta.")
     ap.add_argument("--voz", type=Path, help="Voz de la historia (voz.jsonl): activa el agente en lugar de explicar.")
     ap.add_argument("--motor", default="", choices=["", "api", "abierto", "abierto+api"],
                     help="Quién escribe la tarjeta: api (Spark 1.3), abierto (Muse Spark Open) o abierto+api "

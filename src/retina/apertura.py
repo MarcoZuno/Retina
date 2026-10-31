@@ -16,6 +16,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import os
 import re
@@ -26,15 +27,17 @@ from pathlib import Path
 from . import baseten, explicar, integridad, meta_api, sam, storyboard, transcribir
 from .esquemas import RAIZ
 
-VERSION = "apertura-v2"
+VERSION = "apertura-v3"
 MAX_CORRECCIONES = 2
 MIN_PALABRAS, MAX_PALABRAS = 18, 45  # de 10 a 15 segundos, hablando a unas 2.5 a 3 palabras por segundo
+PALABRAS_POR_SEGUNDO = 2.5
+MIN_MUDO, MAX_MUDO = 5, 16  # sin voz, el arranque es un texto en pantalla
 MAX_CARACTERES_CUADRO = 400
 MIN_CLAVES_TITULO = 3  # con menos, es un título de trabajo («VERSION 1»), no una promesa
 MAX_PALABRAS_RESTO = 1200
 SEGUNDOS_ANTES = 15
 IDIOMAS = {"es": "español", "en": "inglés"}
-COMPROBACIONES = ("anzuelos", "intocables", "cifras", "nombres", "tema", "largo", "cuadros")
+COMPROBACIONES = ("anzuelos", "intocables", "cifras", "nombres", "tema", "largo", "una_prueba", "cuadros")
 # USD: 3 vueltas de Spark Open, hasta 5 dibujos y 3 revisiones de SAM (medido en eval/apertura_casos.py)
 COSTO_MAXIMO_USD = 0.25
 VACIAS = frozenset("""para como este esta esto estos estas pero porque cuando donde desde hasta sobre entre tiene tienen
@@ -51,15 +54,25 @@ LETRA = {"dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6, "siete": 7, "o
          "seiscientos": 600, "setecientos": 700, "ochocientos": 800, "novecientos": 900, "docena": 12, "docenas": 12,
          "dozen": 12, "dozens": 12, "eleven": 11, "thirteen": 13, "fourteen": 14, "sixteen": 16, "seventeen": 17,
          "eighteen": 18, "nineteen": 19,
-         "mil": 1000, "millon": 1e6, "millones": 1e6, "million": 1e6, "millions": 1e6, "billion": 1e9, "billions": 1e9, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
+         "mil": 1000, "miles": 1000, "millares": 1000, "cientos": 100, "centenares": 100, "decenas": 10,
+         "thousands": 1000, "hundreds": 100, "millon": 1e6, "millones": 1e6, "million": 1e6, "millions": 1e6, "billion": 1e9, "billions": 1e9, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
          "nine": 9, "ten": 10, "twelve": 12, "fifteen": 15, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
          "seventy": 70, "eighty": 80, "ninety": 90, "hundred": 100, "thousand": 1000}
+_DECENAS = "treinta cuarenta cincuenta sesenta setenta ochenta noventa twenty thirty forty fifty sixty seventy eighty ninety".split()
+_UNIDADES = {"uno": 1, "un": 1, "una": 1, "one": 1, **{k: LETRA[k] for k in "dos tres cuatro cinco seis siete ocho nueve two three four five six seven eight nine".split()}}
+COMPUESTO = re.compile(rf"\b({'|'.join(_DECENAS)})(?:\s+y\s+|[\s-]+)({'|'.join(_UNIDADES)})\b")
+ENLACE = re.compile(r"https?://|www\.", re.I)
+SALUDO = re.compile(r"\b(hola|buenos dias|buenas tardes|buenas noches|bienvenid[oa]s?|que tal|hello|hi everyone|welcome|hey guys)\b")
+PALABRAS_DEL_TEMA = 12  # un inicio que ya funciona dice de qué trata en sus primeras palabras
+ORDINAL = re.compile(r"\b(primero|segundo|tercero|first|second|third)[,:]", re.I)
+SERIE_LARGA = re.compile(r"(?:[^,.!?…]{1,40},\s*){2,}[^,.!?…]*\b(?:y|e|o|and|or)\b", re.I)
+SERIE_CORTA = re.compile(r"(?:^|[\s:])(?:[^\W\d_]+\s){0,2}[^\W\d_]+,\s(?:[^\W\d_]+\s){0,2}[^\W\d_]+\s(?:y|e|o|and|or)\s(?:[^\W\d_]+\s){0,2}[^\W\d_]+[.!?…]*$", re.I)
 # En inglés llevan mayúscula sin ser un nombre. En un cuadro describen la escena; en la voz serían un dato y sí se revisan.
 GENTILICIOS = frozenset("""mexican american latin spanish french italian german chinese japanese korean indian brazilian
     argentine colombian peruvian cuban canadian british english irish greek turkish russian arab african asian european""".split())
 MIN_LETRAS_ALFABETO = 20
 FORMATO = ("\n\nFORMATO DE RESPUESTA: devuelve solo un objeto JSON válido, sin texto antes ni después y sin bloques de "
-           "código, con exactamente estas claves: «voz»: texto; «cuadros»: lista de tres textos.")
+           "código, con exactamente estas claves: «ya_funciona»: true o false; «motivo»: texto; «voz»: texto; «cuadros»: lista de tres textos.")
 
 
 def instrucciones() -> str:
@@ -70,8 +83,15 @@ def _palabras(texto: str) -> list[str]:
     return re.findall(r"[^\W\d_]+", integridad.normalizar(texto))
 
 
-def _numeros(texto: str) -> set[float]:
+def _numeros(texto: str, con_letra: bool = True) -> set[float]:
     hallados = set()
+
+    def compuesto(m: re.Match) -> str:
+        hallados.add(float(LETRA[m[1]] + _UNIDADES[m[2]]))
+        return " "
+
+    limpio = unicodedata.normalize("NFKD", texto.lower()).encode("ascii", "ignore").decode()
+    texto = COMPUESTO.sub(compuesto, limpio)  # «treinta y cinco» es 35, no 30 y 5
     for n in re.findall(r"\d+(?:[.,]\d+)*", texto):
         if re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+", n):  # 1,000 y 1.000
             hallados.add(float(re.sub(r"[.,]", "", n)))
@@ -79,17 +99,17 @@ def _numeros(texto: str) -> set[float]:
             hallados.add(float(n.replace(",", ".")))
         else:  # 30.10.2026 o 1,2,3: cada pieza es una cifra
             hallados.update(float(x) for x in re.split(r"[.,]", n))
-    return hallados | {float(LETRA[p]) for p in _palabras(texto) if p in LETRA}
+    return hallados | ({float(LETRA[p]) for p in re.findall(r"[a-z]+", texto) if p in LETRA} if con_letra else set())
 
 
-def cifras_nuevas(voz: str, fuente: str) -> list[str]:
-    return sorted(f"{n:g}" for n in _numeros(voz) - _numeros(fuente) - {0.0, 1.0})
+def cifras_nuevas(voz: str, fuente: str, con_letra: bool = True) -> list[str]:
+    return sorted(f"{n:g}" for n in _numeros(voz, con_letra) - _numeros(fuente) - {0.0, 1.0})
 
 
 def nombres_nuevos(voz: str, fuente: str) -> list[str]:
     """Palabras con mayúscula a media frase que el video no dice. La primera de cada frase no se juzga."""
     conocidas = set(_palabras(fuente))
-    return sorted({p for frase in re.split(r"(?<=[.!?…:])\s+", voz) for p in re.findall(r"[^\W\d_]+", frase)[1:]
+    return sorted({p for frase in re.split(r"(?<=[.!?…])\s+", voz) for p in re.findall(r"[^\W\d_]+", frase)[1:]
                    if p[0].isupper() and integridad.normalizar(p) not in conocidas})
 
 
@@ -108,6 +128,42 @@ def tema_llega_tarde(voz: str, titulo: str) -> bool:
     return not {p[:4] for p in claves} & {p[:4] for p in _palabras(primera)}  # «panes» cuenta como «pan»
 
 
+def enumera(voz: str) -> bool:
+    """¿Suelta una lista en vez de una sola prueba? Una lista agota lo que el video venía a dar."""
+    frases = re.split(r"(?<=[.!?…])\s+", voz.strip())
+    return len({m.lower() for m in ORDINAL.findall(voz)}) >= 2 or any(SERIE_LARGA.search(f) or SERIE_CORTA.search(f) for f in frases)
+
+
+def limites_de_voz(datos: dict) -> tuple[int, int]:
+    """Un video de 6 segundos no aguanta una voz de 15. Sin voz en el video, es un texto corto en pantalla."""
+    if datos.get("video_mudo"):
+        return MIN_MUDO, MAX_MUDO
+    duracion = datos.get("duracion_video_s") or 0
+    maximo = min(MAX_PALABRAS, max(int(duracion * PALABRAS_POR_SEGUNDO), MIN_MUDO)) if duracion else MAX_PALABRAS
+    return min(MIN_PALABRAS, maximo // 2), maximo
+
+
+def inicio_real(datos: dict) -> str:
+    return " ".join(f["dice"] for f in datos.get("frases", []) if f["segundo"] < SEGUNDOS_ANTES and f["dice"])
+
+
+def por_que_no_sirve(datos: dict) -> str:
+    """Spark puede decir que el inicio ya funciona, pero quien lo confirma es el código. Vacío si de verdad sirve."""
+    real = inicio_real(datos)
+    if len(real.split()) < MIN_PALABRAS:
+        return "el inicio casi no dice nada: escribe uno"
+    if rotas := integridad.revisar(real):
+        return f"el inicio trae un anzuelo ({rotas[0]['regla']}): escribe uno sin él"
+    primeras = " ".join(real.split()[:PALABRAS_DEL_TEMA])
+    if SALUDO.search(integridad.normalizar(primeras)):
+        return "el inicio abre con un saludo: escribe uno"
+    if datos.get("tema_obligatorio", True) and tema_llega_tarde(primeras, datos["titulo"]):
+        return "el inicio tarda en decir de qué trata: escribe uno"
+    if datos.get("promesa_en_el_inicio") is False:
+        return "lo que promete el título no se ve en el inicio: escribe uno"
+    return ""
+
+
 def revisar(s: dict, datos: dict) -> list[dict]:
     """Las reglas de texto, en código, después del modelo. Devuelve lo que falló, con el detalle para corregirlo."""
     voz, cuadros = (s.get("voz"), s.get("cuadros")) if isinstance(s, dict) else (None, None)
@@ -122,17 +178,22 @@ def revisar(s: dict, datos: dict) -> list[dict]:
     todo = " ".join([voz, *cuadros])
     for r in integridad.revisar(todo):
         fallo("anzuelos", f"{r['regla']} (frases: {', '.join(r['frases'])})")
+    if ENLACE.search(todo):
+        fallo("anzuelos", "no incluyas enlaces")
     if t := explicar.toca_intocable(todo):
         fallo("intocables", f"toca algo intocable: {', '.join(t)}")
-    if n := cifras_nuevas(voz, fuente):
+    if n := sorted({*cifras_nuevas(voz, fuente), *(x for c in cuadros for x in cifras_nuevas(c, fuente, con_letra=False))}):
         fallo("cifras", f"cifras que no vienen en los datos del video: {', '.join(n)}")
     en_cuadros = [p for c in cuadros for p in nombres_nuevos(c, fuente) if integridad.normalizar(p) not in GENTILICIOS]
     if n := sorted({*nombres_nuevos(voz, fuente), *en_cuadros}):
         fallo("nombres", f"nombres que no vienen en los datos del video: {', '.join(n)}")
     if datos.get("tema_obligatorio", True) and tema_llega_tarde(voz, titulo):
         fallo("tema", "la primera frase tiene que decir de qué trata el video con palabras del título")
-    if not MIN_PALABRAS <= (n := len(voz.split())) <= MAX_PALABRAS:
-        fallo("largo", f"la voz mide {n} palabras y tiene que medir de {MIN_PALABRAS} a {MAX_PALABRAS}")
+    if enumera(voz):
+        fallo("una_prueba", "enumeras varias cosas: da una sola prueba y deja lo demás al video")
+    minimo, maximo = limites_de_voz(datos)
+    if not minimo <= (n := len(voz.split())) <= maximo:
+        fallo("largo", f"la voz mide {n} palabras y tiene que medir de {minimo} a {maximo}")
     if len(cuadros) != 3 or not all(c.strip() for c in cuadros) or any(len(c) > MAX_CARACTERES_CUADRO for c in cuadros):
         fallo("cuadros", f"tienen que ser exactamente 3 cuadros de hasta {MAX_CARACTERES_CUADRO} caracteres")
     return problemas
@@ -152,20 +213,43 @@ def _nada_que_avisar(paso: str, vuelta: int) -> None:
     pass
 
 
-def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_que_avisar) -> dict:
+def _revisar_cuadros(imagenes: list[Path], textos: list[str], ya_visto: bool, comprobar) -> list[dict]:
+    """SAM busca una cosa en el primer cuadro. Muse Spark 1.3 mira los que SAM no vio. None: no se pudo revisar."""
+    filas = []
+    for i, (imagen, texto) in enumerate(zip(imagenes, textos), 1):
+        if i == 1 and ya_visto:
+            continue
+        try:
+            filas.append({"cuadro": i, "coincide": comprobar(imagen, texto)})
+        except meta_api.TopeAlcanzado:
+            raise
+        except Exception:  # noqa: BLE001 — lo que no se pudo revisar se dice, no cuenta como bueno
+            filas.append({"cuadro": i, "coincide": None})
+    return filas
+
+
+def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_que_avisar, comprobar=None) -> dict:
     """Escribe, revisa y corrige. `dibujar(i, cuadro)` deja el cuadro i y `medir(imagen, concepto)` lo busca con SAM;
     los dos cuestan, así que solo corren si el texto ya pasó. El primer cuadro se dibuja antes que los otros: si SAM no
-    ve la promesa, los otros dos no se pagan. El objeto prometido lo recibe quien escribe, nunca el dibujo: si el código
-    se lo ordenara a Muse Image, SAM estaría comprobando la orden y no lo que se escribió."""
+    ve la promesa, los otros dos no se pagan. Quien escribe sabe qué objeto se va a buscar y debe describirlo: SAM comprueba
+    que el dibujo lo muestre, no que la idea sea buena. `comprobar(imagen, texto)` mira los cuadros que SAM no revisó."""
     if concepto:
         datos = {**datos, "objeto_prometido": concepto}
-    intentos, no_comprobe, aviso, s, imagenes, vista = [], [], "", None, [], None
+    intentos, no_comprobe, aviso, s, imagenes, vista, revisados = [], [], "", None, [], None, []
     for vuelta in range(MAX_CORRECCIONES + 1):
         avisar("corrigiendo" if vuelta else "escribiendo", vuelta)
-        vista = None
+        vista, no_comprobe, revisados = None, [], []
         try:
             s = pedir(datos, aviso)
-            problemas = revisar(s, datos)
+            if isinstance(s, dict) and s.get("ya_funciona"):
+                motivo = str(s.get("motivo") or "").strip()
+                if not (no_sirve := por_que_no_sirve(datos)) and motivo and not integridad.revisar(motivo) and not ENLACE.search(motivo):
+                    intentos.append({"vuelta": vuelta, "problemas": []})
+                    return {"aprobada": True, "ya_funciona": True, "motivo": motivo, "vueltas": vuelta, "despues": None,
+                            "comprobaciones": [], "intentos": intentos, "no_comprobe": []}
+                problemas = [{"id": "ya_funciona", "detalle": no_sirve or "explica en una frase por qué el inicio ya funciona, sin enlaces ni pedidos al público"}]
+            else:
+                problemas = revisar(s, datos)
         except meta_api.TopeAlcanzado:
             raise
         except RuntimeError as e:
@@ -186,6 +270,12 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
                 if not problemas:
                     avisar("terminando", vuelta)
                     imagenes = [primero, dibujar(2, s["cuadros"][1]), dibujar(3, s["cuadros"][2])]
+                    if comprobar:
+                        avisar("mirando", vuelta)
+                        revisados = _revisar_cuadros(imagenes, s["cuadros"], vista is not None, comprobar)
+                        if malos := [r["cuadro"] for r in revisados if r["coincide"] is False]:
+                            problemas = [{"id": "cuadros", "detalle": f"el dibujo del cuadro {', '.join(map(str, malos))} no muestra lo que "
+                                                                      "describe: pide una escena más simple y concreta"}]
             except meta_api.TopeAlcanzado:
                 raise
             except Exception as e:  # noqa: BLE001 — Muse Image puede rechazar una escena: se pide otra
@@ -203,7 +293,8 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
         return {"aprobada": False, "vueltas": len(intentos) - 1, "despues": None, "comprobaciones": comprobaciones,
                 "intentos": intentos, "no_comprobe": no_comprobe}
     return {"aprobada": True, "vueltas": len(intentos) - 1,
-            "despues": {"voz": s["voz"], "cuadros": s["cuadros"], "imagenes": [p.name for p in imagenes]},
+            "despues": {"voz": s["voz"], "cuadros": s["cuadros"], "imagenes": [p.name for p in imagenes],
+                        "cuadros_revisados": revisados},
             "comprobaciones": comprobaciones, "intentos": intentos, "no_comprobe": no_comprobe}
 
 
@@ -214,8 +305,26 @@ def quien_escribe() -> tuple[str, str]:
 
 
 def esquema() -> dict:
-    return {"type": "object", "additionalProperties": False, "required": ["voz", "cuadros"], "properties": {
+    return {"type": "object", "additionalProperties": False, "required": ["ya_funciona", "motivo", "voz", "cuadros"], "properties": {
+        "ya_funciona": {"type": "boolean"}, "motivo": {"type": "string"},
         "voz": {"type": "string"}, "cuadros": {"type": "array", "items": {"type": "string"}}}}
+
+
+ESQUEMA_CUADRO = {"type": "object", "additionalProperties": False, "required": ["coincide", "que_se_ve"],
+                  "properties": {"coincide": {"type": "boolean"}, "que_se_ve": {"type": "string"}}}
+
+
+def comprobar_cuadro(imagen: Path, cuadro: str) -> bool:
+    """Muse Spark 1.3 mira el dibujo y contesta si muestra lo principal de lo que se escribió."""
+    sistema = (RAIZ / "skills" / "cuadro.md").read_text(encoding="utf-8").split("---", 2)[2].strip()
+    url = "data:image/png;base64," + base64.b64encode(imagen.read_bytes()).decode()
+    cuerpo = {"model": explicar.MODELO, "reasoning": {"effort": "low"}, "max_output_tokens": 2000, "store": False,
+              "text": {"format": {"type": "json_schema", "name": "cuadro_v1", "strict": True, "schema": ESQUEMA_CUADRO}},
+              "input": [{"type": "message", "role": "developer", "content": [{"type": "input_text", "text": sistema}]},
+                        {"type": "message", "role": "user", "content": [
+                            {"type": "input_text", "text": meta_api.como_dato("ESCENA_PEDIDA", cuadro)},
+                            {"type": "input_image", "image_url": url}]}]}
+    return bool(json.loads(meta_api.texto_de(meta_api.responder("cuadro", cuerpo)))["coincide"])
 
 
 def _pedir_spark(sistema: str, texto: str) -> dict:
@@ -270,8 +379,12 @@ def datos_de_apertura(carpeta: Path, titulo: str, idioma: str = "es") -> dict:
     tramos = json.loads((carpeta / "describir.json").read_text(encoding="utf-8"))["tramos"]
     pantalla = [str(t.get("texto_en_pantalla") or "") for t in tramos]
     lengua = transcribir.idioma_de(" ".join([titulo, *" ".join(dicho).split()[:60]])) or idioma
+    vista = carpeta / "sam.json"
+    promesa = json.loads(vista.read_text(encoding="utf-8")) if vista.exists() else {}
+    en_el_inicio = (promesa["aparece"] and promesa.get("primer_segundo", 99) < 3) if "aparece" in promesa else None
     return {**datos, "titulo": titulo, "resto_de_lo_que_se_dice": " ".join(resto.split()[:MAX_PALABRAS_RESTO]),
-            "idioma_de_la_apertura": IDIOMAS[lengua], "fuente": integridad.normalizar(" ".join([titulo, *dicho, *pantalla])),
+            "idioma_de_la_apertura": IDIOMAS[lengua], "fuente": " ".join([titulo, *dicho, *pantalla]),
+            "video_mudo": not dicho, "promesa_en_el_inicio": en_el_inicio,
             # Con un título en otro idioma que el video, la apertura no puede usar sus palabras.
             "tema_obligatorio": transcribir.idioma_de(titulo) in (None, lengua)}
 
@@ -310,13 +423,14 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
                       "intentos": [], "no_comprobe": []}
         else:
             medido = lazo(datos, concepto, pedir, lambda i, c: dibujar_cuadro(carpeta, i, c),
-                          lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar)
+                          lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar, comprobar_cuadro)
     finally:
         if not (medido and medido["aprobada"]):  # lo que no pasó no se queda en la carpeta del caso
             for i in (1, 2, 3):
                 (carpeta / f"apertura-cuadro{i}-ilustracion-ia.png").unlink(missing_ok=True)
     modelo, servido_por = quien_escribe()
     return {"version": VERSION, "titulo": titulo, "idioma": datos["idioma_de_la_apertura"], "objeto": concepto,
+            "modo": "texto_en_pantalla" if datos.get("video_mudo") else "voz",
             "antes": antes_del_cambio(carpeta, datos), **medido,
             "licencia": {"escribio": modelo, "servido_por": servido_por, "dibujo": storyboard.MODELO, "reviso": sam.MODELO,
                          "instrucciones": f"skills/apertura.md ({VERSION})", "reglas": integridad.reglas()["version"]}}

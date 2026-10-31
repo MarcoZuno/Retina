@@ -18,7 +18,7 @@ REGLAS = RAIZ / "reglas" / "anzuelos-v1.json"
 
 
 # Letras de otros alfabetos que se ven iguales a las latinas («сomenta» con c cirílica).
-HOMOGLIFOS = str.maketrans("аеорсухіјѕԁɡ", "aeopcyxijsdg")
+HOMOGLIFOS = str.maketrans("аеорсухіјѕԁɡαεικνορτυχ", "aeopcyxijsdgaeikvoptyx")
 # Números y signos que imitan letras, solo dentro de palabras («c0menten»), no en «3 días».
 IMITACIONES = str.maketrans("013457@$", "oieastas")
 
@@ -26,6 +26,7 @@ IMITACIONES = str.maketrans("013457@$", "oieastas")
 def normalizar(texto: str) -> str:
     t = texto.lower().translate(HOMOGLIFOS)
     t = re.sub(r"(?<=[^\W\d_])[-._*](?=[^\W\d_])", "", t)  # co-menten, c.o.m.e.n.t.e.n
+    t = re.sub(r"\b[^\W\d_](?: [^\W\d_]){3,}\b", lambda m: m.group(0).replace(" ", ""), t)  # c o m e n t a
     t = re.sub(r"\b(?=\w*[a-z])(?=\w*[0-9@$])[\w@$]+", lambda m: m.group(0).translate(IMITACIONES), t)
     sin_acentos = unicodedata.normalize("NFKD", t).encode("ascii", "ignore").decode()
     return re.sub(r"\s+", " ", sin_acentos)

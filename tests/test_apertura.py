@@ -269,7 +269,7 @@ class Rehacer(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             d = Path(t); self.preparar(d)
             datos = apertura.datos_de_apertura(d, TITULO, "es")
-        self.assertIn("9 dias", datos["fuente"])
+        self.assertIn("9 días", datos["fuente"])
         self.assertIn("5 pasos", datos["fuente"])
         self.assertIn("Y dura 9 días.", datos["resto_de_lo_que_se_dice"])
         self.assertNotIn("nivel_de_riesgo", datos)

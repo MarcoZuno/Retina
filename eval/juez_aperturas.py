@@ -121,7 +121,7 @@ def main() -> None:
     trabajos = []
     for d in sorted((a.casos / "casos").iterdir()):
         s = json.loads((d / "apertura.json").read_text(encoding="utf-8"))
-        if s["aprobada"] and d.name not in vistos:
+        if s["aprobada"] and s.get("despues") and d.name not in vistos:
             trabajos.append((d.name, s["despues"]["voz"]))
     with ThreadPoolExecutor(max_workers=a.hilos) as ex, salida.open("a", encoding="utf-8") as f:
         futuros = {ex.submit(un_caso, c, x, por_codigo[c], voz[c], a.referencia): c for c, x in trabajos}

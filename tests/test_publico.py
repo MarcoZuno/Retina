@@ -95,15 +95,13 @@ class ArchivoPublico(unittest.TestCase):
         for llave in ("videos_fuera", "videos_que_aprendio", "videos_por_duracion"):
             self.assertNotIn(llave, self.d)
 
-    def test_predice_con_y_sin_voz_y_da_su_riesgo(self):
+    def test_predice_con_y_sin_voz(self):
         v = {"fecha": datetime(2025, 12, 1, 18), "dur": 90.0, "cubeta": cubeta(90.0), "codigo": "", "talento": "",
              "archivo": "receta", "titulo": "receta", "reel": 0.0}
         con = self.modelo.predecir(v, tramos=[[0.3, "¿Sabías esto?"]])
         sin = self.modelo.predecir(v)
         self.assertEqual((con["cerebro"], sin["cerebro"], con["conoce_al_creador"]), ("cualquier_video", "promedio", False))
         self.assertEqual(sin["curva_predicha"], sin["curva_parecidos"])
-        nivel = self.modelo.arranque().predecir(v, np.array(con["curva_parecidos"]))["nivel"]
-        self.assertIn(nivel, ("alto", "medio", "bajo"))
 
     def test_el_modo_publico_no_da_semaforo_y_avisa_en_videos_cortos(self):
         self.assertFalse(self.modelo.semaforo)  # la v1 no pasó y la v2 es exploratoria (docs/decisiones.md)
@@ -126,7 +124,7 @@ class ElArchivoDelRepo(unittest.TestCase):
         textos = dict(_textos(d))
         self.assertEqual(set(textos), {".version", ".que_es", ".datos_hasta"})
         self.assertFalse({"videos_fuera", "videos_que_aprendio", "videos_por_duracion"} & set(d))
-        self.assertEqual(set(d["arranque"]["W"]), {"con_voz", "sin_voz"})
+        self.assertNotIn("arranque", d)
         self.assertIsInstance(cargar_modelo(ARCHIVO), ModeloPublico)
 
 
@@ -142,7 +140,7 @@ class MetricasDeMeta(unittest.TestCase):
     def test_el_export_con_ingresos_se_lee_sin_ingresos(self):
         import csv as _csv
         import tempfile
-        from retina.base import CURVA
+        from retina.metricas_meta import CURVA
         from retina.metricas_meta import leer
         cols = ["Identificador de la publicación", "Nombre de la página", "Tipo de publicación", "Alcance",
                 "Ingresos estimados (USD)", *[CURVA.format(i) for i in range(41)]]

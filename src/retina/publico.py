@@ -9,7 +9,6 @@ promedio por duración: ningún título, talento, código ni cifra de un video.
 Adentro van dos piezas:
 - el cerebro para cualquier video (duración, reel, hora y día, título y voz del
   arranque), el mismo que se midió con talentos escondidos (eval/cualquier_video.py);
-- el riesgo del arranque sin talento ni tipo de producción (retina.arranque).
 Sin voz, la curva es la de los videos de su duración y la tarjeta lo dice.
 
 Uso (con la base privada):
@@ -27,7 +26,6 @@ from pathlib import Path
 
 import numpy as np
 
-from .arranque import Arranque
 from .curvas import CUBETAS, VENTANA, cargar, regla_de_hoy, tramo_exceso
 from .predecir import (LAMBDA_UNIVERSAL, N_ARRANQUE, N_PALABRAS, Rasgos, ajustar_ridge, de_fuera,
                        en_bloques, fijos_universales, plano, rasgos_universales)
@@ -106,12 +104,6 @@ def entrenar(filas: list[dict], voz: dict, fichas: dict | None = None) -> dict:
         grupo = grupo or [v["curva"] for v in quedan]  # una duración sin videos toma el promedio de todos
         curvas.append(np.mean(grupo, axis=0).tolist())
 
-    # Riesgo del arranque: el mismo modelo de la casa, entrenado sin talento y con el título limpio;
-    # los pesos de tipo de producción (códigos internos) no se publican.
-    arr = Arranque.entrenar([{**v, "talento": "", "archivo": v["titulo"]} for v in limpios], voz, hasta + timedelta(minutes=1))
-    ini, n_tipos = 1 + 5 + 7, len(arr.rasgos.tipos)
-    pesos = {k: np.delete(w, range(ini, ini + n_tipos), axis=0) for k, w in arr.W.items()}
-
     redondo = lambda a: np.round(np.asarray(a, dtype=float), 6).tolist()  # noqa: E731
     return {
         "version": VERSION,
@@ -123,7 +115,6 @@ def entrenar(filas: list[dict], voz: dict, fichas: dict | None = None) -> dict:
                    "cubetas_s": CUBETAS[:-1]},
         "curvas_por_duracion": [redondo(c) for c in curvas],
         "cualquier_video": redondo(W),
-        "arranque": {"W": {k: redondo(w) for k, w in pesos.items()}, "cortes": arr.cortes, "lambda": arr.lam},
     }
 
 
@@ -175,16 +166,10 @@ class ModeloPublico:
             "cerebro": "cualquier_video" if tramos else "promedio",
             "conoce_al_creador": False,
             "uso_voz": bool(tramos),
-            # Casi no hay reels ni videos de menos de 30 s en la base: el número es una referencia más débil.
-            "formato_poco_conocido": v["cubeta"] == 0 or bool(v.get("reel")),
+            # Casi no hay reels ni videos de menos de 30 s o de más de 4 min en la base: el número es una referencia más débil.
+            "formato_poco_conocido": v["cubeta"] in (0, N_CUBETAS - 1) or bool(v.get("reel")),
             "datos_hasta": self.d["datos_hasta"],
         }
-
-    def arranque(self) -> Arranque:
-        a = self.d["arranque"]
-        rasgos = Rasgos([]); rasgos.tipos, rasgos.talentos = [], []
-        return Arranque(rasgos, {k: np.array(w) for k, w in a["W"].items()},
-                        {k: tuple(c) for k, c in a["cortes"].items()}, a["lambda"], {k: None for k in a["W"]}, {})
 
 
 def cargar_modelo(ruta: Path):

@@ -1,7 +1,7 @@
 """Las demás métricas de Meta de cada video: alcance, reacciones, compartidos, tiempo visto y de dónde
 vinieron las reproducciones (recomendaciones de Facebook, seguidores o contenido compartido).
 
-Lee los mismos CSV que cualquier página baja de Meta Business Suite (los que usa `retina.base`) y se
+Lee los mismos CSV que cualquier página baja de Meta Business Suite y se
 queda, por publicación, con la misma fila que la base: la de curva más completa y más vistas.
 
 Nunca lee columnas de ingresos ni de monetización: se descartan del encabezado antes de leer las filas,
@@ -16,7 +16,16 @@ import argparse
 import csv
 from pathlib import Path
 
-from .base import CURVA, N_PUNTOS, _num
+N_PUNTOS = 41
+CURVA = "Porcentaje del total de reproducciones en el intervalo {}"
+
+
+def _num(valor) -> float | None:
+    try:
+        return float(str(valor).replace(",", ""))
+    except (TypeError, ValueError):
+        return None
+
 
 # nombre en la salida -> nombres posibles en el export (cambian entre años)
 METRICAS = {

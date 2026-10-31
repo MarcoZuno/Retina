@@ -275,16 +275,21 @@ def investigar(caja, motores: tuple, fabricas: dict) -> tuple[dict | None, list,
     return None, traza, None, fallas
 
 
-def correr_agente(carpeta: Path, modelo: Modelo, voz: dict, motor: str = "", nombre: str = "agente.json") -> dict:
+def inicio_del_agente(video: dict, idioma: str = "es") -> str:
+    en = " Escribe la tarjeta en inglés." if idioma == "en" else ""
+    return f"Revisa el arranque de este video de {video['duracion_s']:.0f} s y entrega la tarjeta.{en}"
+
+
+def correr_agente(carpeta: Path, modelo: Modelo, voz: dict, motor: str = "", nombre: str = "agente.json", idioma: str = "es") -> dict:
     motor = motor or explicar.motor_por_omision()
     sufijo = "" if motor == "api" else "-" + motor.replace("+", "-y-")
     caja = Caja(carpeta, modelo, voz)
     v = caja.resultado["video"]
-    inicio = f"Revisa el arranque de este video de {v['duracion_s']:.0f} s y entrega la tarjeta."
+    inicio = inicio_del_agente(v, idioma)
     fabricas = {m: (lambda m=m: CONVERSADORES[m](inicio)) for m in MOTORES[motor]}
     tarjeta, traza, quien, fallas = investigar(caja, MOTORES[motor], fabricas)
     if tarjeta is None:  # ningún ciclo cerró: una sola vuelta de «explicar», con su propio validador
-        tarjeta = explicar.explicar(carpeta, caja.resultado["arranque"], motor, f"explicar{sufijo}.json")
+        tarjeta = explicar.explicar(carpeta, caja.resultado["arranque"], motor, f"explicar{sufijo}.json", idioma)
         modelo_, servido, fuente = tarjeta["licencia"]["modelo"], tarjeta["licencia"]["servido_por"], "explicar (respaldo)"
     else:
         modelo_, servido, fuente = CONVERSADORES[quien].modelo, CONVERSADORES[quien].servido_por, "agente"

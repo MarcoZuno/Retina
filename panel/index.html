@@ -8,7 +8,7 @@
 <style>
 :root {
   --tinte: rgba(255,255,255,.10);
-  --texto: #FFFFFF; --suave: rgba(255,255,255,.80); --tenue: rgba(255,255,255,.58);
+  --texto: #FFFFFF; --suave: rgba(255,255,255,.86); --tenue: rgba(255,255,255,.72);
   --rojo: #FF6B6E; --rojo-vidrio: rgba(255,90,95,.30); --rojo-letra: #FFE1E2; --rojo-zona: rgba(255,90,95,.42);
   --ambar: #FFC46B; --ambar-vidrio: rgba(255,180,80,.26); --ambar-letra: #FFEBC7; --ambar-zona: rgba(255,180,80,.40);
   --verde: #7CF0B5; --verde-vidrio: rgba(124,240,181,.22); --verde-letra: #DDFBEA; --verde-zona: rgba(124,240,181,.30);
@@ -52,10 +52,10 @@ body.sin-gl #lienzo { display: none; }
 /* En el resultado hay mucho texto: el fondo se apaga un poco y las tarjetas de texto se esmerilan más */
 body[data-estado="resultado"] .bloque, body[data-estado="resultado"] .linea-bloque, body[data-estado="comparacion"] .bloque { background: rgba(10,20,46,.16); }
 body.sin-gl .vidrio { -webkit-backdrop-filter: blur(12px) saturate(1.4); backdrop-filter: blur(12px) saturate(1.4); background: rgba(10,20,46,.35); }
-.vidrio:not(.fondos):not(.pastilla):hover { transform: translateY(-3px) scale(1.006); }
+.boton.vidrio:hover { transform: translateY(-1px); }
 body.legible .vidrio { background: rgba(6,14,34,.62); }
 /* Tema claro: para los fondos de paisaje claros, letras oscuras y vidrio un poco más blanco */
-body[data-tema="claro"] { --texto: #0E1A33; --suave: rgba(14,26,51,.82); --tenue: rgba(14,26,51,.64);
+body[data-tema="claro"] { --texto: #0E1A33; --suave: rgba(14,26,51,.88); --tenue: rgba(14,26,51,.76);
   --verde: #12814B; --verde-vidrio: rgba(18,129,75,.14); --verde-letra: #0B5A33; --verde-zona: rgba(18,129,75,.28);
   --rojo: #D7263D; --rojo-vidrio: rgba(215,38,61,.16); --rojo-letra: #8E0F1B; --rojo-zona: rgba(215,38,61,.30);
   --ambar: #A35F00; --ambar-vidrio: rgba(200,120,0,.16); --ambar-letra: #6E3F00; --ambar-zona: rgba(200,120,0,.30);
@@ -77,6 +77,7 @@ body[data-tema="claro"] .traza span { background: rgba(14,26,51,.07); }
 
 /* Estructura */
 .capa { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+body:not(.con-textos) header { visibility: hidden; }  /* hasta saber el idioma no se enseña ni una palabra */
 header { display: flex; align-items: center; gap: 12px; padding: 16px 22px; }
 .marca { display: flex; align-items: center; gap: 10px; padding: 8px 16px 8px 10px; border-radius: 999px; font-weight: 650; letter-spacing: .01em; }
 .ojo { width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle at 35% 32%, #fff 0 12%, #9FD3FF 22%, #3D6BFF 55%, #12204A 78%); box-shadow: 0 0 18px rgba(159,211,255,.7); }
@@ -97,8 +98,14 @@ body[data-tema="claro"] .ejemplo { color: var(--ambar-letra); background: rgba(2
 button:focus-visible, [role="button"]:focus-visible, [role="radio"]:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--texto); outline-offset: 3px; }
 main { flex: 1; display: grid; place-items: start center; padding: 8px 22px 48px; }
 .pantalla { display: none; width: 100%; }
-body[data-estado="vacio"] #vacio, body[data-estado="resultado"] #resultado { display: block; }
+body[data-estado="vacio"] #vacio, body[data-estado="resultado"] #resultado, body[data-estado="cargando"] #cargando { display: block; }
 .oculto { display: none !important; }
+
+/* Abriendo: nada de pantallas de otro modo mientras Retina contesta. Si tarda, se ofrece reintentar, sin rojo. */
+#cargando { max-width: 420px; margin-top: 18vh; text-align: center; color: var(--suave); }
+#cargando .ojo { display: block; margin: 0 auto 18px; width: 44px; height: 44px; animation: late 1.6s infinite; }
+#cargando p { margin: 0 0 16px; animation: aparece .2s .5s both; }
+@keyframes aparece { from { opacity: 0; } to { opacity: 1; } }
 
 /* Vacío */
 #vacio { max-width: 640px; text-align: center; margin-top: 6vh; }
@@ -122,7 +129,6 @@ body[data-estado="subir"] #subir, body[data-estado="revisando"] #revisando { dis
 #subir h1, #revisando h1 { font-size: 34px; }
 #subir .soltar p { color: var(--suave); margin: 10px auto 0; max-width: 460px; }
 .forma { margin-top: 14px; padding: 22px 24px 24px; }
-#subir .forma:hover, #revisando .vidrio:hover { transform: none; }
 .campos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .campos label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; color: var(--suave); }
 .campos .ancho { grid-column: 1 / -1; }
@@ -135,7 +141,8 @@ body[data-tema="claro"] .campos input, body[data-tema="claro"] .campos select { 
 .check { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-size: 14px; color: var(--suave); cursor: pointer; }
 .check input { width: 20px; height: 20px; margin: 2px 0 0; flex: none; accent-color: #9FD3FF; }
 .check small { display: block; color: var(--tenue); font-size: 13px; }
-.forma .boton { margin-top: 20px; width: 100%; }
+.nota-envio { margin: 16px 0 0; font-size: 13px; color: var(--tenue); }
+.forma .boton { margin-top: 12px; width: 100%; }
 .avance { margin-top: 14px; padding: 26px 26px 24px; }
 .avance p { color: var(--suave); margin: 6px 0 0; }
 .avance .barra { display: block; height: 8px; border-radius: 99px; background: rgba(255,255,255,.14); overflow: hidden; margin: 18px 0 20px; }
@@ -153,7 +160,6 @@ body[data-tema="claro"] .campos input, body[data-tema="claro"] .campos select { 
 .opcion-modo { border: 0; font: inherit; font-size: 14px; font-weight: 650; color: var(--suave); background: none; padding: 9px 16px; border-radius: 999px; cursor: pointer; min-height: 40px; }
 .opcion-modo[aria-checked="true"] { color: #0B1730; background: linear-gradient(180deg, #fff, #DDEBFF); }
 .opcion-modo:focus-visible { outline: 2px solid var(--texto); outline-offset: 2px; }
-#subir .modo:hover { transform: none; }
 .etiqueta-version { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--azul); }
 .soltar-b { margin-top: 14px; padding: 22px 24px !important; text-align: center; }
 .soltar-b p { color: var(--suave); margin: 4px 0 0; }
@@ -201,6 +207,7 @@ a.boton { text-decoration: none; display: inline-flex; align-items: center; }
 .gente .de-mas, .leyenda-gente .de-mas { background: var(--rojo); box-shadow: 0 0 8px var(--rojo); }
 .gente .gana, .leyenda-gente .gana { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
 body[data-tema="claro"] .gente .va, body[data-tema="claro"] .leyenda-gente .va { background: rgba(14,26,51,.14); }
+.etiqueta-actual { margin: 0 0 14px; font-size: 16px; color: var(--texto); }
 .texto-gente p { margin: 0 0 6px; }
 .texto-gente .frase { font-size: 19px; line-height: 1.35; }
 .texto-gente .frase .intro { color: var(--suave); }
@@ -216,8 +223,13 @@ body[data-tema="claro"] .gente .va, body[data-tema="claro"] .leyenda-gente .va {
 .leyenda-gente span { display: inline-flex; align-items: center; gap: 6px; }
 .leyenda-gente i { width: 10px; height: 10px; }
 .nota-gente { margin: 10px 0 0; font-size: 13px; color: var(--tenue); }
-.de-donde { margin-top: 12px; }
+.de-donde { margin-top: 8px; }
 .de-donde summary { font-size: 14px; }
+summary { min-height: 44px; display: flex; align-items: center; gap: 8px; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: ""; flex: none; width: 7px; height: 7px; margin: 0 3px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg); transition: transform .18s ease-out; }
+details[open] > summary::before { transform: rotate(45deg); }
 .mas-detalles { padding: 16px 20px; border-radius: 22px; }
 .mas-detalles > summary { font-size: 16px; }
 .dentro-detalles { display: grid; gap: 14px; margin-top: 14px; }
@@ -272,6 +284,36 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 @media (max-width: 640px) { .balance { grid-template-columns: 1fr; } }
 .lema-apertura { margin: 0 0 14px; color: var(--suave); }
 .avance-apertura { margin: 14px 0 0; font-size: 15px; color: var(--suave); }
+#arreglar:disabled { opacity: .6; cursor: progress; }
+/* El inicio ya funciona: un logro, no un error */
+.ya-funciona { padding: 16px 18px; border-radius: var(--radio-chico); background: var(--verde-vidrio); box-shadow: inset 0 0 0 1px var(--verde-zona); }
+.ya-funciona h3 { margin: 0 0 4px; font-size: 19px; font-weight: 650; color: var(--verde-letra); }
+.ya-funciona p { margin: 0; }
+.ya-funciona .nota { margin-top: 8px; color: var(--suave); }
+/* El lazo: cada intento, lo que falló y lo que pasó. Es lo que Retina hace y nadie más te enseña. */
+.lazo { margin-top: 20px; padding-top: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+.lazo h3 { margin: 0 0 12px; font-size: 16px; font-weight: 650; }
+.lazo-lista { list-style: none; margin: 0; padding: 0; }
+.lazo-lista li { position: relative; display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding-bottom: 14px; }
+.lazo-lista li:last-child { padding-bottom: 0; }
+.lazo-lista li:not(:last-child)::before { content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: rgba(255,255,255,.22); }
+.lazo-lista .marca-lazo { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; }
+.lazo-lista .ok .marca-lazo, .lazo-lista li.ok > .marca-lazo { background: var(--verde-vidrio); color: var(--verde); box-shadow: inset 0 0 0 1.5px var(--verde); }
+.lazo-lista li.no > .marca-lazo { background: var(--rojo-vidrio); color: var(--rojo-letra); box-shadow: inset 0 0 0 1.5px var(--rojo); }
+.lazo-lista b { display: block; font-weight: 650; }
+.lazo-lista p { margin: 2px 0 0; font-size: 14.5px; color: var(--suave); overflow-wrap: anywhere; }
+.lazo-regla { margin: 12px 0 0; font-size: 13px; color: var(--tenue); }
+.doblado-apertura { margin-top: 10px; }
+.doblado-apertura > summary { font-size: 15px; }
+body[data-tema="claro"] .lazo, body[data-tema="claro"] .mejoras { box-shadow: inset 0 1px 0 rgba(14,26,51,.14); }
+body[data-tema="claro"] .lazo-lista li:not(:last-child)::before { background: rgba(14,26,51,.2); }
+/* Lo que Retina dice del título: un aviso, el título no se toca */
+.aviso-titulo { padding: 18px 22px; background: var(--ambar-vidrio) !important; color: var(--ambar-letra); }
+.aviso-titulo.grave { background: var(--rojo-vidrio) !important; color: var(--rojo-letra); }
+.aviso-titulo h2 { margin: 0 0 4px; color: inherit; font-size: 16px; }
+.aviso-titulo p { margin: 0; }
+.aviso-botones { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.aviso-botones .pastilla { min-height: 44px; padding: 8px 14px; background: rgba(255,255,255,.14); font-size: 13px; }
 .antes-despues { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .lado { min-width: 0; }
 .lado h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: var(--tenue); }
@@ -280,6 +322,9 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .lado .sin-imagen { display: grid; place-items: center; aspect-ratio: 9 / 16; border-radius: 12px; background: rgba(0,0,0,.28); color: var(--tenue); font-size: 14px; padding: 12px; text-align: center; }
 .miniaturas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
 .lado .voz { margin: 12px 0 0; font-size: 15px; }
+.lado .rotulo-voz { display: block; margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--tenue); }
+.lado .rotulo-voz + .voz { margin-top: 2px; }
+.sin-revisar { display: block; margin-top: 4px; font-size: 12.5px; color: var(--ambar-letra); }
 .lado .promesa { margin: 8px 0 0; font-size: 14px; color: var(--suave); }
 .lado.nuevo .promesa { color: var(--verde-letra); }
 .primero { color: var(--verde); }
@@ -292,7 +337,7 @@ h2 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--suave); l
 .lista-comprobada li { display: grid; grid-template-columns: 20px 1fr; }
 .lista-comprobada li::before { content: "✓"; color: var(--verde); font-weight: 700; }
 .lista-comprobada li.no::before { content: "✕"; color: var(--rojo); }
-@media (max-width: 640px) { .antes-despues { grid-template-columns: 1fr; } }
+.lista-comprobada li.nd { color: var(--suave); } .lista-comprobada li.nd::before { content: "–"; color: var(--tenue); }
 .linea-bloque { padding: 18px 22px 16px; }
 .linea { position: relative; height: 104px; border-radius: 16px; overflow: hidden; background: rgba(0,0,0,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.15); }
 body[data-tema="claro"] .linea { background: rgba(255,255,255,.28); }
@@ -348,11 +393,24 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
   .storyboard::-webkit-scrollbar { display: none; }
   .storyboard div { scroll-snap-align: start; }
 }
-@media (max-width: 480px) { .bloque, .veredicto { padding: 18px 16px; } .paso { grid-template-columns: 30px 1fr auto; gap: 10px; padding: 12px; } }
+@media (max-width: 480px) {
+  .bloque, .veredicto { padding: 18px 16px; } .paso { grid-template-columns: 30px 1fr auto; gap: 10px; padding: 12px; }
+  .antes-despues { gap: 10px; } .lado .voz { font-size: 14px; } .lado .promesa { font-size: 13px; } .reproducir { font-size: 13px; padding: 10px 8px; }
+  .cifra.grande { padding: 16px; } .texto-gente .frase { font-size: 17px; } .texto-gente .frase .num { font-size: 38px; }
+  .linea { height: 84px; }
+}
+/* Detalles que se notan al usarlo */
+h1, h2, h3 { text-wrap: balance; }
+p, li { text-wrap: pretty; }
+.boton, .pastilla, .opcion-modo, .hecho { transition: transform .12s ease-out, background-color .15s ease-out; }
+.boton:active:not(:disabled), .pastilla:active, .opcion-modo:active, .hecho:active { transform: scale(.96); }
+[tabindex="-1"]:focus { outline: none; }
+.bloque-doblado > summary { font-size: 15px; font-weight: 650; }
+.bloque-doblado[open] > summary { margin-bottom: 8px; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .vidrio, .vidrio:hover { transform: none !important; } }
 </style>
 </head>
-<body data-estado="vacio">
+<body data-estado="cargando">
 <canvas id="lienzo" aria-hidden="true"></canvas>
 
 <div class="capa">
@@ -370,17 +428,24 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
   <main>
     <div id="error" class="error oculto" role="alert"></div>
 
-    <!-- 1 · Vacío: elegir la revisión que dejó Retina -->
+    <!-- 0 · Abriendo: mientras Retina contesta. Nunca se decide aquí qué pantalla toca: se espera a /api/salud. -->
+    <section id="cargando" class="pantalla" aria-live="polite">
+      <span class="ojo" aria-hidden="true"></span>
+      <p id="cargando-texto" data-t="cargando">Abriendo Retina…</p>
+      <button class="boton vidrio oculto" id="reintentar" type="button" data-t="reintentar">Intentar otra vez</button>
+    </section>
+
+    <!-- 1 · Vacío: abrir una revisión guardada (solo donde no se pueden subir videos) -->
     <section id="vacio" class="pantalla" aria-labelledby="t-vacio">
-      <div class="soltar vidrio" id="soltar" tabindex="0" role="button" aria-describedby="d-vacio">
+      <div class="soltar vidrio" id="soltar">
         <div class="gota vidrio" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
         </div>
-        <h1 id="t-vacio" data-t="vacio_titulo">Abre la revisión de tu video</h1>
-        <p id="d-vacio"><span data-t="vacio_p1">Retina deja un archivo </span><b>resultado.json</b><span data-t="vacio_p2"> en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.</span></p>
+        <h1 id="t-vacio" data-t="vacio_titulo">Abre una revisión guardada</h1>
+        <p id="d-vacio" data-t="vacio_p">Retina guarda cada revisión en un archivo resultado.json. Ábrelo aquí.</p>
         <div class="botones">
-          <button class="boton" id="elegir" type="button" data-t="elegir">Elegir archivo</button>
-          <button class="boton vidrio" id="ejemplo" type="button" data-t="ver_ejemplo">Ver el ejemplo</button>
+          <button class="boton" id="ejemplo" type="button" data-t="ver_ejemplo">Ver el ejemplo</button>
+          <button class="boton vidrio" id="elegir" type="button" data-t="elegir">Elegir archivo</button>
         </div>
         <input type="file" id="archivo" accept=".json,application/json" hidden>
         <p class="nota-vacio" data-t="nota_vacio">El archivo no sale de tu computadora: el panel solo lo lee.</p>
@@ -398,8 +463,8 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         <div class="gota vidrio" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
         </div>
-        <h1 id="t-subir" data-t="subir_titulo">Revisa tu video antes de publicarlo</h1>
-        <p id="d-subir" data-t="subir_p">Elige o arrastra tu video. Retina te escribe un inicio nuevo y calcula cuánta gente se quedaría.</p>
+        <h1 id="t-subir" data-t="subir_titulo"></h1>
+        <p id="d-subir" data-t="subir_p"></p>
         <p id="video-elegido" class="nota-vacio"></p>
         <input type="file" id="archivo-video" accept="video/*,.mp4,.mov,.m4v,.webm,.mkv,.avi" hidden>
       </div>
@@ -412,7 +477,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
       <form class="forma vidrio" id="forma" novalidate>
         <div class="campos">
           <label class="ancho" id="campo-acceso" hidden><span data-t="campo_acceso">Código de acceso</span><input type="password" id="v-acceso" maxlength="120" autocomplete="off">
-            <small data-t="nota_en_linea">Tu video se manda a la API de Meta y a Baseten para revisarlo, y se borra de aquí a las 24 horas. No subas nada confidencial.</small></label>
+            <small data-t="nota_en_linea"></small></label>
           <label class="ancho"><span data-t="campo_titulo">Título del video (como saldría en Facebook)</span><input type="text" id="v-titulo" maxlength="300" autocomplete="off"></label>
           <label><span data-t="campo_talento">Quién sale a cuadro</span><select id="v-talento"><option value="" data-t="sin_talento">Nadie o no está en la lista</option></select></label>
           <label><span data-t="campo_fecha">Día y hora en que se publicaría</span><input type="datetime-local" id="v-fecha"></label>
@@ -420,6 +485,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
         </div>
         <label class="check"><input type="checkbox" id="v-publicado"><span><span data-t="campo_publicado">Este video ya está publicado</span>
           <small data-t="campo_publicado_nota">Déjala sin marcar si es un borrador.</small></span></label>
+        <p class="nota-envio" data-t="aviso_envio"></p>
         <button class="boton" id="revisar" type="submit" data-t="revisar">Revisar este video</button>
       </form>
     </section>
@@ -435,11 +501,11 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
     </section>
 
     <!-- 1d · Comparación de dos versiones del mismo video -->
-    <section id="comparacion" class="pantalla" aria-labelledby="c-titular" aria-live="polite">
+    <section id="comparacion" class="pantalla" aria-labelledby="c-titular">
       <div class="tarjetas">
         <div class="veredicto vidrio">
           <span class="chip"><i></i><span data-t="comparacion_chip">Comparación de dos versiones</span></span>
-          <h1 id="c-titular"></h1>
+          <h1 id="c-titular" tabindex="-1"></h1>
           <p id="c-porque"></p>
           <p class="titulo-video" id="c-aviso"></p>
         </div>
@@ -464,33 +530,48 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
     </section>
 
     <!-- 2 · Resultado -->
-    <section id="resultado" class="pantalla" aria-labelledby="titular" aria-live="polite">
+    <section id="resultado" class="pantalla" aria-labelledby="titular">
       <div class="tarjetas">
         <p class="ejemplo oculto" id="aviso-ejemplo" role="note"></p>
-        <p class="ejemplo oculto" id="aviso-idioma" role="status"></p>
+        <div class="ejemplo aviso-botones oculto" id="aviso-idioma" role="status">
+          <span id="aviso-idioma-texto"></span>
+          <button class="pastilla" id="traducir" type="button" data-t="traducir">Traducir esta revisión</button>
+        </div>
         <div class="veredicto vidrio">
           <span class="chip"><i></i><span id="semaforo"></span></span>
-          <h1 id="titular"></h1>
+          <h1 id="titular" tabindex="-1"></h1>
           <p id="sub"></p>
           <p class="titulo-video" id="titulo-video"></p>
         </div>
 
-        <div class="bloque vidrio oculto" id="bloque-apertura">
-          <h2 data-t="apertura_t">El inicio de tu video</h2>
-          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema">Retina escribe un inicio nuevo para tu video, lo dibuja y lo revisa antes de enseñártelo. Tu título no cambia.</p>
-          <button class="boton" id="arreglar" type="button" data-t="arreglar">Arreglar el inicio (unos USD 0.10)</button>
-          <p class="avance-apertura oculto" id="apertura-avance" aria-live="polite"></p>
-          <div class="antes-despues oculto" id="antes-despues"></div>
-          <p class="resumen-apertura oculto" id="apertura-resumen"></p>
-          <ul class="lista-comprobada oculto" id="apertura-comprobada"></ul>
-          <p class="nota oculto" id="apertura-nota" data-t="apertura_nota">Es un boceto, con la voz de tu navegador y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si esta apertura hará que se quede más gente: eso no se ha medido.</p>
-        </div>
+        <div class="bloque vidrio aviso-titulo oculto" id="aviso-titulo" role="note"></div>
 
         <div class="cifras" id="cifras"></div>
 
+        <div class="bloque vidrio oculto" id="bloque-apertura">
+          <h2 data-t="apertura_t">El inicio de tu video</h2>
+          <p class="lema-apertura" id="apertura-lema" data-t="apertura_lema"></p>
+          <button class="boton" id="arreglar" type="button" data-t="arreglar"></button>
+          <p class="avance-apertura oculto" id="apertura-avance" aria-live="polite"></p>
+          <div class="ya-funciona oculto" id="apertura-ya"></div>
+          <div class="antes-despues oculto" id="antes-despues"></div>
+          <p class="nota oculto" id="apertura-corta" data-t="apertura_corta"></p>
+          <div class="lazo oculto" id="apertura-lazo">
+            <h3 id="lazo-titulo"></h3>
+            <ol class="lazo-lista" id="lazo-lista"></ol>
+            <p class="lazo-regla" id="lazo-regla" data-t="lazo_regla"></p>
+          </div>
+          <p class="resumen-apertura oculto" id="apertura-resumen"></p>
+          <details class="doblado-apertura oculto" id="apertura-doblado" data-plegable>
+            <summary data-t="comprobo_t"></summary>
+            <ul class="lista-comprobada" id="apertura-comprobada"></ul>
+            <p class="nota" id="apertura-nota" data-t="apertura_nota"></p>
+          </details>
+        </div>
+
         <div class="linea-bloque vidrio">
           <h2 class="cabeza"><span id="t-linea"></span>
-            <span class="leyenda"><span><i></i><span data-t="tu_video">Tu video</span></span><span><i class="p"></i><span data-t="parecidos">Videos como el tuyo</span></span><span id="leyenda-real-linea" class="oculto"><i class="r"></i><span data-t="lo_que_paso">Lo que pasó</span></span></span></h2>
+            <span class="leyenda"><span><i></i><span data-t="tu_video"></span></span><span><i class="p"></i><span data-t="parecidos"></span></span><span id="leyenda-real-linea" class="oculto"><i class="r"></i><span data-t="lo_que_paso"></span></span></span></h2>
           <div class="linea" id="linea" role="img">
             <svg id="curvas" viewBox="0 0 1000 104" preserveAspectRatio="none" aria-hidden="true"></svg>
           </div>
@@ -505,17 +586,18 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 
         <div class="bloque vidrio anzuelo oculto" id="anzuelo" role="note"></div>
 
-        <div class="bloque vidrio oculto" id="bloque-balance">
-          <h2 data-t="balance_t">Lo que está bien y lo que está flojo</h2>
+        <details class="bloque bloque-doblado vidrio oculto" id="bloque-balance" data-plegable>
+          <summary data-t="balance_t"></summary>
           <div class="balance">
-            <div><h3 class="bien-t" data-t="bien_t">Lo que está bien</h3><ul class="balance-lista bien" id="lo-bueno"></ul></div>
-            <div><h3 class="flojo-t" data-t="flojo_t">Lo que está flojo</h3><ul class="balance-lista flojo" id="lo-flojo"></ul></div>
+            <div><h3 class="bien-t" data-t="bien_t"></h3><ul class="balance-lista bien" id="lo-bueno"></ul></div>
+            <div><h3 class="flojo-t" data-t="flojo_t"></h3><ul class="balance-lista flojo" id="lo-flojo"></ul></div>
           </div>
-        </div>
+        </details>
 
         <div class="bloque vidrio" id="seccion-hacer">
           <h2 data-t="que_hacer">Qué hacer</h2>
           <p class="cambio" id="cambio"></p>
+          <p class="nota oculto" id="sin-verificar"></p>
           <ol class="pasos" id="pasos"></ol>
           <div class="mejoras oculto" id="mejoras">
             <h3 data-t="mejoras_t">Si quieres mejorarlo (opcional)</h3>
@@ -526,7 +608,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
             <button class="boton vidrio" id="bajar" type="button" data-t="bajar">Bajar para el editor</button>
           </div>
           <p class="funciona oculto" id="funciona"></p>
-          <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false">Ver cómo quedaría (3 cuadros)</button>
+          <button class="boton vidrio oculto" id="ver-storyboard" type="button" aria-expanded="false"></button>
           <div id="storyboard" class="storyboard oculto"></div>
         </div>
 
@@ -534,7 +616,8 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <h2 data-t="normas_t">Normas de Facebook</h2>
           <p class="porque" id="normas-resumen"></p>
           <ul class="meta" id="normas-lista"></ul>
-          <p class="nota" data-t="normas_nota">Es una revisión previa, no una garantía: un video sin avisos aquí también puede tener problemas. Quien decide es Meta.</p>
+          <p class="nota oculto" id="normas-verificado" data-t="normas_no_verificado"></p>
+          <p class="nota" data-t="normas_nota"></p>
         </div>
 
         <details class="mas-detalles vidrio" id="mas-detalles">
@@ -545,9 +628,9 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <h2 class="cabeza" data-t="ficha_t">Cómo arranca tu video, según Muse Spark Open</h2>
           <div class="ficha-chips" id="ficha-chips"></div>
           <div class="tacticas oculto" id="tacticas">
-            <h3 data-t="tacticas_t">Lo que pasó con videos que arrancan como el tuyo</h3>
+            <h3 data-t="tacticas_t"></h3>
             <ul id="tacticas-lista"></ul>
-            <p class="nota" data-t="tacticas_nota">En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.</p>
+            <p class="nota" data-t="tacticas_nota"></p>
           </div>
         </div>
 
@@ -565,7 +648,7 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
           <details>
             <summary data-t="ver_detalle">Ver detalle</summary>
             <div class="detalle">
-              <div class="leyenda"><span><i></i><span data-t="tu_video_pred">Tu video (lo que predice Retina)</span></span><span><i class="p"></i><span data-t="parecidos">Videos como el tuyo</span></span><span id="leyenda-real" class="oculto"><i class="r"></i><span data-t="lo_que_paso_real">Lo que pasó de verdad</span></span></div>
+              <div class="leyenda"><span><i></i><span data-t="tu_video_pred"></span></span><span><i class="p"></i><span data-t="parecidos"></span></span><span id="leyenda-real" class="oculto"><i class="r"></i><span data-t="lo_que_paso_real"></span></span></div>
               <svg id="grafica" viewBox="0 0 800 280" role="img"></svg>
               <ul id="detalle-lista"></ul>
             </div>
@@ -584,20 +667,25 @@ details summary { cursor: pointer; font-weight: 650; color: var(--suave); }
 <script>
 const $ = (id) => document.getElementById(id);
 const NS = "http://www.w3.org/2000/svg";
-const mmss = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+const mmss = (s) => {  // se redondea primero: 59.6 s es 1:00, nunca 0:60
+  const t = Math.round(Number(s) || 0);
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+};
 // Retina escribe «segundo 4» o «del segundo 4 al 11» (en inglés, «second 4» o «from second 4 to 11»);
 // la persona lee tiempos de reloj: 0:04, 0:11. El caso puede venir en un idioma y el panel estar en el otro.
 const seg = (x) => mmss(parseFloat(x.replace(",", ".")));
-const reloj = (t) => (t || "")
-  .replace(/\b([Dd]el|[Dd]esde el) segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} al ${seg(b)}`)
+const reloj = (t) => (t || "")  // un tramo que cae en el mismo segundo es un momento: «en el 0:06», no «del 0:06 al 0:06»
+  .replace(/\b([Dd]el|[Dd]esde el) segundo (\d+(?:[.,]\d+)?) al (?:segundo )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) =>
+    (seg(a) === seg(b) ? `${/^D/.test(d) ? "En" : "en"} el ${seg(a)}` : `${d} ${seg(a)} al ${seg(b)}`))
   .replace(/\b([Dd]el|[Ee]l|[Dd]esde el|[Ee]n el) segundo (\d+(?:[.,]\d+)?)/g, (_, d, a) => `${d} ${seg(a)}`)
   .replace(/\bsegundo (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a))
-  .replace(/\b([Ff]rom) second (\d+(?:[.,]\d+)?) to (?:second )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) => `${d} ${seg(a)} to ${seg(b)}`)
+  .replace(/\b([Ff]rom) second (\d+(?:[.,]\d+)?) to (?:second )?(\d+(?:[.,]\d+)?)/g, (_, d, a, b) =>
+    (seg(a) === seg(b) ? `${d === "From" ? "At" : "at"} ${seg(a)}` : `${d} ${seg(a)} to ${seg(b)}`))
   .replace(/\bsecond (\d+(?:[.,]\d+)?)/g, (_, a) => seg(a));
 
-// ---- Idioma: el del navegador (español si es español; inglés en cualquier otro); ?lang= o el botón del encabezado mandan y se recuerdan ----
-// Aquí van los textos fijos del panel. Lo que escribió el modelo se traduce aparte, con retina.traducir. Lo que viene del resultado.json (por qué, pasos, storyboard, título)
-// es contenido del caso y se muestra tal cual: para la demo en inglés existe casos/demo-en/.
+// ---- Idioma: manda el del navegador (español si es español; inglés en cualquier otro), salvo que la persona lo cambie: ?lang= o el botón se recuerdan ----
+// Aquí van los textos fijos del panel. Lo que escribió el modelo se traduce aparte, con retina.traducir, y solo si la persona lo pide: cuesta.
+// Lo que viene del resultado.json es contenido del caso y se muestra tal cual: el ejemplo tiene un caso por idioma (casos/demo y casos/demo-en).
 const TEXTOS = {
   es: {
     anzuelos: {  // nombres legibles si la tarjeta no trae la frase (reglas/anzuelos-v1.json)
@@ -609,12 +697,12 @@ const TEXTOS = {
     },
     niveles: {
       alto: { semaforo: "Alerta", titular: "Tu video puede perder gente en los primeros segundos",
-              sub: "Más de lo que suele perder un video como este." },
+              sub: "Más de lo que suele perder un video de su duración." },
       medio: { semaforo: "Se puede mejorar", titular: "El inicio de tu video se puede mejorar",
-               sub: "Pierde un poco más de lo normal para un video como este." },
+               sub: "Pierde un poco más de lo normal para su duración." },
       bajo: { semaforo: "Sin problema claro", titular: "No vemos un problema claro al inicio",
               sub: "Igual revisa el detalle antes de publicar." },
-      sin_nivel: { semaforo: "Revisión", titular: "Esto es lo que vimos al inicio de tu video",
+      sin_nivel: { semaforo: "Revisión", titular: "Lo que puedes cambiar en el inicio de tu video",
                    sub: "" },
     },
     sin_formula_gente: "En este modo el número es el promedio de videos de su duración; Retina no lo ajusta a tu video.",
@@ -625,7 +713,7 @@ const TEXTOS = {
     sin_numero: "Retina no le pone calificación a tu video: todo lo que ves aquí sale de lo que vieron y oyeron los modelos de Meta.",
     herramientas: {  // lo que revisó el agente, en palabras de quien edita
       ver_arranque: "vio el inicio del video y su título", ver_tramos: "volvió a mirar partes del inicio con detalle",
-      oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de videos parecidos",
+      oir: "escuchó lo que se dice, con su segundo", buscar_parecidos: "comparó con títulos de otros videos",
       medir_lo_prometido: "revisó con SAM si lo que promete el título aparece en los primeros 3 segundos",
     },
     modelos: {  // quién escribió la tarjeta, en palabras de quien edita
@@ -641,11 +729,12 @@ const TEXTOS = {
     fondos: {},  // en español, los nombres de FONDOS
     idioma_boton: "English", idioma_destino: "en", idioma_titulo: "Ver el panel en inglés",
     fondo: "Fondo", elige_fondo: "Elige el fondo", legible: "Más legible",
-    subir_titulo: "Revisa tu video antes de publicarlo",
-    subir_p: "Elige o arrastra tu video (MP4, MOV, WebM, MKV o AVI). Retina te escribe un inicio nuevo y calcula cuánta gente se quedaría.",
+    subir_titulo: "Reescribe el inicio de tu video antes de publicarlo",
+    subir_p: "Elige o arrastra tu video (MP4, MOV, WebM, MKV o AVI). Retina te escribe un inicio nuevo y estima cuánta gente se queda con el que tienes hoy.",
+    aviso_envio: "Tu video se envía a Meta y a Baseten. Revisarlo cuesta unos USD 0.10 por video; arreglar el inicio, de USD 0.05 a 0.25.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · toca para cambiarlo`,
     campo_acceso: "Código de acceso",
-    nota_en_linea: "Tu video se manda a la API de Meta y a Baseten para revisarlo, y se borra de aquí a las 24 horas. No subas nada confidencial.",
+    nota_en_linea: "Se borra de aquí a las 24 horas. No subas nada confidencial.",
     campo_titulo: "Título del video (como saldría en Facebook)", campo_talento: "Quién sale a cuadro",
     sin_talento: "Nadie o no está en la lista", campo_fecha: "Día y hora en que se publicaría",
     campo_codigo: "Código de producción (si tiene)", campo_publicado: "Este video ya está publicado",
@@ -656,7 +745,7 @@ const TEXTOS = {
               transcribir: ["Muse Voice Transcribe", "escucha lo que se dice"], ficha: ["Muse Spark Open", "lee cómo empieza tu video"],
               predecir: ["La fórmula de Retina", "calcula cuánta gente se quedaría"], describir: ["Muse Spark 1.3", "mira lo que pasa en pantalla"],
               sam: ["Muse Spark 1.3 y SAM 3.1", "buscan al inicio lo que promete el título"], explicar: ["Muse Spark Open", "escribe qué funciona y qué cambiar"],
-              normas: ["Muse Spark 1.3", "revisa las normas de Facebook"] },
+              normas: ["Muse Spark 1.3", "revisa las normas de Facebook"], titulo: ["Muse Spark 1.3", "compara el título con el video"] },
     falta_video: "Primero elige el video.", falta_titulo: "Escribe el título del video.",
     falta_fecha: "Pon el día y la hora en que se publicaría.", solo_mp4: "Eso no parece un video. Sube un MP4, MOV, WebM, MKV o AVI.",
     codigo_malo: "El código tiene que verse como XYZ0000001 (letras y luego números). Si no tiene, déjalo vacío.",
@@ -665,32 +754,32 @@ const TEXTOS = {
     modo_aria: "Qué quieres revisar", modo_uno: "Un video", modo_ab: "Comparar dos versiones",
     version_a: "Versión A", version_b: "Versión B",
     subir_titulo_ab: "Compara dos versiones del mismo video",
-    subir_p_ab: "Sube las dos versiones. Retina revisa cada una y te dice cuál arranque prefiere Spark y por qué. Es una lectura de los dos arranques, no una predicción de cuál retiene más gente.",
+    subir_p_ab: "Sube las dos versiones. Retina revisa cada una y te dice qué inicio prefiere Spark y por qué. Es una lectura de los dos inicios, no una predicción de cuál retiene más gente.",
     subir_b: "Elige o arrastra la otra versión del mismo video.", revisar_ab: "Revisar y comparar",
     falta_a: "Primero elige la versión A.", falta_b: "Falta la versión B.",
     avance_subiendo_ab: "Subiendo las dos versiones…", avance_comparando: "Comparando las dos versiones…",
     avance_ab: { subiendo: "Subir las dos versiones", version_a: "Revisar la versión A", version_b: "Revisar la versión B",
                  comparando: "Comparar las dos con Spark" },
     comparacion_chip: "Comparación de dos versiones", lado_a_lado: "Lado a lado",
-    lo_que_ve_spark: "Lo que ve Spark en cada una", tarjetas_completas: "Las tarjetas completas",
-    ver_tarjeta_a: "Ver la tarjeta de la versión A", ver_tarjeta_b: "Ver la tarjeta de la versión B",
-    gana_version: (v) => `Spark prefiere el arranque de la ${v.replace(/^V/, "v")}`, empate_ab: "Spark no prefiere ninguno de los dos arranques",
+    lo_que_ve_spark: "Lo que ve Spark en cada una", tarjetas_completas: "Las revisiones completas",
+    ver_tarjeta_a: "Ver la revisión de la versión A", ver_tarjeta_b: "Ver la revisión de la versión B",
+    gana_version: (v) => `Spark prefiere el inicio de la ${v.replace(/^V/, "v")}`, empate_ab: "Spark no prefiere ninguno de los dos inicios",
     sin_comparar: "Aquí están las dos revisiones", sin_comparar_p: "Spark no pudo comparar las dos versiones; abajo está lo que Retina vio en cada una.",
-    aviso_ab: "Es la opinión de Spark viendo cómo arranca cada versión (la revisó en los dos órdenes), no una predicción de retención medida.",
-    fila_semaforo: "Semáforo", fila_duracion: "Duración", fila_cambio: "Lo principal a cambiar", nada_urgente: "Nada urgente.",
+    aviso_ab: "Es la opinión de Spark viendo cómo empieza cada versión (la revisó en los dos órdenes), no una predicción de retención medida.",
+    fila_semaforo: "Resultado", fila_duracion: "Duración", fila_cambio: "Lo principal a cambiar", nada_urgente: "Nada urgente.",
     numeros_ab: (s, a, b) => `A los ${s} segundos, Retina calcula que de cada 100 que pasan los primeros 3 segundos siguen ${a} con la A y ${b} con la B. Casi no cambia entre versiones porque ese número sale del tipo de video (talento, duración, día y título), no de lo que se ve: para elegir, guíate por la tabla y por lo que ve Spark.`,
     mejor_en: (v) => `Mejor en la ${v.replace(/^V/, "v")}`, igual_ab: "Igual en las dos",
-    vacio_titulo: "Abre la revisión de tu video", vacio_p1: "Retina deja un archivo ",
-    vacio_p2: " en la carpeta de cada video que revisa. Ábrelo aquí para ver si el inicio va a perder gente, por qué y qué cortar.",
+    vacio_titulo: "Abre una revisión guardada",
+    vacio_p: "Retina guarda cada revisión en un archivo resultado.json. Ábrelo aquí.",
     elegir: "Elegir archivo", ver_ejemplo: "Ver el ejemplo", nota_vacio: "El archivo no sale de tu computadora: el panel solo lo lee.",
-    tu_video: "Tu video", parecidos: "Videos como el tuyo", lo_que_paso: "Lo que pasó",
-    tu_video_pred: "Tu video (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
+    video_actual: "Tu video actual", tu_video: "Tu video actual", parecidos: "Videos de la misma duración", lo_que_paso: "Lo que pasó",
+    tu_video_pred: "Tu video actual (lo que predice Retina)", lo_que_paso_real: "Lo que pasó de verdad",
     por_que: "Por qué", que_hacer: "Qué hacer", copiar: "Copiar para el editor", copiado: "Copiado", bajar: "Bajar para el editor",
-    ficha_t: "Cómo arranca tu video, según Muse Spark Open",
-    tacticas_t: "Lo que pasó con videos que arrancan como el tuyo",
+    ficha_t: "Cómo empieza tu video, según Muse Spark Open",
+    tacticas_t: "Lo que pasó con videos que empiezan igual",
     tacticas_nota: "En miles de videos de una página grande de Facebook en México. Describe lo que pasó con otros videos; no promete nada del tuyo.",
-    tactica: { mas: (x) => `Los que ${x} retuvieron más gente en su primer cuarto que videos parecidos.`,
-      menos: (x) => `Los que ${x} retuvieron menos gente en su primer cuarto que videos parecidos.`,
+    tactica: { mas: (x) => `Los que ${x} retuvieron más gente en su primer cuarto que otros de su duración.`,
+      menos: (x) => `Los que ${x} retuvieron menos gente en su primer cuarto que otros de su duración.`,
       presenta: "se presentan antes de decir el tema", presentacion: "arrancan con una presentación", saludo: "arrancan con un saludo",
       dato: "arrancan con un dato o una cifra", conflicto: "arrancan con un conflicto", tema_tarde: "dicen el tema después de la primera frase",
       curiosidad_alta: "dejan mucha curiosidad desde el inicio", curiosidad_baja: "dejan poca curiosidad al inicio",
@@ -706,51 +795,84 @@ const TEXTOS = {
     no_copio: "No se pudo copiar: selecciona el texto",
     ver_storyboard: "Ver cómo quedaría (3 cuadros)", ver_storyboard_ia: "Ver cómo quedaría (dibujado con Muse Image)",
     normas_t: "Normas de Facebook", normas_nota: "Es una revisión previa, no una garantía: un video sin avisos aquí también puede tener problemas. Quien decide es Meta.",
-    normas_sin: (n) => `No encontré riesgos claros en las ${n} normas que revisé.`,
-    normas_con: (n) => (n === 1 ? "Encontré 1 punto que conviene revisar antes de publicar:" : `Encontré ${n} puntos que conviene revisar antes de publicar:`),
+    normas_sin: (n) => `No encontramos riesgos claros en las ${n} normas que revisamos.`,
+    normas_con: (n) => (n === 1 ? "Encontramos 1 punto que conviene revisar antes de publicar:" : `Encontramos ${n} puntos que conviene revisar antes de publicar:`),
+    normas_no_verificado: "No pudimos comprobarlo en este idioma.",
+    anzuelo_norma: "Meta reparte menos los videos con esto.",
     empieza_aqui: "Empieza por este.",
-    por_que_importa: "Por qué importa: en una página grande de Facebook, los videos que mejor retuvieron a la gente al inicio llegaron a unas 3.5 veces más personas que los que peor la retuvieron. Con lo que se predijo antes de publicar, la diferencia fue de unas 1.5 veces. Es una relación, no una promesa.",
-    margen_nota: (m) => `Es una estimación: puede fallar por unas ${m} personas de cada 100.`,
+    margen_nota: (m) => `Suele fallar por unas ${m} personas de cada 100; 4 de cada 10 veces, por más.`,
+    numero_borrador: "Este número es de tu video tal como está hoy. No mide el inicio nuevo.",
     nota_3s: "Solo cuenta a quienes pasan los primeros 3 segundos: Facebook parece empezar a contar desde ahí, así que Retina no ve a quien se va antes.",
     de_donde: "¿De dónde sale este número?", mas_detalles: "Más detalles de la revisión",
-    traduciendo: "Traduciendo la revisión…", no_traduje: "No pude traducir la revisión: sigue en su idioma original.",
-    ver_arranque: "▶ Ver y oír el arranque nuevo", parar_arranque: "■ Parar",
+    traduciendo: "Traduciendo la revisión…", no_traduje: "No pudimos traducir la revisión: sigue en su idioma original.",
+    traducir: "Traducir esta revisión", idioma_distinto: "Esta revisión está en inglés.",
+    cargando: "Abriendo Retina…", sin_respuesta: "Retina no contesta todavía.", reintentar: "Intentar otra vez",
+    ver_arranque: "▶ Ver y oír el inicio nuevo", ver_texto: "▶ Ver el inicio nuevo", parar_arranque: "■ Parar",
+    voz_t: "Lo que se dice", pantalla_t: "Texto en pantalla",
     apertura_t: "El inicio de tu video",
     apertura_lema: "Retina escribe un inicio nuevo para tu video, lo dibuja y lo revisa antes de enseñártelo. Tu título no cambia.",
-    arreglar: "Arreglar el inicio (unos USD 0.10)",
-    apertura_pasos: { en_fila: "En fila…", escribiendo: "Muse Spark Open está escribiendo tu arranque…", dibujando: "Muse Image está dibujando el primer cuadro…",
+    arreglar: "Arreglar el inicio (de USD 0.05 a 0.25)",
+    apertura_pasos: { en_fila: "En fila…", escribiendo: "Muse Spark Open está escribiendo tu inicio…", dibujando: "Muse Image está dibujando el primer cuadro…",
       buscando: "SAM 3.1 está buscando lo que promete el título…", corrigiendo: "Algo no pasó las comprobaciones. Muse Spark Open lo está corrigiendo…",
-      terminando: "Pasó todo. Muse Image está dibujando los otros dos cuadros…" },
+      terminando: "Pasó todo. Muse Image está dibujando los otros dos cuadros…",
+      mirando: "Muse Spark 1.3 mira que cada dibujo muestre lo que dice…" },
     antes: "Antes", despues: "Después", sin_voz_antes: "Tu borrador no trae voz en esos segundos.", sin_imagen_antes: "Tu video",
     alt_antes: "Primer cuadro de tu video",
-    promesa_no: (o) => `En tus primeros 3 segundos no se ve «${o}».`,
-    promesa_si: (o, s) => `«${o}» se ve desde el segundo ${s}.`,
-    promesa_nueva: (o) => `«${o}» se ve desde el primer cuadro.`,
-    apertura_vueltas: (n) => (n ? `Retina la corrigió ${n === 1 ? "1 vez" : `${n} veces`} antes de enseñártela. El título no se tocó.`
-      : "Pasó todas las comprobaciones a la primera. El título no se tocó."),
-    apertura_incompleta: () => "Pasó las reglas de texto, pero SAM 3.1 no pudo revisar el primer cuadro. El título no se tocó.",
-    apertura_no: "No logré una apertura que pasara todas las comprobaciones, así que no te enseño ninguna. Esto fue lo que falló:",
-    apertura_alfabeto: "Por ahora Retina reescribe arranques en español e inglés. Este video parece estar en otro idioma, así que no gasté nada.",
+    promesa_no: () => "Lo que promete el título no se ve en tus primeros 3 segundos.",
+    promesa_si: (o, s) => `Lo que promete el título se ve desde el ${s}.`,
+    promesa_nueva: () => "Lo que promete el título se ve desde el primer cuadro.",
+    titular_hecha: "Aquí tienes un inicio nuevo para tu video", sub_hecha: "Retina lo escribió y lo comprobó. Tu título no cambia.",
+    titular_ya: "Tu inicio ya funciona", sub_ya: "Retina no lo reescribió: no hacía falta.",
+    ya_t: "No hace falta cambiarlo", ya_sin_motivo: "Ya cumple con lo que Retina revisa.",
+    titulo_parcial: "Tu video cumple tu título solo en parte", titulo_no: "Tu video no cumple lo que promete tu título",
+    titulo_nota: "Retina no toca tu título: lo decides tú.",
+    lazo_primera: "Pasó a la primera",
+    lazo_corrigio: (n) => (n === 1 ? "Retina lo rechazó una vez y lo corrigió" : `Retina lo rechazó ${n} veces y lo corrigió`),
+    lazo_no: "No pasó, así que no te enseñamos ninguno",
+    lazo_regla: "Cada intento pasa por reglas fijas y por los modelos de Meta. Si falla, se reescribe hasta 2 veces. Si sigue fallando, no se enseña.",
+    intento: (n) => `Intento ${n}`, intento_paso: "Pasó todas las comprobaciones.",
+    motivos: {  // qué falló en cada intento: el motivo real, con su dato
+      anzuelos: (x) => (x ? `Traía algo que Meta castiga: ${x}.` : "Traía algo que Meta castiga."), enlaces: "Traía un enlace.",
+      intocables: (x) => `Tocaba algo que no se cambia${x ? `: ${x}` : ""}.`,
+      cifras: (x) => `Usaba cifras que tu video no dice${x ? `: ${x}` : ""}.`, nombres: (x) => `Usaba nombres que tu video no dice${x ? `: ${x}` : ""}.`,
+      tema: () => "La primera frase no decía de qué trata el video.", una_prueba: () => "Enumeraba varias cosas en vez de dar una sola prueba.",
+      largo: (n, a, b) => (n ? `Medía ${n} palabras y debe medir de ${a} a ${b}.` : "No cabía en el tiempo del inicio."),
+      cuadros: () => "Los cuadros no cumplían lo que se pide.", dibujo: "Muse Image no pudo dibujar un cuadro.",
+      cuadro_mal: (x) => `El dibujo del cuadro ${x} no mostraba lo que describe.`,
+      promesa: () => "En el primer cuadro no se veía lo que promete el título.", formato: () => "El modelo no devolvió una respuesta válida.",
+      ya_funciona: () => "El modelo dijo que el inicio ya funcionaba, pero las reglas no lo confirmaron.", otro: "No pasó una comprobación." },
+    apertura_incompleta: () => "Pasó las reglas de texto, pero SAM 3.1 no pudo revisar el primer cuadro.",
+    apertura_no: "No logramos un inicio que pasara todas las comprobaciones.",
+    apertura_alfabeto: "Por ahora Retina reescribe inicios en español e inglés. Este video parece estar en otro idioma, así que no se gastó nada.",
+    apertura_corta: "Es un boceto. Nadie ha medido si este inicio retiene a más gente.",
+    comprobo_t: "Qué comprobó Retina",
     apertura_quien: (m) => `Escribió ${m} · dibujó Muse Image · revisaron SAM 3.1 y reglas fijas de código.`,
-    apertura_nota: "Es un boceto, con la voz de tu navegador y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si esta apertura hará que se quede más gente: eso no se ha medido.",
+    apertura_nota: "Es un boceto, con la voz de tu navegador y dibujos, no un video grabado. Retina comprueba que las cifras y los nombres salgan de tu video, no que sean ciertos. Y no sabe si este inicio hará que se quede más gente: eso no se ha medido.",
     apertura_error: "No se pudo terminar. Intenta otra vez.",
-    apertura_editor: "Arranque nuevo (lo que se dice): ",
+    apertura_editor: "Inicio nuevo (lo que se dice): ", apertura_editor_texto: "Inicio nuevo (texto en pantalla): ",
     comprobada: { anzuelos: "Sin los anzuelos que Meta castiga", intocables: "No toca logos, avisos legales ni créditos", cifras: "Cada cifra sale de tu video",
-      nombres: "Cada nombre sale de tu video", tema: "El tema del título llega en la primera frase", largo: "Cabe en 10 a 15 segundos",
-      cuadros: "Tres cuadros listos", promesa: (o) => `SAM 3.1 encontró «${o}» en el primer cuadro`, promesa_falta: "SAM 3.1 no pudo revisar el primer cuadro esta vez" },
+      nombres: "Cada nombre sale de tu video", tema: "El tema del título llega en la primera frase", largo: "Cabe en el tiempo del inicio",
+      una_prueba: "Da una sola prueba, no toda la lista",
+      cuadros: "Tres cuadros dibujados", promesa: () => "SAM 3.1 encontró en el primer cuadro lo que promete el título", promesa_falta: "SAM 3.1 no pudo revisar el primer cuadro esta vez",
+      cuadros_ok: (l, n) => (n === 1 ? `El dibujo del cuadro ${l} muestra lo que dice` : `Los dibujos de los cuadros ${l} muestran lo que dicen`),
+      cuadros_mal: (l, n) => (n === 1 ? `El dibujo del cuadro ${l} no muestra lo que dice` : `Los dibujos de los cuadros ${l} no muestran lo que dicen`),
+      cuadros_sin: (l, n) => (n === 1 ? `El cuadro ${l} no se pudo revisar` : `Los cuadros ${l} no se pudieron revisar`),
+      cuadros_nada: "Los cuadros 2 y 3 no se revisaron" },
+    cuadro_sin_revisar: "Sin revisar", cuadro_no_coincide: "No coincide",
     segun_meta: "Según lo que recomienda Meta",
     nota_meta: "Son buenas prácticas públicas de Meta revisadas en los primeros segundos, no una predicción.",
     como_reviso: "Cómo lo revisó Retina", ver_detalle: "Ver detalle", otra: "Volver al inicio",
     gente_de_100: (n) => `${n} de cada 100`,
     gente_siguen: (s) => `personas que pasan los primeros 3 segundos seguirían viendo tu video a los ${s} segundos.`,
-    gente_menos: (n, o) => `Son ${n} menos que en videos como el tuyo, donde siguen ${o}.`,
-    gente_mas: (n, o) => `Son ${n} más que en videos como el tuyo, donde siguen ${o}.`,
-    gente_igual: (o) => `Es parecido a videos como el tuyo, donde siguen ${o}.`,
+    gente_menos: (n, o) => `Son ${n} menos que en videos de la misma duración, donde siguen ${o}.`,
+    gente_mas: (n, o) => `Son ${n} más que en videos de la misma duración, donde siguen ${o}.`,
+    gente_igual: () => "No vemos diferencia con la curva de su duración.",
+    gente_curva: (o) => `En videos de la misma duración siguen ${o} de cada 100.`,
     gente_ejemplo: (m, s) => `Por ejemplo: si 10,000 personas pasan esos 3 segundos, unas ${m} seguirían viendo a los ${s}.`,
     gente_real: (n) => `Ya está publicado: de verdad siguieron ${n} de cada 100.`,
     ley_siguen: "siguen viendo", ley_normal: "se van",
     ley_de_mas: "se irían de más", ley_gana: "se quedarían de más",
-    como_tuyo_es: (x) => `«Videos como el tuyo» son ${x}.`,
+    como_tuyo_es: (x) => `«Videos de la misma duración» son ${x}.`,
     reglas_meta: { gancho_3s: "Algo que detenga a la gente en los primeros 3 segundos",
       mensaje_3s: "El mensaje principal aparece pronto (en texto o en voz)",
       promesa_3s: "Lo que promete el título se ve en los primeros 3 segundos",
@@ -765,23 +887,23 @@ const TEXTOS = {
     creador_nuevo_sin_voz: "Retina todavía no conoce a este creador y no oyó voz: el número es el promedio de videos de esa duración.",
     t_linea_seg: (n) => `Cómo se va la gente en los primeros ${n} segundos`, t_linea_mm: (t) => `Cómo se va la gente de 0:00 a ${t}`,
     linea_texto: () => "", partes: (l) => `Partes a revisar: ${l}.`,
-    tramo: (a, b) => `${a} a ${b}`, castiga_en: (t) => ` Lo que Meta castiga aparece en ${t}.`,
-    grafica_aria: (d) => `De cada 100 personas que empiezan, cuántas siguen viendo en cada momento de un video de ${d}, según Retina y según videos parecidos.`,
+    tramo: (a, b) => (a === b ? a : `${a} a ${b}`), castiga_en: (t) => ` Lo que Meta castiga aparece en ${t}.`,
+    grafica_aria: (d) => `De cada 100 personas que pasan los primeros 3 segundos, cuántas siguen viendo en cada momento de un video de ${d}, según Retina y según videos de la misma duración.`,
     cumple: "Cumple", no_cumple: "No cumple", sin_dato: "Sin dato", fuente_meta: "Fuente de Meta",
     confianza_txt: (c) => `Qué tan segura está Retina de la explicación: ${c}.`,
-    sin_api: "Esta revisión se hizo sin la API de Meta.",
+    sin_api: "Esta revisión se hizo sin los modelos de Meta.",
     traza_pre: (q) => `Para escribir esto, Retina${q ? ` (${q})` : ""}: `,
     compara: (c, d) => `La alerta compara el inicio de tu video (el primer cuarto) con ${c}. Datos al ${d}.`,
-    parecidos_def: "videos como el tuyo",
+    parecidos_def: "videos de la misma duración",
     no_promete: "Retina no promete en qué segundo exacto se va la gente después del inicio: la curva de Facebook no da para tanto.",
-    no_revise: (n) => `No revisé: ${n}`,
+    no_revise: (n) => `No revisamos: ${n}`, no_verifique: (n) => `No pudimos comprobar: ${n}`,
     escribio: (q, s) => `Escribió la explicación: ${q}${s ? ` (${s})` : ""}.`,
     rescate: "Muse Spark Open no cerró esta revisión y la terminó Muse Spark 1.3.",
-    correccion: (n, p) => `Antes de mostrártela, el validador le regresó la tarjeta ${n === 1 ? "una vez" : `${n} veces`} y Retina la corrigió sola (${p}).`,
+    correccion: (n, p) => `Antes de mostrártela, una revisión automática regresó la explicación ${n === 1 ? "una vez" : `${n} veces`} y Retina la corrigió sola (${p}).`,
     alt_ia: (c) => `Ilustración hecha con IA: ${c}`,
     paso_aria: (on, i) => `${on ? "Desmarcar" : "Marcar"} el paso ${i} como hecho`,
     progreso: (h, n) => `${h} de ${n} hechos`,
-    no_es_revision: "Este archivo no es una revisión de Retina (le falta el arranque o la curva).",
+    no_es_revision: "Este archivo no es una revisión de Retina.",
     aviso_ejemplo: "Ejemplo inventado: no es un video real. Sirve para ver cómo se ve una revisión de Retina.",
     sin_cambio_bajo: "No hace falta cambiar el inicio.",
     sin_sugerencia: "Ninguna sugerencia pasó nuestras reglas. Revisa el inicio a mano.",
@@ -789,11 +911,12 @@ const TEXTOS = {
     nada_bien: "Retina no marcó nada en especial.", nada_flojo: "Nada flojo a la vista en el inicio.",
     mejoras_t: "Si quieres mejorarlo (opcional)", opcional_editor: "Mejoras opcionales:",
     ya_funciona: "Ya funciona: ", quitalo: "Quítalo antes de publicar", anzuelo_otro: "trae algo que Meta castiga",
+    cita: (x) => `«${x}»`,
     anzuelo_texto: (t, que, frase) => `${t ? `En ${t}` : "En el video"} tu video ${que}${frase ? `: «${frase}»` : ""}. Meta reparte menos los videos con esto.`,
-    sin_api_porque: "Esta revisión se hizo sin la API de Meta: vemos el riesgo, pero no el porqué.",
+    sin_api_porque: "Esta revisión se hizo sin los modelos de Meta: vemos el riesgo, pero no el porqué.",
     para_editor: "Qué hacer: ",
-    fallo: (m) => `No pude abrir esta revisión. ${m} Vuelve a elegir el archivo o avisa a quien corrió Retina.`,
-    no_se_leyo: "El archivo no se pudo leer.", no_encontre: "No encontré esa revisión.",
+    fallo: (m) => `No pudimos abrir esta revisión. ${m} Vuelve a elegir el archivo o avisa a quien corrió Retina.`,
+    no_se_leyo: "El archivo no se pudo leer.", no_encontre: "No encontramos esa revisión.",
     doble_clic: "Con doble clic el navegador no deja abrir el ejemplo: corre «python -m retina.demo» o elige el archivo.",
     caso_invalido: "La dirección del caso no es válida: tiene que ser un resultado.json de la carpeta casos.",
   },
@@ -807,12 +930,12 @@ const TEXTOS = {
     },
     niveles: {
       alto: { semaforo: "Alert", titular: "Your video may lose people in the first few seconds",
-              sub: "More than a video like this usually loses." },
+              sub: "More than a video of this length usually loses." },
       medio: { semaforo: "Could be better", titular: "Your video's opening could be better",
-               sub: "It loses a bit more than usual for a video like this." },
+               sub: "It loses a bit more than usual for its length." },
       bajo: { semaforo: "No clear problem", titular: "We don't see a clear problem in the opening",
               sub: "Still, check the details before publishing." },
-      sin_nivel: { semaforo: "Review", titular: "Here is what we saw at the start of your video",
+      sin_nivel: { semaforo: "Review", titular: "What you can change in your video's opening",
                    sub: "" },
     },
     sin_formula_gente: "In this mode the number is the average for videos of this length; Retina doesn't adjust it to your video.",
@@ -823,7 +946,7 @@ const TEXTOS = {
     sin_numero: "Retina doesn't grade your video: everything you see here comes from what Meta's models saw and heard.",
     herramientas: {
       ver_arranque: "watched the opening and read the title", ver_tramos: "took a closer look at parts of the opening",
-      oir: "listened to what is said, with timestamps", buscar_parecidos: "compared it with titles of similar videos",
+      oir: "listened to what is said, with timestamps", buscar_parecidos: "compared it with titles of other videos",
       medir_lo_prometido: "used SAM to check if the title's promise shows up in the first 3 seconds",
     },
     modelos: {
@@ -840,11 +963,12 @@ const TEXTOS = {
               espacio: "Space", valle: "Valley", laguna: "Lagoon", flores: "Flowers", cielo: "Sky" },
     idioma_boton: "Español", idioma_destino: "es", idioma_titulo: "View the panel in Spanish",
     fondo: "Background", elige_fondo: "Choose a background", legible: "Easier to read",
-    subir_titulo: "Check your video before you publish it",
-    subir_p: "Choose or drop your video (MP4, MOV, WebM, MKV or AVI). Retina writes you a new opening and estimates how many people would stay.",
+    subir_titulo: "Rewrite your video's opening before you publish it",
+    subir_p: "Choose or drop your video (MP4, MOV, WebM, MKV or AVI). Retina writes you a new opening and estimates how many people stay with the one you have today.",
+    aviso_envio: "Your video is sent to Meta and Baseten. A review costs about USD 0.10 per video; fixing the opening, USD 0.05 to 0.25.",
     video_elegido: (nombre, mb) => `${nombre} · ${mb} MB · tap to change it`,
     campo_acceso: "Access code",
-    nota_en_linea: "Your video goes to Meta's API and to Baseten for the review, and it's deleted from here after 24 hours. Don't upload anything confidential.",
+    nota_en_linea: "It's deleted from here after 24 hours. Don't upload anything confidential.",
     campo_titulo: "Video title (as it would appear on Facebook)", campo_talento: "Who is on camera",
     sin_talento: "Nobody, or not on the list", campo_fecha: "Day and time it would be published",
     campo_codigo: "Production code (if any)", campo_publicado: "This video is already published",
@@ -855,7 +979,7 @@ const TEXTOS = {
               transcribir: ["Muse Voice Transcribe", "listens to what is said"], ficha: ["Muse Spark Open", "reads how your video opens"],
               predecir: ["Retina's formula", "estimates how many people would stay"], describir: ["Muse Spark 1.3", "watches what happens on screen"],
               sam: ["Muse Spark 1.3 and SAM 3.1", "look at the start for what the title promises"], explicar: ["Muse Spark Open", "writes what works and what to change"],
-              normas: ["Muse Spark 1.3", "checks Facebook's rules"] },
+              normas: ["Muse Spark 1.3", "checks Facebook's rules"], titulo: ["Muse Spark 1.3", "compares the title with the video"] },
     falta_video: "Choose the video first.", falta_titulo: "Write the video title.",
     falta_fecha: "Set the day and time it would be published.", solo_mp4: "That doesn't look like a video. Upload an MP4, MOV, WebM, MKV or AVI.",
     codigo_malo: "The code has to look like XYZ0000001 (letters, then numbers). If there is none, leave it empty.",
@@ -864,32 +988,32 @@ const TEXTOS = {
     modo_aria: "What do you want to review", modo_uno: "One video", modo_ab: "Compare two versions",
     version_a: "Version A", version_b: "Version B",
     subir_titulo_ab: "Compare two versions of the same video",
-    subir_p_ab: "Upload both versions. Retina reviews each one and tells you which start Spark prefers and why. That's a reading of the two starts, not a prediction of which one keeps more people.",
+    subir_p_ab: "Upload both versions. Retina reviews each one and tells you which opening Spark prefers and why. That's a reading of the two openings, not a prediction of which one keeps more people.",
     subir_b: "Choose or drop the other version of the same video.", revisar_ab: "Review and compare",
     falta_a: "Choose version A first.", falta_b: "Version B is missing.",
     avance_subiendo_ab: "Uploading both versions…", avance_comparando: "Comparing both versions…",
     avance_ab: { subiendo: "Upload both versions", version_a: "Review version A", version_b: "Review version B",
                  comparando: "Compare both with Spark" },
     comparacion_chip: "Two-version comparison", lado_a_lado: "Side by side",
-    lo_que_ve_spark: "What Spark sees in each one", tarjetas_completas: "The full cards",
-    ver_tarjeta_a: "See version A's card", ver_tarjeta_b: "See version B's card",
-    gana_version: (v) => `Spark prefers the start of ${v}`, empate_ab: "Spark doesn't prefer either start",
+    lo_que_ve_spark: "What Spark sees in each one", tarjetas_completas: "The full reviews",
+    ver_tarjeta_a: "See version A's review", ver_tarjeta_b: "See version B's review",
+    gana_version: (v) => `Spark prefers the opening of ${v}`, empate_ab: "Spark doesn't prefer either opening",
     sin_comparar: "Here are both reviews", sin_comparar_p: "Spark couldn't compare both versions; below is what Retina saw in each one.",
-    aviso_ab: "This is Spark's opinion after watching how each version starts (it judged them in both orders), not a measured retention prediction.",
-    fila_semaforo: "Traffic light", fila_duracion: "Length", fila_cambio: "Main thing to change", nada_urgente: "Nothing urgent.",
+    aviso_ab: "This is Spark's opinion after watching how each version opens (it judged them in both orders), not a measured retention prediction.",
+    fila_semaforo: "Result", fila_duracion: "Length", fila_cambio: "Main thing to change", nada_urgente: "Nothing urgent.",
     numeros_ab: (s, a, b) => `At ${s} seconds, Retina estimates that out of 100 people who get past the first 3 seconds, ${a} keep watching version A and ${b} version B. It barely changes between versions because that number comes from the kind of video (talent, length, day and title), not from what is on screen: to choose, go by the table and by what Spark sees.`,
     mejor_en: (v) => `Better in ${v}`, igual_ab: "Same in both",
-    vacio_titulo: "Open your video's review", vacio_p1: "Retina saves a ",
-    vacio_p2: " file in the folder of every video it reviews. Open it here to see if the opening will lose viewers, why, and what to cut.",
+    vacio_titulo: "Open a saved review",
+    vacio_p: "Retina saves each review in a resultado.json file. Open it here.",
     elegir: "Choose file", ver_ejemplo: "See the example", nota_vacio: "The file never leaves your computer: the panel only reads it.",
-    tu_video: "Your video", parecidos: "Videos like yours", lo_que_paso: "What happened",
-    tu_video_pred: "Your video (Retina's prediction)", lo_que_paso_real: "What actually happened",
+    video_actual: "Your current video", tu_video: "Your current video", parecidos: "Videos of the same length", lo_que_paso: "What happened",
+    tu_video_pred: "Your current video (Retina's prediction)", lo_que_paso_real: "What actually happened",
     por_que: "Why", que_hacer: "What to do", copiar: "Copy for the editor", copiado: "Copied", bajar: "Download for the editor",
     ficha_t: "How your video opens, according to Muse Spark Open",
-    tacticas_t: "What happened with videos that open like yours",
+    tacticas_t: "What happened with videos that open the same way",
     tacticas_nota: "Across thousands of videos from a large Facebook page in Mexico. It describes what happened with other videos; it promises nothing about yours.",
-    tactica: { mas: (x) => `Videos that ${x} kept more people through their first quarter than similar videos.`,
-      menos: (x) => `Videos that ${x} kept fewer people through their first quarter than similar videos.`,
+    tactica: { mas: (x) => `Videos that ${x} kept more people through their first quarter than others of their length.`,
+      menos: (x) => `Videos that ${x} kept fewer people through their first quarter than others of their length.`,
       presenta: "introduce the speaker before saying the topic", presentacion: "open with an introduction", saludo: "open with a greeting",
       dato: "open with a fact or a number", conflicto: "open with a conflict", tema_tarde: "say the topic after the first sentence",
       curiosidad_alta: "spark a lot of curiosity from the start", curiosidad_baja: "spark little curiosity at the start",
@@ -905,51 +1029,84 @@ const TEXTOS = {
     no_copio: "Couldn't copy: select the text instead",
     ver_storyboard: "See how it would look (3 frames)", ver_storyboard_ia: "See how it would look (drawn with Muse Image)",
     normas_t: "Facebook's rules", normas_nota: "This is a first check, not a guarantee: a video with no warnings here can still have problems. Meta makes the final call.",
-    normas_sin: (n) => `I found no clear risks in the ${n} rules I checked.`,
-    normas_con: (n) => (n === 1 ? "I found 1 point worth checking before you publish:" : `I found ${n} points worth checking before you publish:`),
+    normas_sin: (n) => `We found no clear risks in the ${n} rules we checked.`,
+    normas_con: (n) => (n === 1 ? "We found 1 point worth checking before you publish:" : `We found ${n} points worth checking before you publish:`),
+    normas_no_verificado: "We couldn't check this in this language.",
+    anzuelo_norma: "Meta shows videos with this to fewer people.",
     empieza_aqui: "Start here.",
-    por_que_importa: "Why it matters: on a large Facebook page, the videos that best held people at the start reached about 3.5 times more people than the ones that held them worst. With what was predicted before publishing, the gap was about 1.5 times. It's a relation, not a promise.",
-    margen_nota: (m) => `It's an estimate: it can be off by about ${m} people out of 100.`,
+    margen_nota: (m) => `Usually off by about ${m} of every 100 people; 4 in 10 times, by more.`,
+    numero_borrador: "This number is for your video as it is today. It doesn't measure the new opening.",
     nota_3s: "It only counts people who get past the first 3 seconds: Facebook seems to start counting there, so Retina can't see who leaves earlier.",
     de_donde: "Where does this number come from?", mas_detalles: "More review details",
-    traduciendo: "Translating the review…", no_traduje: "I couldn't translate the review: it stays in its original language.",
-    ver_arranque: "▶ Watch and hear the new opening", parar_arranque: "■ Stop",
+    traduciendo: "Translating the review…", no_traduje: "We couldn't translate the review: it stays in its original language.",
+    traducir: "Translate this review", idioma_distinto: "This review is in Spanish.",
+    cargando: "Opening Retina…", sin_respuesta: "Retina isn't answering yet.", reintentar: "Try again",
+    ver_arranque: "▶ Watch and hear the new opening", ver_texto: "▶ Watch the new opening", parar_arranque: "■ Stop",
+    voz_t: "What is said", pantalla_t: "On-screen text",
     apertura_t: "Your video's opening",
     apertura_lema: "Retina writes a new opening for your video, draws it and checks it before showing it to you. Your title stays as it is.",
-    arreglar: "Fix the opening (about USD 0.10)",
+    arreglar: "Fix the opening (USD 0.05 to 0.25)",
     apertura_pasos: { en_fila: "In line…", escribiendo: "Muse Spark Open is writing your opening…", dibujando: "Muse Image is drawing the first frame…",
       buscando: "SAM 3.1 is looking for what the title promises…", corrigiendo: "Something didn't pass the checks. Muse Spark Open is fixing it…",
-      terminando: "Everything passed. Muse Image is drawing the other two frames…" },
+      terminando: "Everything passed. Muse Image is drawing the other two frames…",
+      mirando: "Muse Spark 1.3 checks each drawing shows what it says…" },
     antes: "Before", despues: "After", sin_voz_antes: "Your draft has no voice in those seconds.", sin_imagen_antes: "Your video",
     alt_antes: "First frame of your video",
     promesa_no: (o) => `“${o}” doesn't show in your first 3 seconds.`,
-    promesa_si: (o, s) => `“${o}” shows from second ${s}.`,
+    promesa_si: (o, s) => `“${o}” shows from ${s}.`,
     promesa_nueva: (o) => `“${o}” shows from the first frame.`,
-    apertura_vueltas: (n) => (n ? `Retina fixed it ${n === 1 ? "once" : `${n} times`} before showing it to you. Your title wasn't touched.`
-      : "It passed every check on the first try. Your title wasn't touched."),
-    apertura_incompleta: () => "It passed the text rules, but SAM 3.1 couldn't check the first frame. Your title wasn't touched.",
-    apertura_no: "I couldn't get an opening to pass every check, so I'm not showing you one. This is what failed:",
+    titular_hecha: "Here's a new opening for your video", sub_hecha: "Retina wrote it and checked it. Your title stays the same.",
+    titular_ya: "Your opening already works", sub_ya: "Retina didn't rewrite it: it didn't need to.",
+    ya_t: "It doesn't need changing", ya_sin_motivo: "It already meets what Retina checks.",
+    titulo_parcial: "Your video only partly delivers your title", titulo_no: "Your video doesn't deliver what your title promises",
+    titulo_nota: "Retina doesn't touch your title: that's your call.",
+    lazo_primera: "Passed on the first try",
+    lazo_corrigio: (n) => (n === 1 ? "Retina rejected it once and fixed it" : `Retina rejected it ${n} times and fixed it`),
+    lazo_no: "It didn't pass, so we're not showing you one",
+    lazo_regla: "Every attempt goes through fixed rules and Meta's models. If it fails, it's rewritten up to 2 times. If it still fails, you don't see it.",
+    intento: (n) => `Attempt ${n}`, intento_paso: "Passed every check.",
+    motivos: {
+      anzuelos: (x) => (x ? `It had something Meta penalizes: ${x}.` : "It had something Meta penalizes."), enlaces: "It had a link.",
+      intocables: (x) => `It touched something that can't change${x ? `: ${x}` : ""}.`,
+      cifras: (x) => `It used numbers your video doesn't say${x ? `: ${x}` : ""}.`, nombres: (x) => `It used names your video doesn't say${x ? `: ${x}` : ""}.`,
+      tema: () => "The first sentence didn't say what the video is about.", una_prueba: () => "It listed several things instead of giving one proof.",
+      largo: (n, a, b) => (n ? `It was ${n} words long and must be ${a} to ${b}.` : "It didn't fit the opening's time."),
+      cuadros: () => "The frames didn't meet the rules.", dibujo: "Muse Image couldn't draw a frame.",
+      cuadro_mal: (x) => `The drawing for frame ${x} didn't show what it describes.`,
+      promesa: () => "The first frame didn't show what the title promises.", formato: () => "The model didn't return a valid answer.",
+      ya_funciona: () => "The model said the opening already worked, but the rules didn't confirm it.", otro: "It failed a check." },
+    apertura_incompleta: () => "It passed the text rules, but SAM 3.1 couldn't check the first frame.",
+    apertura_no: "We couldn't get an opening to pass every check.",
     apertura_alfabeto: "For now Retina rewrites openings in Spanish and English. This video seems to be in another language, so nothing was spent.",
+    apertura_corta: "This is a sketch. Nobody has measured whether this opening keeps more people watching.",
+    comprobo_t: "What Retina checked",
     apertura_quien: (m) => `Written by ${m} · drawn by Muse Image · checked by SAM 3.1 and fixed code rules.`,
     apertura_nota: "This is a sketch, with your browser's voice and drawings, not a filmed video. Retina checks that numbers and names come from your video, not that they are true. And it doesn't know whether this opening keeps more people watching: that hasn't been measured.",
     apertura_error: "It couldn't be finished. Try again.",
-    apertura_editor: "New opening (what is said): ",
+    apertura_editor: "New opening (what is said): ", apertura_editor_texto: "New opening (on-screen text): ",
     comprobada: { anzuelos: "None of the bait Meta penalizes", intocables: "Doesn't touch logos, legal notices or credits", cifras: "Every number comes from your video",
-      nombres: "Every name comes from your video", tema: "The title's topic arrives in the first sentence", largo: "Fits in 10 to 15 seconds",
-      cuadros: "Three frames ready", promesa: (o) => `SAM 3.1 found “${o}” in the first frame`, promesa_falta: "SAM 3.1 couldn't check the first frame this time" },
+      nombres: "Every name comes from your video", tema: "The title's topic arrives in the first sentence", largo: "Fits the time of the opening",
+      una_prueba: "Gives one proof, not the whole list",
+      cuadros: "Three frames drawn", promesa: (o) => `SAM 3.1 found “${o}” in the first frame`, promesa_falta: "SAM 3.1 couldn't check the first frame this time",
+      cuadros_ok: (l, n) => (n === 1 ? `The drawing for frame ${l} shows what it says` : `The drawings for frames ${l} show what they say`),
+      cuadros_mal: (l, n) => (n === 1 ? `The drawing for frame ${l} doesn't show what it says` : `The drawings for frames ${l} don't show what they say`),
+      cuadros_sin: (l, n) => (n === 1 ? `Frame ${l} couldn't be checked` : `Frames ${l} couldn't be checked`),
+      cuadros_nada: "Frames 2 and 3 weren't checked" },
+    cuadro_sin_revisar: "Not checked", cuadro_no_coincide: "Doesn't match",
     segun_meta: "What Meta recommends",
     nota_meta: "These are Meta's public best practices, checked in the first few seconds. They're not a prediction.",
     como_reviso: "How Retina reviewed it", ver_detalle: "See details", otra: "Back to the start",
     gente_de_100: (n) => `${n} out of 100`,
     gente_siguen: (s) => `people who get past the first 3 seconds would still be watching your video at ${s} seconds.`,
-    gente_menos: (n, o) => `That's ${n} fewer than in videos like yours, where ${o} stay.`,
-    gente_mas: (n, o) => `That's ${n} more than in videos like yours, where ${o} stay.`,
-    gente_igual: (o) => `That's similar to videos like yours, where ${o} stay.`,
+    gente_menos: (n, o) => `That's ${n} fewer than in videos of the same length, where ${o} stay.`,
+    gente_mas: (n, o) => `That's ${n} more than in videos of the same length, where ${o} stay.`,
+    gente_igual: () => "We see no difference from the curve for its length.",
+    gente_curva: (o) => `In videos of the same length, ${o} of every 100 stay.`,
     gente_ejemplo: (m, s) => `For example: if 10,000 people get past those 3 seconds, about ${m} would still be watching at ${s}.`,
     gente_real: (n) => `Already published: ${n} out of 100 actually stayed.`,
     ley_siguen: "still watching", ley_normal: "leave",
     ley_de_mas: "extra people lost", ley_gana: "extra people kept",
-    como_tuyo_es: (x) => `“Videos like yours” means ${x}.`,
+    como_tuyo_es: (x) => `“Videos of the same length” means ${x}.`,
     reglas_meta: { gancho_3s: "Something that stops people in the first 3 seconds",
       mensaje_3s: "The main message shows up early (as text or voice)",
       promesa_3s: "What the title promises shows in the first 3 seconds",
@@ -964,23 +1121,23 @@ const TEXTOS = {
     creador_nuevo_sin_voz: "Retina doesn't know this creator yet and heard no voice: the number is the average for videos of that length.",
     t_linea_seg: (n) => `How people leave in the first ${n} seconds`, t_linea_mm: (t) => `How people leave from 0:00 to ${t}`,
     linea_texto: () => "", partes: (l) => `Parts to check: ${l}.`,
-    tramo: (a, b) => `${a} to ${b}`, castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
-    grafica_aria: (d) => `Out of every 100 people who get past the first 3 seconds, how many are still watching at each moment of a ${d} video, according to Retina and to similar videos.`,
+    tramo: (a, b) => (a === b ? a : `${a} to ${b}`), castiga_en: (t) => ` What Meta penalizes shows up at ${t}.`,
+    grafica_aria: (d) => `Out of every 100 people who get past the first 3 seconds, how many are still watching at each moment of a ${d} video, according to Retina and to videos of the same length.`,
     cumple: "Meets it", no_cumple: "Doesn't meet it", sin_dato: "No data", fuente_meta: "Meta source",
     confianza_txt: (c) => `How sure Retina is about this explanation: ${c}.`,
-    sin_api: "This review was done without the Meta API.",
+    sin_api: "This review was done without Meta's models.",
     traza_pre: (q) => `To write this, Retina${q ? ` (${q})` : ""}: `,
     compara: (c, d) => `The alert compares your video's opening (the first quarter) with ${c}. Data through ${d}.`,
-    parecidos_def: "videos like yours",
+    parecidos_def: "videos of the same length",
     no_promete: "Retina doesn't promise the exact second people leave after the opening: Facebook's curve isn't that precise.",
-    no_revise: (n) => `Not checked: ${n}`,
+    no_revise: (n) => `Not checked: ${n}`, no_verifique: (n) => `We couldn't verify: ${n}`,
     escribio: (q, s) => `Explanation written by ${q}${s ? ` (via ${s})` : ""}.`,
     rescate: "Muse Spark Open didn't finish this review, so Muse Spark 1.3 completed it.",
-    correccion: (n, p) => `Before showing it to you, the validator sent the card back ${n === 1 ? "once" : `${n} times`} and Retina fixed it on its own (${p}).`,
+    correccion: (n, p) => `Before showing it to you, an automatic check sent the explanation back ${n === 1 ? "once" : `${n} times`} and Retina fixed it on its own (${p}).`,
     alt_ia: (c) => `AI-made illustration: ${c}`,
     paso_aria: (on, i) => `${on ? "Unmark" : "Mark"} step ${i} as done`,
     progreso: (h, n) => `${h} of ${n} done`,
-    no_es_revision: "This file isn't a Retina review (it's missing the opening or the curve).",
+    no_es_revision: "This file isn't a Retina review.",
     aviso_ejemplo: "Made-up example: not a real video. It shows what a Retina review looks like.",
     sin_cambio_bajo: "No need to change the opening.",
     sin_sugerencia: "No suggestion passed our rules. Check the opening yourself.",
@@ -988,11 +1145,12 @@ const TEXTOS = {
     nada_bien: "Retina didn't flag anything in particular.", nada_flojo: "Nothing weak in sight at the start.",
     mejoras_t: "If you want to make it better (optional)", opcional_editor: "Optional improvements:",
     ya_funciona: "Already working: ", quitalo: "Remove it before publishing", anzuelo_otro: "has something Meta penalizes",
+    cita: (x) => `“${x}”`,
     anzuelo_texto: (t, que, frase) => `${t ? `At ${t}, your` : "Your"} video ${que}${frase ? `: “${frase}”` : ""}. Meta shows videos with this to fewer people.`,
-    sin_api_porque: "This review was done without the Meta API: we can see the risk, but not the reason.",
+    sin_api_porque: "This review was done without Meta's models: we can see the risk, but not the reason.",
     para_editor: "What to do: ",
-    fallo: (m) => `I couldn't open this review. ${m} Choose the file again or tell whoever ran Retina.`,
-    no_se_leyo: "The file couldn't be read.", no_encontre: "I couldn't find that review.",
+    fallo: (m) => `We couldn't open this review. ${m} Choose the file again or tell whoever ran Retina.`,
+    no_se_leyo: "The file couldn't be read.", no_encontre: "We couldn't find that review.",
     doble_clic: "Opened with a double-click, the browser won't load the example: run “python -m retina.demo” or choose the file.",
     caso_invalido: "The case address isn't valid: it must be a resultado.json from the casos folder.",
   },
@@ -1010,7 +1168,27 @@ let idioma = (() => {
 const tx = () => TEXTOS[idioma];
 const t = (clave, ...args) => { const v = tx()[clave] ?? TEXTOS.es[clave]; return typeof v === "function" ? v(...args) : v; };
 const falla = (clave) => Object.assign(new Error(t(clave)), { clave });  // un error que se puede volver a escribir en otro idioma
+const dice = (m) => (typeof de(tx(), m) === "string" ? t(m) : m);  // una clave de TEXTOS o un texto ya escrito
+// Lo que le llega a la persona: la clave del error o lo que escribió Retina; nunca el error crudo del navegador ni de JavaScript.
+const legible = (err, porOmision) => {
+  if (err && err.clave) return err.clave;
+  if (!err || !err.message || err instanceof TypeError || err instanceof SyntaxError || /fetch|network|load failed/i.test(err.message)) return porOmision;
+  return err.message;
+};
+const espera = (ms) => new Promise((listo) => setTimeout(listo, ms));
+// Una lectura con 3 intentos: una falla pasajera (conexión rechazada, 429, 5xx) no llega a la persona. Un 404 es una respuesta y no se repite.
+async function traer(ruta, opciones = {}) {
+  for (const ms of [0, 400, 1200]) {
+    if (ms) await espera(ms);
+    try {
+      const r = await fetch(ruta, opciones);
+      if (r.status < 500 && r.status !== 429) return r;
+    } catch (_) { /* se intenta otra vez */ }
+  }
+  throw falla("sin_conexion");
+}
 const DEMO = () => (idioma === "en" ? "../casos/demo-en/resultado.json" : "../casos/demo/resultado.json");
+const casoDemo = () => !!(carpeta && /^\/casos\/demo(?:-en)?\/$/.test(carpeta.pathname));  // los dos ejemplos son el mismo caso en dos idiomas
 const RECHAZOS = [  // los problemas los escribe el validador en español; aquí solo se reconocen
   [/ mide \d+ caracteres/, "largo"],
   [/^(Pide comentarios|«Mira hasta|Esconde el dato|Exagera|Promete curas|Contenido no original|Sorteos|Pide sacar|Imagen o voz)/, "castiga"],
@@ -1021,9 +1199,14 @@ const RECHAZOS = [  // los problemas los escribe el validador en español; aquí
   [/no trae un cambio/, "sin_cambio"],
 ];
 // carpeta: de dónde vino el caso (solo si vino de casos/ por http); porOmision: es el ejemplo del idioma (cambia con él)
-let actual = null, original = null, carpeta = null, porOmision = false, ultimoFallo = null;  // original: la revisión como se escribió
+let actual = null, original = null, carpeta = null, porOmision = false, ultimoFallo = null, ultimoAviso = null;  // original: la revisión como se escribió
 
-function estado(e) { document.body.dataset.estado = e; if (window.scrollY > 0) window.scrollTo(0, 0); }
+function estado(e) {
+  if (e !== "resultado") pararArranque();  // salir de la revisión calla la voz
+  if (document.body.dataset.estado === e) return;
+  document.body.dataset.estado = e;
+  if (window.scrollY > 0) window.scrollTo(0, 0);
+}
 
 function el(tag, attrs, texto) {  // todo lo que viene del JSON entra como texto, nunca como HTML
   const n = tag === "svg-text" ? document.createElementNS(NS, "text") : document.createElementNS(NS, tag);
@@ -1083,14 +1266,14 @@ function cifras(r) {
   const principal = nodo("div", "cifra vidrio grande personas");
   const fila = nodo("div", "fila-gente"); fila.append(gente, texto);
   const l = r.licencia || {}, doblado = nodo("details", "de-donde");
-  doblado.append(nodo("summary", "", t("de_donde")), nodo("p", "nota-gente", t("nota_3s")));
+  doblado.append(nodo("summary", "", t("de_donde")), nodo("p", "nota-gente", t("numero_borrador")), nodo("p", "nota-gente", t("nota_3s")));
+  if (dif === 0 && !sinFormula) doblado.append(nodo("p", "nota-gente", t("gente_curva", otros)));
   if (comparadoCon(l)) doblado.append(nodo("p", "nota-gente", t("como_tuyo_es", comparadoCon(l))));
   if (l.formato_poco_conocido) doblado.append(nodo("p", "nota-gente", t("formato_poco")));
   if (l.otro_idioma) doblado.append(nodo("p", "nota-gente", t("otro_idioma")));
   if (l.conoce_al_creador === false && !sinFormula)  // en el plan B la frase de arriba ya lo explica
     doblado.append(nodo("p", "nota-gente", t(l.cerebro === "cualquier_video" ? "creador_nuevo" : "creador_nuevo_sin_voz")));
-  doblado.append(nodo("p", "nota-gente", t("por_que_importa")));
-  principal.append(fila, leyenda, doblado);
+  principal.append(nodo("h2", "etiqueta-actual", t("video_actual")), fila, leyenda, doblado);
 
   $("cifras").className = "cifras";
   $("cifras").replaceChildren(principal);
@@ -1148,8 +1331,8 @@ function linea(r) {  // el inicio (primer cuarto = los primeros 11 de 41 puntos)
     const pnt = nodo("div", "punto"); pnt.style.left = pct(e.anzuelo_momento_s); caja.append(pnt);
     texto += t("castiga_en", mmss(e.anzuelo_momento_s));
   }
-  caja.setAttribute("aria-label", texto);
-  conTiempos($("texto-linea"), texto);
+  caja.setAttribute("aria-label", `${$("t-linea").textContent}.${texto ? ` ${texto.trim()}` : ""}`);
+  conTiempos($("texto-linea"), texto.trim());
 }
 
 function grafica(r) {
@@ -1175,19 +1358,26 @@ function grafica(r) {
 const seguro = (u) => { try { const x = new URL(u); return x.protocol === "https:" ? x.href : null; } catch (_) { return null; } };
 
 function normasFacebook(r) {  // lo que Spark señaló y el código sostuvo con evidencia del video; quien decide es Meta
-  const n = r.normas, lista = n && Array.isArray(n.hallazgos) ? n.hallazgos : [];
+  const n = r.normas, e = r.explicacion, hallazgos = n && Array.isArray(n.hallazgos) ? n.hallazgos : [];
   $("bloque-normas").classList.toggle("oculto", !n);
   if (!n) return;
-  $("normas-resumen").textContent = lista.length ? t("normas_con", lista.length) : t("normas_sin", n.revisadas);
+  // «Sin riesgos» nunca sale junto a un aviso de anzuelo: el anzuelo cuenta como hallazgo, una sola vez.
+  const hay = e && e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno", frase = (e && e.anzuelo_frase) || "";
+  const contado = hallazgos.some((h) => h.anzuelo || /anzuelo/i.test(String(h.norma || "")) || (frase && String(h.evidencia || "").includes(frase)));
+  const lista = hay && !contado
+    ? [{ nombre: de(tx().anzuelos, e.anzuelo_detectado) || t("anzuelo_otro"), por_que: t("anzuelo_norma"), evidencia: frase, segundo: e.anzuelo_momento_s }, ...hallazgos]
+    : hallazgos;
+  $("normas-resumen").textContent = lista.length ? t("normas_con", lista.length) : n.no_verificado === true ? t("normas_no_verificado") : t("normas_sin", n.revisadas);
+  $("normas-verificado").classList.toggle("oculto", !(n.no_verificado === true && lista.length));
   $("normas-lista").replaceChildren(...lista.map((h) => {
     const marca = nodo("span", "no", "!"), texto = nodo("span");
-    texto.append(nodo("b", "", h.nombre || ""), document.createElement("br"), nodo("span", "", `${h.por_que || ""} «${h.evidencia || ""}»`));
+    texto.append(nodo("b", "", h.nombre || ""), document.createElement("br"), nodo("span", "", [h.por_que, h.evidencia ? t("cita", h.evidencia) : ""].filter(Boolean).join(" ")));
     const u = seguro(h.fuente);
     if (u) {
       const a = nodo("a", "", t("fuente_meta")); a.href = u; a.target = "_blank"; a.rel = "noopener noreferrer";
       texto.append(" · ", a);
     }
-    const li = nodo("li"); li.append(marca, nodo("span", "ventana", mmss(Number(h.segundo) || 0)), texto);
+    const li = nodo("li"); li.append(marca, nodo("span", "ventana", Number(h.segundo) >= 0 ? mmss(h.segundo) : ""), texto);
     return li;
   }));
 }
@@ -1223,6 +1413,7 @@ function delCaso(n) {
 const ilustraciones = (e) => (e && Array.isArray(e.storyboard_imagenes) ? e.storyboard_imagenes.map(delCaso) : []);
 
 // «Lo que no revisé» llega en español desde el orquestador; en inglés se traducen sus piezas fijas.
+const SIN_SUGERENCIA = "No hubo una sugerencia que pasara el validador y el filtro de integridad.";  // retina.explicar, cuando ninguna pasa
 const NO_REVISE_EN = [
   ["La música: no se analiza la letra ni la licencia.", "Music: lyrics and licensing are not analyzed."],
   ["La voz y los silencios: el video no trae audio. Lo de abajo sale solo de lo que se ve.", "The voice and the silences: the video has no audio. What follows comes only from what is on screen."],
@@ -1239,6 +1430,7 @@ const NO_REVISE_EN = [
   ["se corrió sin la API de Meta", "run without Meta's API"],
   ["no hubo descripción del video", "there was no description of the video"],
   ["falló:", "failed:"],
+  [SIN_SUGERENCIA, "No suggestion passed the checks."],
 ];
 const enIdioma = (texto) => idioma === "en" ? NO_REVISE_EN.reduce((x, [es, en]) => (es instanceof RegExp ? x.replace(es, en) : x.split(es).join(en)), String(texto)) : texto;
 
@@ -1260,6 +1452,7 @@ function revisado(r) {
   item(ul, t("compara", comparadoCon(l) || t("parecidos_def"), l.datos_hasta || "—"));
   item(ul, t("no_promete"));
   for (const n of l.no_pude_revisar || []) item(ul, t("no_revise", enIdioma(n)));
+  for (const n of lista_(e, "no_pude_verificar")) item(ul, t("no_verifique", enIdioma(n)));
   if (lx.modelo) item(ul, t("escribio", quien, lx.servido_por));
   if (lx.rescate) item(ul, t("rescate"));
   const regresos = traza.filter((x) => x.herramienta === "entregar_tarjeta" && x.resultado && x.resultado.aceptada === false);
@@ -1284,6 +1477,10 @@ function revisado(r) {
 // El «después» se ve y se oye: los tres cuadros con el texto nuevo, leído con la voz del navegador (no es un modelo de IA).
 let arranqueSonando = null;
 function pararArranque() { if (arranqueSonando) arranqueSonando(); }
+function callar() { pararArranque(); if ("speechSynthesis" in window) window.speechSynthesis.cancel(); }
+addEventListener("pagehide", callar);  // el navegador sigue hablando aunque la página se cierre o se recargue
+document.addEventListener("visibilitychange", () => { if (document.hidden) callar(); });
+callar();
 
 function tercios(texto) {
   const palabras = texto.split(/\s+/).filter(Boolean), n = Math.ceil(palabras.length / 3);
@@ -1293,7 +1490,8 @@ function tercios(texto) {
 function reproducirArranque(a, fotos, img, subtitulo, boton) {
   if (arranqueSonando) return pararArranque();
   const voz = a.despues.voz, partes = tercios(voz), porParte = (voz.split(/\s+/).length / 2.6) * 1000 / 3;
-  const habla = "speechSynthesis" in window ? window.speechSynthesis : null;
+  const mudo = a.modo === "texto_en_pantalla";  // sin voz en el video, el inicio es texto en pantalla: se lee, no se oye
+  const habla = !mudo && "speechSynthesis" in window ? window.speechSynthesis : null;
   if (habla) {
     const decir = new SpeechSynthesisUtterance(voz);
     decir.lang = /ingl/i.test(a.idioma || "") ? "en-US" : "es-MX";
@@ -1302,7 +1500,7 @@ function reproducirArranque(a, fotos, img, subtitulo, boton) {
   let i = 0, reloj_ = null;
   arranqueSonando = () => {
     clearTimeout(reloj_); if (habla) habla.cancel();
-    img.src = fotos[0]; subtitulo.classList.add("oculto"); boton.textContent = t("ver_arranque");
+    img.src = fotos[0]; subtitulo.classList.add("oculto"); boton.textContent = t(mudo ? "ver_texto" : "ver_arranque");
     arranqueSonando = null;
   };
   const paso = () => {
@@ -1320,61 +1518,142 @@ function ladoApertura(clase, titulo, hijos) {
   return lado;
 }
 
+// El motivo real de un intento fallido, en el idioma del panel. `detalle` lo escribe el código en español para el modelo:
+// aquí se saca el dato (la cifra, el nombre, la frase) y se dice en palabras de quien edita.
+function motivo(p) {
+  const id = String((p && p.id) || ""), d = String((p && p.detalle) || ""), M = tx().motivos;
+  const dato = (/:\s*([^:]+)$/.exec(d) || [])[1] || "";
+  if (id === "anzuelos") return /enlace/i.test(d) ? M.enlaces : M.anzuelos(((/\(frases: (.+)\)$/.exec(d)) || [])[1] || "");
+  if (id === "intocables" || id === "cifras" || id === "nombres") return M[id](dato.trim());
+  if (id === "largo") { const m = /(\d+) palabras.*?(\d+) a (\d+)/.exec(d); return m ? M.largo(m[1], m[2], m[3]) : M.largo(); }
+  if (id === "cuadros") {
+    if (/no se pudo dibujar/i.test(d)) return M.dibujo;
+    const m = /cuadro ([\d, ]+) no muestra/.exec(d);
+    return m ? M.cuadro_mal(m[1].trim()) : M.cuadros();
+  }
+  if (typeof de(M, id) === "function") return M[id]();
+  return idioma === "es" && d ? d.charAt(0).toUpperCase() + d.slice(1) : M.otro;
+}
+
+// El lazo: cada intento, qué falló y cómo acabó. Con vueltas == 0 se dice tal cual, sin inflarlo.
+function pintarLazo(a, hecha) {
+  const intentos = Array.isArray(a.intentos) ? a.intentos : [], vueltas = a.vueltas || 0;
+  $("apertura-lazo").classList.toggle("oculto", !intentos.length || !!a.ya_funciona);
+  if (!intentos.length) return;
+  $("lazo-titulo").textContent = !hecha ? t("apertura_no") : vueltas ? t("lazo_corrigio", vueltas) : t("lazo_primera");
+  $("lazo-lista").replaceChildren(...intentos.map((x, i) => {
+    const malos = Array.isArray(x.problemas) ? x.problemas : [], li = nodo("li", malos.length ? "no" : "ok"), cuerpo = nodo("div");
+    cuerpo.append(nodo("b", "", t("intento", i + 1)));
+    if (malos.length) cuerpo.append(...malos.map((p) => nodo("p", "", motivo(p)))); else cuerpo.append(nodo("p", "", t("intento_paso")));
+    li.append(nodo("span", "marca-lazo", malos.length ? "✕" : "✓"), cuerpo);
+    return li;
+  }));
+  if (!hecha) {  // el final también es parte de la historia: lo que no pasó no se enseña
+    const fin = nodo("li", "no"), c = nodo("div");
+    c.append(nodo("b", "", t("lazo_no")));
+    fin.append(nodo("span", "marca-lazo", "✕"), c);
+    $("lazo-lista").append(fin);
+  }
+}
+
+const listaDe = (xs) => new Intl.ListFormat(idioma === "en" ? "en-US" : "es-MX", { style: "long", type: "conjunction" }).format(xs.map(String));
+
+// Las filas de la lista de comprobaciones que hablan de los cuadros: solo se dice «listo» de lo que se revisó.
+function filasCuadros(a) {
+  const C = tx().comprobada, revisados = a.despues && a.despues.cuadros_revisados;
+  if (!Array.isArray(revisados) || !revisados.length) return [nodo("li", "", C.cuadros), nodo("li", "nd", C.cuadros_nada)];
+  const con = (v) => revisados.filter((x) => x.coincide === v).map((x) => x.cuadro);
+  const filas = [];
+  for (const [v, clase, texto] of [[true, "", C.cuadros_ok], [false, "no", C.cuadros_mal], [null, "nd", C.cuadros_sin]]) {
+    const xs = con(v);
+    if (xs.length) filas.push(nodo("li", clase, texto(listaDe(xs), xs.length)));
+  }
+  return filas;
+}
+
+function pintarEncabezado(r) {  // el titular es lo que Retina hizo por el video; el número va aparte y es del borrador
+  const N = tx().niveles, n = N[de(N, r.arranque.nivel) ? r.arranque.nivel : "medio"], a = r.apertura;
+  const [titular, sub] = a && a.ya_funciona ? [t("titular_ya"), t("sub_ya")]
+    : a && a.aprobada && a.despues ? [t("titular_hecha"), t("sub_hecha")] : [n.titular, n.sub];
+  $("titular").textContent = titular; $("sub").textContent = sub; $("sub").classList.toggle("oculto", !sub);
+}
+
 function pintarApertura(r) {
   pararArranque();
+  pintarEncabezado(r);
   const a = r.apertura, idCaso = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname);
-  const puede = !!(conSubida && idCaso && r.explicacion), hecha = !!(a && a.despues && a.aprobada);
+  const ya = !!(a && a.ya_funciona), puede = !!(conSubida && idCaso && r.explicacion), hecha = !!(a && a.despues && a.aprobada);
   $("bloque-apertura").classList.toggle("oculto", !a && !puede);
-  $("arreglar").classList.toggle("oculto", hecha || !puede);  // la que no pasó se puede volver a intentar
+  $("arreglar").classList.toggle("oculto", hecha || ya || !puede);  // la que no pasó se puede volver a intentar
   $("arreglar").dataset.id = idCaso ? idCaso[1] : "";
   $("apertura-lema").classList.toggle("oculto", !!a);
   $("apertura-avance").classList.add("oculto");
   $("antes-despues").classList.toggle("oculto", !hecha);
-  $("apertura-resumen").classList.toggle("oculto", !a);
+  $("apertura-resumen").classList.toggle("oculto", !a || ya);
+  $("apertura-corta").classList.toggle("oculto", !hecha);
   $("apertura-nota").classList.toggle("oculto", !hecha);
+  $("apertura-doblado").classList.toggle("oculto", !a || ya);
+  $("apertura-ya").classList.toggle("oculto", !ya);
+  $("apertura-lazo").classList.toggle("oculto", !a);
   const lista = $("apertura-comprobada");
-  lista.classList.toggle("oculto", !a);
   if (!a) return;
-  const antes = a.antes || {}, promesa = antes.promesa;
+  if (ya) {  // un logro, no un error: Retina lo dice en vez de reescribirlo
+    $("apertura-ya").replaceChildren(nodo("h3", "", t("ya_t")), conTiempos(nodo("p"), reloj(String(a.motivo || "")) || t("ya_sin_motivo")));
+    pintarLazo(a, hecha);
+    return;
+  }
+  const antes = a.antes || {}, promesa = antes.promesa, mudo = a.modo === "texto_en_pantalla";
   const revision = (a.comprobaciones || []).find((c) => c.id === "promesa");
   const objeto = (revision && revision.objeto) || a.objeto;  // lo que SAM buscó de verdad
   const fotoAntes = delCaso(antes.imagen);
   const imgAntes = fotoAntes ? nodo("img") : nodo("div", "sin-imagen", t("sin_imagen_antes"));
   if (fotoAntes) { imgAntes.src = fotoAntes; imgAntes.alt = t("alt_antes"); }
-  const hijosAntes = [imgAntes, nodo("p", "voz", antes.voz || t("sin_voz_antes"))];
-  if (promesa) hijosAntes.push(nodo("p", "promesa", promesa.aparece ? t("promesa_si", promesa.concepto, promesa.primer_segundo) : t("promesa_no", promesa.concepto)));
+  const hijosAntes = [imgAntes, ...(antes.voz ? [nodo("span", "rotulo-voz", t("voz_t"))] : []), nodo("p", "voz", antes.voz || t("sin_voz_antes"))];
+  if (promesa) hijosAntes.push(nodo("p", "promesa", promesa.aparece ? t("promesa_si", promesa.concepto, mmss(promesa.primer_segundo)) : t("promesa_no", promesa.concepto)));
   if (hecha) {
     const fotos = (a.despues.imagenes || []).map(delCaso);
+    const revisados = Array.isArray(a.despues.cuadros_revisados) ? a.despues.cuadros_revisados : [];
+    const marcaDe = (i) => {  // lo que no se pudo revisar se dice encima del cuadro; lo revisado no lleva marca
+      const fila = revisados.find((x) => x.cuadro === i + 1);
+      return !fila || fila.coincide === true ? null : nodo("small", "sin-revisar", t(fila.coincide === null ? "cuadro_sin_revisar" : "cuadro_no_coincide"));
+    };
     const [primera, ...otras] = fotos.map((u, i) => {
       if (!u) return nodo("div", "sin-imagen", a.despues.cuadros[i] || "");
       const img = nodo("img"); img.src = u; img.alt = t("alt_ia", a.despues.cuadros[i] || ""); img.title = a.despues.cuadros[i] || "";
       return img;
     });
     const miniaturas = nodo("div", "miniaturas");
-    miniaturas.append(...otras);
+    miniaturas.append(...otras.map((x, i) => { const d = nodo("div"); d.append(x, ...[marcaDe(i + 1)].filter(Boolean)); return d; }));
     const visor = nodo("div", "visor"), subtitulo = nodo("p", "subtitulo oculto");
     visor.append(primera, subtitulo);
-    const hijosDespues = [visor, miniaturas];
+    const hijosDespues = [visor, ...[marcaDe(0)].filter(Boolean), miniaturas];
     if (fotos.length === 3 && fotos.every(Boolean)) {
-      const play = nodo("button", "boton vidrio reproducir", t("ver_arranque"));
+      const play = nodo("button", "boton vidrio reproducir", t(mudo ? "ver_texto" : "ver_arranque"));
       play.type = "button"; play.id = "reproducir";
       play.onclick = () => reproducirArranque(a, fotos, primera, subtitulo, play);
       hijosDespues.push(play);
     }
-    hijosDespues.push(nodo("p", "voz", a.despues.voz));
+    hijosDespues.push(nodo("span", "rotulo-voz", t(mudo ? "pantalla_t" : "voz_t")), nodo("p", "voz", a.despues.voz));
     if (revision && revision.paso) hijosDespues.push(nodo("p", "promesa", t("promesa_nueva", objeto)));
     $("antes-despues").replaceChildren(ladoApertura("", t("antes"), hijosAntes), ladoApertura("nuevo", t("despues"), hijosDespues));
   }
   const modelo = a.licencia && /open/i.test(a.licencia.escribio || "") ? "Muse Spark Open" : "Muse Spark 1.3";
   const sinRevisar = (a.no_comprobe || []).includes("promesa");
-  $("apertura-resumen").textContent = hecha ? `${t(sinRevisar ? "apertura_incompleta" : "apertura_vueltas", a.vueltas || 0)} ${t("apertura_quien", modelo)}` : t(a.otro_alfabeto ? "apertura_alfabeto" : "apertura_no");
-  const C = tx().comprobada;
-  const filas = (a.comprobaciones || []).filter((c) => c.id !== "promesa" || objeto).map((c) => {
+  const resumen = hecha ? [sinRevisar ? t("apertura_incompleta") : "", t("apertura_quien", modelo)].filter(Boolean).join(" ") : a.otro_alfabeto ? t("apertura_alfabeto") : "";
+  $("apertura-resumen").textContent = resumen;
+  $("apertura-resumen").classList.toggle("oculto", !resumen);
+  pintarLazo(a, hecha);
+  const C = tx().comprobada, ultimos = ((a.intentos || []).at(-1) || {}).problemas || [];
+  const filas = (a.comprobaciones || []).filter((c) => c.id !== "promesa" || objeto).flatMap((c) => {
+    if (c.id === "cuadros" && c.paso) return filasCuadros(a);
+    const malo = !c.paso && ultimos.find((p) => p.id === c.id);  // el motivo real, no la etiqueta de la regla
+    if (malo) return [nodo("li", "no", motivo(malo))];
     const texto = c.id === "promesa" ? C.promesa(objeto) : de(C, c.id);
-    return texto ? nodo("li", c.paso ? "" : "no", texto) : null;
-  }).filter(Boolean);
+    return texto ? [nodo("li", c.paso ? "" : "no", texto)] : [];
+  });
   if (sinRevisar) filas.push(nodo("li", "no", C.promesa_falta));
   lista.replaceChildren(...filas);
+  $("apertura-doblado").classList.toggle("oculto", !filas.length);
 }
 
 function pasos(e) {
@@ -1392,7 +1671,7 @@ function pasos(e) {
     li.append(nodo("span", "num", String(i + 1)), texto, b);
     return li;
   }));
-  $("pie-pasos").classList.toggle("oculto", !(e && (e.que_cambiar || lista_(e, "mejoras_opcionales").length)));
+  $("seccion-hacer").classList.toggle("oculto", !e);  // Copiar sigue aunque no haya un cambio sugerido
   progreso();
 }
 
@@ -1420,8 +1699,14 @@ function mostrar(r) {
   actual = r;
   const e = r.explicacion, N = tx().niveles, nivel = de(N, r.arranque.nivel) ? r.arranque.nivel : "medio", n = N[nivel];
   $("resultado").className = `pantalla nivel-${nivel}`;
-  $("semaforo").textContent = n.semaforo; $("titular").textContent = n.titular; $("sub").textContent = n.sub;
+  $("semaforo").textContent = n.semaforo;
   $("titulo-video").textContent = r.video.titulo || "";
+  // ¿El video da lo que promete su título? Solo se avisa si no del todo; «sí» y sin dato no dicen nada.
+  const tv = r.titulo_contra_video, avisoTitulo = tv && (tv.cumple === "parcial" || tv.cumple === "no");
+  $("aviso-titulo").classList.toggle("oculto", !avisoTitulo);
+  $("aviso-titulo").classList.toggle("grave", !!avisoTitulo && tv.cumple === "no");
+  if (avisoTitulo) $("aviso-titulo").replaceChildren(nodo("h2", "", t(tv.cumple === "no" ? "titulo_no" : "titulo_parcial")),
+    ...(tv.por_que ? [conTiempos(nodo("p"), reloj(String(tv.por_que)))] : []), nodo("p", "nota", t("titulo_nota")));
   // El ejemplo del repo es inventado (también su traza): se dice siempre, arriba y a la vista.
   $("aviso-ejemplo").classList.toggle("oculto", r.ejemplo_inventado !== true);
   $("aviso-ejemplo").textContent = r.ejemplo_inventado === true ? t("aviso_ejemplo") : "";
@@ -1433,6 +1718,10 @@ function mostrar(r) {
     conTiempos($("porque"), reloj(e.por_que));
     $("bloque-porque").classList.toggle("oculto", !e.por_que);  // si ninguna tarjeta pasó el filtro, no queda un título vacío
     conTiempos($("cambio"), e.que_cambiar ? reloj(e.que_cambiar) : t(nivel === "bajo" ? "sin_cambio_bajo" : "sin_sugerencia"));
+    // Sin un cambio que proponer, lo que no se pudo comprobar se dice aquí, no solo en los detalles.
+    const sinVerificar = !e.que_cambiar && nivel !== "bajo" ? lista_(e, "no_pude_verificar").filter((x) => x !== SIN_SUGERENCIA) : [];
+    $("sin-verificar").classList.toggle("oculto", !sinVerificar.length);
+    $("sin-verificar").textContent = sinVerificar.length ? t("no_verifique", sinVerificar.join(" ")) : "";
     $("funciona").classList.toggle("oculto", !e.lo_que_funciona || lista_(e, "lo_bueno").length > 0);  // sin repetir lo que ya está en la lista de arriba
     $("funciona").replaceChildren(nodo("b", "", t("ya_funciona")), conTiempos(nodo("span"), reloj(e.lo_que_funciona || "")));
     const hay = e.anzuelo_detectado && e.anzuelo_detectado !== "ninguno";
@@ -1444,7 +1733,7 @@ function mostrar(r) {
     }
   } else {
     $("porque").textContent = t("sin_api_porque"); $("bloque-porque").classList.remove("oculto");
-    $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto");
+    $("cambio").textContent = ""; $("funciona").classList.add("oculto"); $("anzuelo").classList.add("oculto"); $("sin-verificar").classList.add("oculto");
   }
   pasos(e); balance(e); normasFacebook(r); segunMeta(r); fichaArranque(r); if (conNumero) grafica(r); revisado(r); pintarApertura(r);
   $("error").classList.add("oculto");
@@ -1475,13 +1764,15 @@ function fichaArranque(r) {  // cómo arranca, según Muse Spark Open: descripci
 }
 
 function textoParaEditor() {
-  const e = actual.explicacion, titulo = actual.video.titulo ? ` · ${actual.video.titulo}` : "";
+  const e = actual.explicacion || {}, titulo = actual.video.titulo ? ` · ${actual.video.titulo}` : "", a = actual.apertura;
   const lineas = [`Retina${titulo}`];
   if (e.que_cambiar) lineas.push(`${t("para_editor")}${reloj(e.que_cambiar)}`, ...(e.pasos || []).map((p, i) => `${i + 1}. ${reloj(p)}`));
+  else lineas.push(t(actual.arranque.nivel === "bajo" ? "sin_cambio_bajo" : "sin_sugerencia"));
+  if (e.por_que) lineas.push(`${t("por_que")}: ${reloj(e.por_que)}`);
   const mejoras = lista_(e, "mejoras_opcionales");
   if (mejoras.length) lineas.push(t("opcional_editor"), ...mejoras.map((m) => `- ${reloj(m)}`));
-  const a = actual.apertura;
-  if (a && a.aprobada && a.despues) lineas.push(`${t("apertura_editor")}${a.despues.voz}`, ...a.despues.cuadros.map((c, i) => `${i + 1}. ${c}`));
+  if (a && a.ya_funciona) lineas.push(`${t("titular_ya")}: ${a.motivo || t("ya_sin_motivo")}`);
+  if (a && a.aprobada && a.despues) lineas.push(`${t(a.modo === "texto_en_pantalla" ? "apertura_editor_texto" : "apertura_editor")}${a.despues.voz}`, ...a.despues.cuadros.map((c, i) => `${i + 1}. ${c}`));
   return lineas.join("\n");
 }
 
@@ -1491,49 +1782,68 @@ $("bajar").onclick = () => {  // el resumen para el editor como archivo de texto
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
+let vueltaCopiar = null;
+const avisoCopiar = (texto) => {  // el botón vuelve a decir «Copiar»: se puede copiar otra vez
+  $("copiar").textContent = texto; clearTimeout(vueltaCopiar);
+  vueltaCopiar = setTimeout(() => { $("copiar").textContent = t("copiar"); }, 2200);
+};
 $("copiar").onclick = async () => {
-  try { await navigator.clipboard.writeText(textoParaEditor()); $("copiar").textContent = t("copiado"); }
-  catch (_) { $("copiar").textContent = t("no_copio"); }
+  try { await navigator.clipboard.writeText(textoParaEditor()); avisoCopiar(t("copiado")); }
+  catch (_) { avisoCopiar(t("no_copio")); }
 };
 
-function fallo(motivo) {  // motivo: una clave de TEXTOS o un texto ya escrito (p. ej. el error que da el navegador)
-  ultimoFallo = motivo;
-  $("error").textContent = t("fallo", typeof de(tx(), motivo) === "string" ? t(motivo) : motivo);
+function fallo(motivo) {  // motivo: una clave de TEXTOS o un texto ya escrito
+  ultimoFallo = motivo; ultimoAviso = null;
+  $("error").textContent = t("fallo", dice(motivo));
   $("error").classList.remove("oculto");
   estado(conSubida ? "subir" : "vacio");
 }
 
 async function leer(archivo) {
   carpeta = null;  // un archivo elegido a mano no trae su carpeta: el storyboard se ve solo en texto
-  try { original = JSON.parse(await archivo.text()); mostrar(original); porOmision = false; }
-  catch (err) { fallo(err.clave || err.message || "no_se_leyo"); }
+  try { original = JSON.parse(await archivo.text()); mostrar(original); porOmision = false; ofrecerTraduccion(); $("titular").focus(); }
+  catch (err) { fallo(err.clave || "no_se_leyo"); }
 }
 
 async function abrir(ruta, ejemplo = false) {  // ejemplo: es el caso de muestra del idioma (DEMO)
-  const r = await fetch(ruta);
+  const r = await traer(ruta, { cache: "no-store" });
   if (!r.ok) throw falla("no_encontre");
+  const datos = await r.json().catch(() => { throw falla("no_se_leyo"); });
   carpeta = new URL(".", r.url);
-  original = await r.json();
-  mostrar(original);
+  original = datos;
   porOmision = ejemplo;
-  await enSuIdioma();
+  mostrar(original);
+  ofrecerTraduccion();
+}
+
+const idDelCaso = () => { const m = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname); return m ? m[1] : null; };
+
+// Abrir una revisión nunca traduce: cuesta, así que solo se hace con el botón de idioma o si la persona lo elige aquí.
+function ofrecerTraduccion() {
+  const base = original, puede = !!(base && base.idioma && base.idioma !== idioma && !porOmision && conSubida && idDelCaso());
+  $("aviso-idioma").classList.toggle("oculto", !puede);
+  $("traducir").classList.remove("oculto");
+  if (puede) $("aviso-idioma-texto").textContent = t("idioma_distinto");
 }
 
 // Lo que escribió el modelo viene en el idioma de la revisión. Si el panel está en el otro, se traduce una vez y se guarda.
 async function enSuIdioma() {
-  const base = original, id = carpeta && /^\/casos\/([0-9a-f]{12})\/$/.exec(carpeta.pathname), aviso = $("aviso-idioma");
+  const base = original, id = idDelCaso(), aviso = $("aviso-idioma");
   aviso.classList.add("oculto");
   if (!base || !base.idioma || porOmision) return;
   if (base.idioma === idioma) { if (actual !== base) repintar({ ...base, apertura: actual.apertura }); return; }
   if (!conSubida || !id) return;
-  aviso.textContent = t("traduciendo"); aviso.classList.remove("oculto");
+  $("aviso-idioma-texto").textContent = t("traduciendo"); $("traducir").classList.add("oculto"); aviso.classList.remove("oculto");
   try {
-    const x = await fetch(`/api/traducir/${id[1]}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma, ...acceso() } });
+    const x = await fetch(`/api/traducir/${id}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma, ...acceso() } });
     const r = await x.json().catch(() => ({}));
-    if (!x.ok) throw new Error(r.error || t("no_traduje"));
+    if (!x.ok) throw new Error(r.error || "no_traduje");
     if (original === base && r.idioma === idioma) { repintar({ ...r, apertura: actual.apertura }); aviso.classList.add("oculto"); }
-  } catch (e) { aviso.textContent = e.message || t("no_traduje"); }
+  } catch (e) {  // sigue en su idioma y se puede volver a pedir
+    $("aviso-idioma-texto").textContent = dice(legible(e, "no_traduje")); $("traducir").classList.remove("oculto");
+  }
 }
+$("traducir").onclick = () => enSuIdioma();
 
 function repintar(r) {  // otra vez lo mismo en pantalla: sin perder los pasos marcados ni el lugar
   const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo"));
@@ -1559,18 +1869,18 @@ $("arreglar").onclick = async () => {
         if (!x.ok) throw new Error(String(x.status));
         e = await x.json(); fallas = 0;
       } catch (_) {
-        if (++fallas >= 10) throw new Error(t("apertura_error"));
+        if (++fallas >= 10) throw falla("apertura_error");
         continue;
       }
-      if (e.estado === "error") throw new Error(e.mensaje || t("apertura_error"));
+      if (e.estado === "error") throw new Error(e.mensaje || "apertura_error");
       if (e.estado === "listo") break;
-      if (e.estado === "sin_pedir") throw new Error(t("apertura_error"));  // Retina se reinició a media corrida
+      if (e.estado === "sin_pedir") throw falla("apertura_error");  // Retina se reinició a media corrida
       pintar(e);
     }
-    const hecha = await (await fetch(`/casos/${id}/resultado.json`, { cache: "no-store" })).json();
+    const hecha = await (await traer(`/casos/${id}/resultado.json`, { cache: "no-store" })).json();
     actual.apertura = hecha.apertura;
     pintarApertura(actual);
-  } catch (x) { avance.textContent = x.message; }
+  } catch (x) { avance.textContent = dice(legible(x, "apertura_error")); }
   finally { b.disabled = false; }
 };
 
@@ -1586,10 +1896,9 @@ $("otra").onclick = () => {
 $("elegir").onclick = (e) => { e.stopPropagation(); $("archivo").click(); };
 $("ejemplo").onclick = (e) => {
   e.stopPropagation();
-  abrir(DEMO(), true).catch(() => fallo("doble_clic"));
+  abrir(DEMO(), true).then(() => $("titular").focus()).catch((err) => fallo(location.protocol === "file:" ? "doble_clic" : legible(err, "no_encontre")));
 };
 $("soltar").onclick = () => $("archivo").click();
-$("soltar").onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("archivo").click(); } };
 $("archivo").onchange = (e) => { if (e.target.files[0]) leer(e.target.files[0]); };
 for (const ev of ["dragenter", "dragover"]) $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.add("encima"); });
 for (const ev of ["dragleave", "drop"]) $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.remove("encima"); });
@@ -1600,7 +1909,7 @@ $("legible").onclick = () => { const on = document.body.classList.toggle("legibl
 // La demo sin llave (python -m retina.demo) no tiene /api/: ahí el panel solo abre revisiones ya hechas.
 let conSubida = false, video = null, talentos = [];
 const acceso = () => ($("v-acceso").value ? { "X-Retina-Acceso": $("v-acceso").value } : {});  // solo en la demo en línea
-const PASOS_AVANCE = ["subiendo", "segmentar", "transcribir", "ficha", "predecir", "describir", "sam", "explicar", "normas"];
+const PASOS_AVANCE = ["subiendo", "segmentar", "transcribir", "ficha", "predecir", "describir", "sam", "explicar", "normas", "titulo"];
 // Otros nombres del mismo paso: los que se deducen de los archivos, el agente y la revisión en código de lo que recomienda Meta.
 const MISMO_PASO = { cortando: "segmentar", escuchando: "transcribir", mirando: "describir", escribiendo: "explicar", agente: "explicar", revision_meta: "normas", terminando: "normas" };
 const quePaso = (k) => MISMO_PASO[k] || k;
@@ -1608,24 +1917,25 @@ const nombrePaso = (k) => [].concat(de(tx().avance, quePaso(k)) || []).join(" ")
 const sinAcentos = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
 
 function avisar(motivo) {  // motivo: una clave de TEXTOS o el texto que manda Retina; vacío lo borra
-  ultimoFallo = null;
-  $("error").textContent = motivo ? (typeof de(tx(), motivo) === "string" ? t(motivo) : motivo) : "";
+  ultimoFallo = null; ultimoAviso = motivo || null;
+  $("error").textContent = motivo ? dice(motivo) : "";
   $("error").classList.toggle("oculto", !motivo);
   if (motivo) estado("subir");
 }
 
+// ¿Aquí se pueden subir videos? /api/salud lo decide, y solo una respuesta lo decide: una falla pasajera se reintenta (traer)
+// y, si sigue, lanza el error: quien llama ofrece reintentar. Nunca se cae a la pantalla de abrir un archivo.
 async function prepararSubida() {
   if (location.protocol === "file:") return false;
-  let salud = {};
+  const r = await traer("/api/salud", { cache: "no-store" });
+  if (!r.ok) return false;  // este sitio no tiene la API
+  const salud = await r.json().catch(() => ({}));
+  if (!salud.subir) return false;  // la demo sin llave: solo abre revisiones ya hechas
   try {
-    const r = await fetch("/api/salud", { cache: "no-store" });
-    if (!r.ok) return false;
-    salud = await r.json();
-    if (!salud.subir) return false;  // la demo sin llave: solo abre revisiones ya hechas
-    const rt = await fetch("/api/talentos", { cache: "no-store" });
-    if (!rt.ok) return false;
-    talentos = ((await rt.json()).talentos || []).map(String);
-  } catch (_) { return false; }
+    const rt = await traer("/api/talentos", { cache: "no-store" });
+    talentos = rt.ok ? ((await rt.json()).talentos || []).map(String) : [];
+  } catch (_) { talentos = []; }  // la app existe aunque la lista no llegue: se sube igual
+  $("v-talento").replaceChildren($("v-talento").options[0]);
   for (const x of talentos) { const o = nodo("option", "", x); o.value = x; $("v-talento").append(o); }
   // Con el cerebro público no hay talentos ni códigos de producción: esos campos ni se enseñan.
   if (!talentos.length) for (const id of ["v-talento", "v-codigo"]) $(id).closest("label").hidden = true;
@@ -1734,6 +2044,7 @@ async function revisarUno() {  // un video: al terminar abre la tarjeta aquí mi
   q.set("caso", ruta);
   history.replaceState(history.state, "", `${location.pathname}?${q}`);
   await abrir(ruta);
+  $("titular").focus();
 }
 
 async function revisarDos() {  // dos versiones: se revisan una tras otra y al final Spark las compara
@@ -1754,6 +2065,7 @@ async function revisarDos() {  // dos versiones: se revisan una tras otra y al f
   q.delete("caso"); q.set("a", idA); q.set("b", idB);
   history.replaceState(history.state, "", `${location.pathname}?${q}`);
   await abrirComparacion(idA, idB, eb.comparacion_error);
+  $("c-titular").focus();
 }
 
 $("forma").onsubmit = (ev) => {
@@ -1765,12 +2077,13 @@ $("forma").onsubmit = (ev) => {
   if (!$("v-fecha").value) return avisar("falta_fecha");
   if (codigo && !/^[A-Z]{2,10}\d{2,12}$/.test(codigo)) return avisar("codigo_malo");
   avisar("");
-  (modoAB ? revisarDos() : revisarUno()).catch((err) => avisar(err.clave || err.message || "no_termino"));
+  (modoAB ? revisarDos() : revisarUno()).catch((err) => avisar(legible(err, "sin_conexion")));
 };
 
 function ponerModo(ab) {
   modoAB = ab;
   $("modo-uno").setAttribute("aria-checked", String(!ab)); $("modo-ab").setAttribute("aria-checked", String(ab));
+  $("modo-uno").tabIndex = ab ? -1 : 0; $("modo-ab").tabIndex = ab ? 0 : -1;
   $("soltar-b").classList.toggle("oculto", !ab); $("etiqueta-a").classList.toggle("oculto", !ab);
   $("t-subir").dataset.t = ab ? "subir_titulo_ab" : "subir_titulo";
   $("d-subir").dataset.t = ab ? "subir_p_ab" : "subir_p";
@@ -1780,6 +2093,11 @@ function ponerModo(ab) {
 }
 $("modo-uno").onclick = () => ponerModo(false);
 $("modo-ab").onclick = () => ponerModo(true);
+for (const id of ["modo-uno", "modo-ab"]) $(id).onkeydown = (e) => {  // un grupo de radio se recorre con las flechas
+  if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+  e.preventDefault(); ponerModo(id === "modo-uno"); $(id === "modo-uno" ? "modo-ab" : "modo-uno").focus();
+};
+$("modo-ab").tabIndex = -1;
 
 function elegirVideoB(archivo) {
   if (!archivo) return;
@@ -1802,9 +2120,9 @@ function reiniciarSubida() {
 // ---- Comparación de dos versiones: tabla lado a lado con lo que Retina vio, y el veredicto de Spark ----
 async function abrirComparacion(a, b, fallaComparar = "") {
   const leerJson = async (ruta) => {
-    const r = await fetch(ruta, { cache: "no-store" });
+    const r = await traer(ruta, { cache: "no-store" });
     if (!r.ok) throw falla("no_encontre");
-    return r.json();
+    return r.json().catch(() => { throw falla("no_se_leyo"); });
   };
   const [ra, rb] = await Promise.all([leerJson(`/casos/${a}/resultado.json`), leerJson(`/casos/${b}/resultado.json`)]);
   let c = null;
@@ -1833,12 +2151,12 @@ function pintarComparacion({ a, b, ra, rb, c, fallaComparar }) {
   fila(t("fila_duracion"), nodo("div", "", mmss(ra.video.duracion_s)), nodo("div", "", mmss(rb.video.duracion_s)));
   const metas = (r) => (Array.isArray(r.revision_meta) ? r.revision_meta : []);
   const reglas = new Map();
-  for (const r of [ra, rb]) for (const m of metas(r)) if (m && m.id && !reglas.has(m.id)) reglas.set(m.id, String(m.regla || m.id));
+  for (const r of [ra, rb]) for (const m of metas(r)) if (m && m.id && !reglas.has(m.id)) reglas.set(m.id, de(tx().reglas_meta, m.id) || String(m.regla || m.id));
   const marca = (r, id) => {
     const m = metas(r).find((x) => x.id === id), d = nodo("div");
     if (!m) { d.append(nodo("span", "nd", "–")); return d; }
     const [clase, signo] = m.cumple === true ? ["ok", "✓"] : m.cumple === false ? ["no", "✗"] : ["nd", "–"];
-    d.append(nodo("span", clase, signo), conTiempos(nodo("small"), reloj(String(m.evidencia || ""))));
+    d.append(nodo("span", clase, signo), nodo("small", "", reloj(String(m.evidencia || ""))));  // sin pastillas: «9:16» no es un tiempo
     return d;
   };
   for (const [id, regla] of reglas) fila(regla, marca(ra, id), marca(rb, id));
@@ -1891,6 +2209,7 @@ function aplicarTextos() {
   document.querySelectorAll("[data-t-aria]").forEach((n) => n.setAttribute("aria-label", t(n.dataset.tAria)));
   const b = $("idioma"); b.textContent = t("idioma_boton"); b.lang = t("idioma_destino"); b.title = t("idioma_titulo");
   document.querySelectorAll(".opcion").forEach((o) => { o.lastChild.textContent = nombreFondo(FONDOS.find((f) => f.id === o.dataset.id)); });
+  document.body.classList.add("con-textos");
 }
 const nombreFondo = (f) => de(tx().fondos, f.id) || f.nombre;
 
@@ -1898,39 +2217,80 @@ const nombreFondo = (f) => de(tx().fondos, f.id) || f.nombre;
 $("idioma").onclick = async () => {
   idioma = idioma === "en" ? "es" : "en";
   try { localStorage.setItem("retina-idioma", idioma); } catch (_) { /* sin almacenamiento: vale para esta visita */ }
-  const q = new URLSearchParams(location.search);
-  if (idioma === "en") q.set("lang", "en"); else q.delete("lang");
-  history.replaceState(history.state, "", `${location.pathname}${q.toString() ? `?${q}` : ""}${location.hash}`);
+  const q = new URLSearchParams(location.search), enResultado = document.body.dataset.estado === "resultado" && actual;
+  q.set("lang", idioma);  // se escribe siempre: si no, otra visita volvería a seguir al navegador
+  if (enResultado && casoDemo() && q.has("caso")) q.set("caso", new URL(DEMO(), location.href).pathname);  // los dos ejemplos son el mismo caso
+  history.replaceState(history.state, "", `${location.pathname}?${q}${location.hash}`);
   aplicarTextos();
-  if (document.body.dataset.estado === "resultado" && actual) {
-    if (porOmision) { try { await abrir(DEMO(), true); } catch (_) { repintar(actual); } }
-    else { repintar(actual); await enSuIdioma(); }
+  if (enResultado) {
+    if (casoDemo()) {
+      const y = window.scrollY, hechos = [...$("pasos").children].map((li) => li.classList.contains("listo"));
+      try {
+        await abrir(DEMO(), true);
+        [...$("pasos").children].forEach((li, i) => { if (hechos[i]) li.querySelector(".hecho").click(); });
+        window.scrollTo(0, y);
+      } catch (_) { repintar(actual); }
+    } else { repintar(actual); await enSuIdioma(); }  // el botón de idioma es la fueraón explícita de traducir
   } else if (document.body.dataset.estado === "comparacion" && comparacionActual) {
-    const y = window.scrollY; pintarComparacion(comparacionActual); window.scrollTo(0, y);
-  } else if (!$("error").classList.contains("oculto") && ultimoFallo) fallo(ultimoFallo);
+    const y = window.scrollY, c = comparacionActual;
+    pintarComparacion(c); window.scrollTo(0, y);
+    // Lo que escribieron los modelos en cada versión; el veredicto de Spark no tiene traducción guardada.
+    if (conSubida) {
+      const enIdiomaPedido = async (id, r) => {
+        if (!r.idioma || r.idioma === idioma) return r;
+        const x = await fetch(`/api/traducir/${id}`, { method: "POST", headers: { "X-Retina": "1", "X-Retina-Idioma": idioma, ...acceso() } });
+        const nuevo = x.ok ? await x.json().catch(() => null) : null;
+        return nuevo && nuevo.idioma === idioma ? nuevo : r;
+      };
+      try {
+        const [ra, rb] = await Promise.all([enIdiomaPedido(c.a, c.ra), enIdiomaPedido(c.b, c.rb)]);
+        if (comparacionActual === c && (ra !== c.ra || rb !== c.rb)) { c.ra = ra; c.rb = rb; const z = window.scrollY; pintarComparacion(c); window.scrollTo(0, z); }
+      } catch (_) { /* sigue en su idioma */ }
+    }
+  } else if (!$("error").classList.contains("oculto")) {
+    if (ultimoFallo) $("error").textContent = t("fallo", dice(ultimoFallo));
+    else if (ultimoAviso) $("error").textContent = dice(ultimoAviso);
+  }
+  if (video) $("video-elegido").textContent = t("video_elegido", video.name, (video.size / 1048576).toFixed(0));
+  if (videoB) $("video-elegido-b").textContent = t("video_elegido", videoB.name, (videoB.size / 1048576).toFixed(0));
 };
 aplicarTextos();
 
+// Lo secundario empieza doblado en pantallas angostas: nada se quita, y en celular la página no se vuelve interminable.
+for (const d of document.querySelectorAll("details[data-plegable]")) d.open = matchMedia("(min-width: 900px)").matches;
+
+function sinRespuesta() {  // Retina no contestó ni después de reintentar: se ofrece otro intento, sin error rojo y sin cambiar de pantalla
+  $("cargando-texto").dataset.t = "sin_respuesta"; $("cargando-texto").textContent = t("sin_respuesta");
+  $("reintentar").classList.remove("oculto");
+  estado("cargando");
+}
+
 // Servido por http (python -m retina.demo) abre el caso de ?caso= o el ejemplo del idioma; con doble clic, se elige el archivo.
 // Con python -m retina.app, sin ?caso= se abre la pantalla para subir un video.
-(async () => {
-  conSubida = await prepararSubida();
+async function arrancar() {
+  $("cargando-texto").dataset.t = "cargando"; $("cargando-texto").textContent = t("cargando");
+  $("reintentar").classList.add("oculto");
+  try { conSubida = await prepararSubida(); } catch (_) { return sinRespuesta(); }
   if (conSubida) aplicarTextos();
   // ?caso= solo acepta un resultado.json de casos/ en este mismo sitio (nunca otro dominio).
   const q = new URLSearchParams(location.search), pedido = q.get("caso"), idA = q.get("a"), idB = q.get("b");
   if (idA && idB && /^[0-9a-f]{12}$/.test(idA) && /^[0-9a-f]{12}$/.test(idB)) { await abrirComparacion(idA, idB); return; }
   if (!pedido && conSubida) { estado("subir"); return; }
+  if (location.protocol === "file:" && !pedido) { estado("vacio"); return; }  // con doble clic el navegador no deja leer archivos: se usa el botón
   let propio = null;
   if (pedido) {
     const u = new URL(pedido, location.href);
     if (u.origin === location.origin && /^\/casos\/[\w-]+\/resultado\.json$/.test(u.pathname)) propio = u.pathname;
     else { fallo("caso_invalido"); return; }
   }
-  for (const ruta of propio ? [propio] : [DEMO()]) {
-    try { await abrir(ruta, ruta === DEMO()); return; } catch (_) { /* con doble clic el navegador no deja leer archivos: se usa el botón */ }
+  try { await abrir(propio || DEMO(), !propio); } catch (err) {
+    if (err.clave === "sin_conexion") return sinRespuesta();
+    if (propio) fallo(err.clave || "no_encontre"); else estado(conSubida ? "subir" : "vacio");
   }
-  if (propio) fallo("no_encontre");
-})().catch((err) => fallo(err.clave || err.message || "no_encontre"));
+}
+const arrancarSeguro = () => arrancar().catch((err) => fallo(legible(err, "no_encontre")));
+$("reintentar").onclick = arrancarSeguro;
+arrancarSeguro();
 
 // ---- Vidrio (WebGL): fondo, lente en las orillas, separación de color, esmerilado y ondas ----
 // Un solo lienzo dibuja el fondo y, dentro de cada cuadro .vidrio, el fondo doblado como lo doblaría un cristal grueso.
@@ -2019,7 +2379,12 @@ function subir(tex, img) {  // con doble clic (file://) el navegador no deja pas
 }
 const cache = {};
 const imagen = (nombre) => cache[nombre] || (cache[nombre] = new Promise((ok, mal) => {
-  const im = new Image(); im.onload = () => ok(im); im.onerror = mal; im.src = `fondos/fondo-${nombre}.webp`;
+  const pedir = (quedan) => {  // una imagen que falla una vez no apaga el vidrio
+    const im = new Image(); im.onload = () => ok(im);
+    im.onerror = () => { if (quedan) setTimeout(() => pedir(quedan - 1), 500); else mal(new Error("sin imagen")); };
+    im.src = `fondos/fondo-${nombre}.webp`;
+  };
+  pedir(2);
 }));
 
 // Ondas: un resorte por cuadro; la onda nace donde pasa el cursor y se asienta sola
@@ -2114,7 +2479,10 @@ $("abrir-fondos").onclick = () => {
   const abierto = $("fondos").hidden; $("fondos").hidden = !abierto; $("abrir-fondos").setAttribute("aria-expanded", String(abierto));
 };
 document.addEventListener("click", (e) => { if (!e.target.closest(".menu-fondo")) { $("fondos").hidden = true; $("abrir-fondos").setAttribute("aria-expanded", "false"); } });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") { $("fondos").hidden = true; $("abrir-fondos").setAttribute("aria-expanded", "false"); } });
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape" || $("fondos").hidden) return;
+  $("fondos").hidden = true; $("abrir-fondos").setAttribute("aria-expanded", "false"); $("abrir-fondos").focus();
+});
 let guardado = null; try { guardado = localStorage.getItem("retina-fondo"); } catch (_) { /* sin almacenamiento */ }
 ponerFondo(guardado || "cristales");
 </script>

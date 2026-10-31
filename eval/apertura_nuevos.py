@@ -63,7 +63,7 @@ def datos_sin_video(titulo: str, tramos: list, dur: float) -> dict:
     return {"duracion_video_s": dur, "titulo": titulo,
             "frases": [{"segundo": round(i, 1), "dice": x} for i, x in voz if i < dur / 4],
             "resto_de_lo_que_se_dice": " ".join(" ".join(x for i, x in voz if i >= dur / 4).split()[:apertura.MAX_PALABRAS_RESTO]),
-            "idioma_de_la_apertura": apertura.IDIOMAS[lengua], "fuente": integridad.normalizar(f"{titulo} {dicho}"),
+            "idioma_de_la_apertura": apertura.IDIOMAS[lengua], "fuente": f"{titulo} {dicho}", "video_mudo": not voz,
             "tema_obligatorio": transcribir.idioma_de(titulo) in (None, lengua)}
 
 

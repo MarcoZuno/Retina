@@ -743,7 +743,7 @@ class CualquierFormato(unittest.TestCase):
 
     def test_se_reconoce_el_video_por_su_contenido(self):
         from retina.app import tipo_de_video
-        caja = lambda t: bytes(4) + t + bytes(4)  # noqa: E731
+        caja = lambda t: (24).to_bytes(4, "big") + t + bytes(4)  # noqa: E731  (el tamaño de la caja ya no puede ser 0)
         self.assertEqual(tipo_de_video(caja(b"ftyp")), "mp4")          # MP4 y MOV modernos
         self.assertEqual(tipo_de_video(caja(b"wide")), "convertir")    # MOV viejo
         self.assertEqual(tipo_de_video(bytes([0x1A, 0x45, 0xDF, 0xA3]) + bytes(8)), "convertir")  # WebM y MKV

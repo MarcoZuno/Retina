@@ -47,14 +47,15 @@ from urllib.parse import unquote, urlsplit
 
 from .demo import ServidorExclusivo, SoloElPanel
 from .esquemas import RAIZ
-from .segmentar import Aviso, duracion_s, maximo_s
+from .segmentar import Aviso, _info, duracion_s, maximo_s, pistas, tiempo_maximo_s
 
 MAX_MB = 800
 ID = re.compile(r"^[0-9a-f]{12}$")
 CODIGO = re.compile(r"^[A-Z]{2,10}\d{2,12}$")
 # El avance se lee de los archivos que va dejando el orquestador, en este orden.
+# La tarjeta la deja agente.json (con --voz) o explicar.json (el flujo público): cualquiera cierra el paso.
 PASOS = (("manifiesto.json", "cortando"), ("transcribir.json", "escuchando"), ("describir.json", "mirando"),
-         ("agente.json", "escribiendo"))
+         (("agente.json", "explicar.json"), "escribiendo"))
 # Dos versiones del mismo video: la B se sube con la cabecera X-Retina-Comparar-Con (el id de la A) y,
 # al terminar su tarjeta, Retina compara cómo arrancan las dos (retina.comparar).
 COMPARAR_CON = "comparar_con.txt"
@@ -65,6 +66,7 @@ ESPERA_A_S = 600
 # La demo en línea para jueces: lo que aguanta y hasta cuándo se guarda.
 MAX_MB_EN_LINEA = 200
 DURACION_EN_LINEA_S = 5 * 60
+FFMPEG_EN_LINEA_S = 180  # un video pesado no ocupa la fila por horas
 MAX_EN_FILA = 5
 HORAS_DE_VIDA = 24
 MIN_LARGO_CODIGO = 12
@@ -72,6 +74,12 @@ TOPE_EN_LINEA_USD = 30.0
 MARGEN_USD = 0.5  # lo que puede costar una revisión completa con su apertura
 LIMPIEZA_CADA_S = 3600
 MAX_SALIDA_BYTES = 2 * 1024 ** 3  # lo más que puede pesar un video ya convertido
+# Lo más que pueden ocupar las revisiones juntas: antes de recibir un video se mira si cabe.
+CUOTA_MB = 20_000
+CUOTA_EN_LINEA_MB = 2_000
+MAX_INTENTOS_TRADUCCION = 3  # fallos seguidos por revisión e idioma; cada intento se paga
+DRENAR_MAX = 1 << 20  # lo que se lee del cuerpo no usado antes de contestar, para que el navegador vea la respuesta
+PLAZO_HUERFANA_S = 60  # una revisión «procesando» que nadie está corriendo y lleva más de esto sin tocarse, se da por interrumpida
 
 # Lo que ve la persona cuando algo falla, en el idioma del panel. Los detalles técnicos van a error.txt.
 TEXTOS = {
@@ -112,6 +120,9 @@ TEXTOS = {
         "tope": "Se llegó al tope de gasto que pusiste en RETINA_TOPE_USD.",
         "interrumpida": "Esta revisión se interrumpió porque Retina se cerró o se reinició antes de terminarla. "
                         "Sube el video otra vez.",
+        "sin_espacio": "Retina no tiene espacio para otro video ahora. Intenta otra vez en unos minutos.",
+        "revision_en_curso": "La revisión todavía no termina. Se traduce cuando esté lista.",
+        "traduccion_intentos": "La traducción falló varias veces. Sigue en su idioma original.",
     },
     "en": {
         "falta_titulo": "Type the video's title (300 characters at most).",
@@ -150,6 +161,9 @@ TEXTOS = {
         "tope": "You reached the spending limit you set in RETINA_TOPE_USD.",
         "interrumpida": "This review was interrupted because Retina was closed or restarted before it finished. "
                         "Upload the video again.",
+        "sin_espacio": "Retina has no room for another video right now. Try again in a few minutes.",
+        "revision_en_curso": "The review isn't finished yet. It can be translated once it's ready.",
+        "traduccion_intentos": "The translation failed several times. It stays in its original language.",
     },
 }
 
@@ -201,14 +215,21 @@ def comparar_con(cabeceras, casos: Path, idioma: str = "es") -> Path | None:
     return casos / valor
 
 
+def _caja(cabeza: bytes, tipo: bytes | None = None) -> bool:
+    """Una caja ISO de verdad: su tamaño declarado cabe en un encabezado (8 bytes en adelante, 1 = tamaño de 64 bits)."""
+    tam = int.from_bytes(cabeza[:4], "big")
+    return len(cabeza) >= 12 and (tipo is None or cabeza[4:8] == tipo) and (tam == 1 or tam >= 8)
+
+
 def es_mp4(cabeza: bytes) -> bool:
-    return len(cabeza) >= 12 and cabeza[4:8] == b"ftyp"
+    """«ftyp» con un tamaño creíble: una marca de 12 a 4096 bytes."""
+    return len(cabeza) >= 12 and cabeza[4:8] == b"ftyp" and 12 <= int.from_bytes(cabeza[:4], "big") <= 4096
 
 
 # Lo que sube cualquier persona: MP4 y MOV (cajas ISO) se revisan tal cual; WebM, MKV, AVI y FLV se pasan
 # a MP4 antes de revisar. Se mira el contenido, no el nombre del archivo.
 SUBIDA = "subida-original.video"
-CAJAS_ISO = (b"ftyp", b"wide", b"free", b"mdat", b"moov", b"skip", b"pnot")
+CAJAS_ISO = (b"wide", b"free", b"mdat", b"moov", b"skip", b"pnot")
 
 
 def tipo_de_video(cabeza: bytes) -> str | None:
@@ -217,8 +238,10 @@ def tipo_de_video(cabeza: bytes) -> str | None:
         return None
     if es_mp4(cabeza):
         return "mp4"
-    if (cabeza[4:8] in CAJAS_ISO or cabeza[:4] == b"\x1aE\xdf\xa3"  # MOV viejo o WebM/MKV
-            or (cabeza[:4] == b"RIFF" and cabeza[8:12] == b"AVI ") or cabeza[:3] == b"FLV"):
+    if (cabeza[4:8] in CAJAS_ISO and _caja(cabeza)  # MOV viejo
+            or cabeza[:4] == b"\x1aE\xdf\xa3"  # WebM o MKV
+            or (cabeza[:4] == b"RIFF" and cabeza[8:12] == b"AVI ")
+            or (cabeza[:4] == b"FLV\x01" and cabeza[5:9] == b"\x00\x00\x00\x09" and not cabeza[4] & 0xFA)):
         return "convertir"
     return None
 
@@ -230,19 +253,27 @@ def formato_riesgoso(cabeza: bytes) -> bool:
 
 def convertir_a_mp4(origen: Path, destino: Path) -> None:
     """Pasa el video a MP4 (H.264 y AAC) para que todo lo demás trabaje igual que con un MP4."""
-    from .segmentar import PROTOCOLOS, TIEMPO_MAXIMO_S, _ffmpeg, entorno_ffmpeg
+    from .segmentar import PROTOCOLOS, _ffmpeg, entorno_ffmpeg
     temporal = destino.with_name("convirtiendo.mp4")
     try:
         r = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *PROTOCOLOS, "-i", str(origen),
                             "-t", str(maximo_s()), "-fs", str(MAX_SALIDA_BYTES),
-                            "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                            "-map", "0:v:0", "-map", "0:a:0?",
+                            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2",  # libx264 en yuv420p no acepta medidas impares
+                            "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
                             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", str(temporal)],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S, env=entorno_ffmpeg())
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=tiempo_maximo_s(), env=entorno_ffmpeg())
     except subprocess.TimeoutExpired:
         temporal.unlink(missing_ok=True)
         raise Aviso("ffmpeg_lento", "Convertir el video tardó demasiado.") from None
     if r.returncode != 0 or not temporal.is_file():
         temporal.unlink(missing_ok=True)
+        try:
+            con_imagen = pistas(_info(origen))[0]
+        except Aviso:
+            con_imagen = True
+        if not con_imagen:  # un WebM válido de solo audio
+            raise Aviso("sin_imagen", "Ese archivo no trae imagen: Retina revisa videos.")
         raise Aviso("no_lee", "No pude leer ese video. Prueba exportarlo como MP4 y súbelo otra vez.")
     os.replace(temporal, destino)
 
@@ -279,20 +310,39 @@ def pedir_apertura(carpeta: Path, fila, idioma: str) -> tuple[int, dict]:
     return 202, {"estado": "en_fila"}
 
 
+_TRADUCCIONES: dict[tuple[str, str], dict] = {}
+_CANDADO_TRADUCCIONES = threading.Lock()
+
+
+def _traduccion(carpeta: Path, idioma: str) -> dict:
+    with _CANDADO_TRADUCCIONES:
+        return _TRADUCCIONES.setdefault((str(carpeta), idioma), {"candado": threading.Lock(), "fallos": 0})
+
+
 def pedir_traduccion(carpeta: Path, idioma: str) -> tuple[int, dict]:
-    """Lo que escribió el modelo, en el idioma del panel. Tarda unos segundos y se hace una sola vez por idioma."""
+    """Lo que escribió el modelo, en el idioma del panel. Tarda unos segundos y se hace una sola vez por idioma:
+    dos pedidos a la vez de la misma revisión esperan la misma traducción, no la pagan dos veces."""
     from . import meta_api, traducir
     if not (carpeta / "resultado.json").is_file():
         return 404, {"error": texto(idioma, "sin_revision")}
+    if (carpeta / "estado.json").is_file() and estado(carpeta).get("estado") != "listo":  # el resultado todavía cambia
+        return 409, {"error": texto(idioma, "revision_en_curso"), "espera": True}
     if not (carpeta / f"resultado-{idioma}.json").exists() and not salud()["llave"]:
         return 503, {"error": texto(idioma, "sin_llave")}
-    try:
-        return 200, traducir.traducir(carpeta, idioma)
-    except meta_api.TopeAlcanzado:
-        return 503, {"error": texto(idioma, "tope")}
-    except Exception as e:  # noqa: BLE001 — la revisión sigue en su idioma; el detalle queda en error.txt
-        (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
-        return 503, {"error": texto(idioma, "traduccion_falla", tipo=type(e).__name__)}
+    t = _traduccion(carpeta, idioma)
+    with t["candado"]:
+        if t["fallos"] >= MAX_INTENTOS_TRADUCCION:
+            return 429, {"error": texto(idioma, "traduccion_intentos")}
+        try:
+            r = traducir.traducir(carpeta, idioma)
+            t["fallos"] = 0
+            return 200, r
+        except meta_api.TopeAlcanzado:
+            return 503, {"error": texto(idioma, "tope")}
+        except Exception as e:  # noqa: BLE001 — la revisión sigue en su idioma; el detalle queda en error.txt
+            t["fallos"] += 1
+            (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
+            return 503, {"error": texto(idioma, "traduccion_falla", tipo=type(e).__name__)}
 
 
 def arreglar(carpeta: Path, idioma: str) -> None:
@@ -353,6 +403,53 @@ def limpiar(casos: Path, horas: float = HORAS_DE_VIDA) -> None:
             continue
 
 
+VIDEOS = ("video.mp4", SUBIDA, "convirtiendo.mp4", "ligero.mp4", "audio.wav")
+
+
+def borrar_videos(carpeta: Path) -> None:
+    """El video de una revisión que no salió no sirve para nada y pesa hasta 800 MB: se borra con todo lo que sale de él."""
+    for n in VIDEOS:
+        try:
+            (carpeta / n).unlink(missing_ok=True)
+        except OSError:
+            pass
+    shutil.rmtree(carpeta / "cuadros", ignore_errors=True)
+
+
+def limpiar_al_arrancar(casos: Path) -> None:
+    """Al arrancar nada corre todavía: lo que dejó una corrida cerrada ya no se va a usar. Revisiones con error pierden su
+    video; una carpeta sin estado, sin resultado y sin video es una subida cortada."""
+    for carpeta in casos.iterdir() if casos.is_dir() else ():
+        if not (ID.fullmatch(carpeta.name) and carpeta.is_dir()):
+            continue
+        try:
+            ruta = carpeta / "estado.json"
+            if ruta.is_file():
+                if json.loads(ruta.read_text(encoding="utf-8")).get("estado") == "error":
+                    borrar_videos(carpeta)
+            elif not (carpeta / "resultado.json").exists() and not any((carpeta / n).exists() for n in VIDEOS):
+                shutil.rmtree(carpeta, ignore_errors=True)
+        except (OSError, ValueError, AttributeError):
+            continue
+
+
+def ocupado_bytes(casos: Path) -> int:
+    total = 0
+    for f in casos.rglob("*") if casos.is_dir() else ():
+        try:
+            if f.is_file():
+                total += f.stat().st_size
+        except OSError:
+            continue
+    return total
+
+
+def cabe(casos: Path, nuevo: int, en_linea: bool) -> bool:
+    """Si otro video de ese tamaño (más lo que sale de convertirlo y cortarlo) cabe en la cuota."""
+    cuota = (CUOTA_EN_LINEA_MB if en_linea else CUOTA_MB) * 1024 * 1024
+    return ocupado_bytes(casos) + 2 * nuevo <= cuota
+
+
 def limpiar_siempre(casos: Path) -> None:
     """Corre aparte, en su propio hilo: el plazo de borrado no depende de que alguien suba un video."""
     while True:
@@ -404,6 +501,9 @@ def pedido_propio(cabeceras, puerto: int, sitio: str | None = None) -> bool:
     return cabeceras.get("X-Retina") == "1" and (origen is None or origen in propios)
 
 
+_ACTIVAS: set[str] = set()  # las revisiones que este proceso está corriendo ahora
+
+
 def estado(carpeta: Path) -> dict:
     ruta = carpeta / "estado.json"
     if not ruta.exists():
@@ -411,25 +511,40 @@ def estado(carpeta: Path) -> dict:
     e = json.loads(ruta.read_text(encoding="utf-8"))
     if e.get("estado") != "procesando":
         return e
+    try:
+        quieta = time.time() - ruta.stat().st_mtime > PLAZO_HUERFANA_S
+    except OSError:
+        quieta = False
+    if quieta and carpeta.name not in _ACTIVAS:  # nadie la corre: el panel no puede esperarla sin fin
+        return {"estado": "error", "mensaje": texto(e.get("idioma") if e.get("idioma") in TEXTOS else "es", "interrumpida")}
     try:  # lo que avisa la revisión misma; sin ese aviso, se deduce de los archivos que ya salieron
         return {"estado": "procesando", **json.loads((carpeta / "avance.json").read_text(encoding="utf-8"))}
     except (OSError, ValueError):
         pass
     pasos = PASOS + ((PASO_COMPARAR,) if (carpeta / COMPARAR_CON).exists() else ())  # una sola versión: los de siempre
-    paso = next((nombre for archivo, nombre in pasos if not (carpeta / archivo).exists()), "terminando")
+    def hecho(archivo) -> bool:
+        return any((carpeta / a).exists() for a in ((archivo,) if isinstance(archivo, str) else archivo))
+    paso = next((nombre for archivo, nombre in pasos if not hecho(archivo)), "terminando")
     return {"estado": "procesando", "paso": paso}
 
 
 def largo_valido(valor: str | None) -> int | None:
     """El Content-Length solo si es un entero positivo escrito con dígitos."""
-    return int(valor) if valor and valor.isdigit() else None
+    return int(valor) if valor and valor.isascii() and valor.isdigit() and len(valor) <= 15 else None
 
 
 def _escribir_estado(carpeta: Path, **e) -> None:
     """Se escribe a un temporal y se reemplaza de un golpe: quien lo lee nunca ve un archivo a medias."""
     temporal = carpeta / "estado.json.tmp"
-    temporal.write_text(json.dumps(e, ensure_ascii=False), encoding="utf-8")
-    os.replace(temporal, carpeta / "estado.json")
+    for intento in range(6):  # en Windows el panel puede tener el archivo abierto justo ahora
+        try:
+            temporal.write_text(json.dumps(e, ensure_ascii=False), encoding="utf-8")
+            os.replace(temporal, carpeta / "estado.json")
+            return
+        except OSError:
+            if intento == 5:
+                raise
+            time.sleep(0.05 * (intento + 1))
 
 
 def marcar_interrumpidas(casos: Path) -> int:
@@ -456,37 +571,62 @@ def marcar_interrumpidas(casos: Path) -> int:
 
 
 def revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float = ESPERA_A_S) -> None:
-    """Corre el orquestador de punta a punta sobre el video subido (en segundo plano). Si es la versión B
-    de una comparación, al terminar su tarjeta compara las dos antes de marcarla lista."""
+    """Corre el orquestador de punta a punta sobre el video subido (en segundo plano). Pase lo que pase, la carpeta
+    termina con un estado final: el panel no se queda en «procesando» para siempre."""
+    _ACTIVAS.add(carpeta.name)
+    try:
+        _revisar(carpeta, datos, modelos, espera_s)
+    except BaseException as e:  # guardián: algo que no se previó (o fallar al escribir el estado) no deja la revisión a medias
+        borrar_videos(carpeta)
+        try:
+            _escribir_estado(carpeta, estado="error", mensaje=texto(datos.get("idioma", "es"), "falla", tipo=type(e).__name__))
+        except OSError:
+            pass
+        raise
+    finally:
+        _ACTIVAS.discard(carpeta.name)
+
+
+def _revisar(carpeta: Path, datos: dict, modelos: dict, espera_s: float) -> None:
+    """Si es la versión B de una comparación, al terminar su tarjeta compara las dos antes de marcarla lista."""
     from . import meta_api
     from .retina import correr
-    _escribir_estado(carpeta, estado="procesando", idioma=datos.get("idioma", "es"))  # el idioma, por si Retina se cierra a media revisión
+    idioma = datos.get("idioma", "es")
+    _escribir_estado(carpeta, estado="procesando", idioma=idioma)  # el idioma, por si Retina se cierra a media revisión
     try:
         if (carpeta / SUBIDA).is_file():  # WebM, MKV, AVI…: primero a MP4, pero antes se mide: convertir cuesta
-            if duracion_s(carpeta / SUBIDA) > maximo_s():
+            try:
+                largo = duracion_s(carpeta / SUBIDA)
+            except Aviso:  # una grabación de navegador no declara su duración: se mide al convertir (con tope de -t)
+                largo = None
+            if largo is not None and largo > maximo_s():
                 raise Aviso("muy_largo", "El video es demasiado largo.")
             convertir_a_mp4(carpeta / SUBIDA, carpeta / "video.mp4")
             (carpeta / SUBIDA).unlink()
+            if largo is None and duracion_s(carpeta / "video.mp4") >= maximo_s() - 0.5:  # llegó al tope de la conversión: era más largo
+                raise Aviso("muy_largo", "El video es demasiado largo.")
         correr(carpeta / "video.mp4", modelos["modelo"], carpeta, datos["codigo"], datos["talento"], datos["fecha"],
                datos["titulo"], True, modelos["arranque"], voz=modelos["voz"], publicado=datos["publicado"],
-               idioma=datos.get("idioma", "es"))
+               idioma=idioma)
         marca = carpeta / COMPARAR_CON
         if not marca.exists():
             _escribir_estado(carpeta, estado="listo")
             return
     except meta_api.TopeAlcanzado:  # a media revisión: lo que no costó queda en resultado.json, pero la persona debe saber que falta
-        _escribir_estado(carpeta, estado="error", mensaje=texto(datos.get("idioma", "es"), "tope"))
+        borrar_videos(carpeta)
+        _escribir_estado(carpeta, estado="error", mensaje=texto(idioma, "tope"))
         return
-    except ValueError as e:  # el candado y los datos que no cuadran se le explican a la persona, en su idioma
-        clave, idioma = getattr(e, "clave", None), datos.get("idioma", "es")
+    except Aviso as e:  # el candado y los datos que no cuadran se le explican a la persona, en su idioma
+        borrar_videos(carpeta)
         _escribir_estado(carpeta, estado="error",
-                         mensaje=texto(idioma, clave, minutos=maximo_s() // 60) if clave in TEXTOS["es"] else str(e))
+                         mensaje=texto(idioma, e.clave, minutos=maximo_s() // 60) if e.clave in TEXTOS["es"] else str(e))
         return
     except Exception as e:  # noqa: BLE001 — cualquier otra falla se anota sin detalles internos
+        borrar_videos(carpeta)
         (carpeta / "error.txt").write_text(traceback.format_exc(), encoding="utf-8")
-        _escribir_estado(carpeta, estado="error", mensaje=texto(datos.get("idioma", "es"), "falla", tipo=type(e).__name__))
+        _escribir_estado(carpeta, estado="error", mensaje=texto(idioma, "falla", tipo=type(e).__name__))
         return
-    comparar_al_terminar(carpeta, marca.read_text(encoding="utf-8").strip(), espera_s, idioma=datos.get("idioma", "es"))
+    comparar_al_terminar(carpeta, marca.read_text(encoding="utf-8").strip(), espera_s, idioma=idioma)
 
 
 def comparar_al_terminar(carpeta: Path, id_a: str, espera_s: float = ESPERA_A_S, cada_s: float = 2.0, idioma: str = "es") -> None:
@@ -529,8 +669,43 @@ class ConSubida(SoloElPanel):
     talentos: list[str] = []
     en_linea: dict | None = None
     apartado = False
+    _leidos = 0
+
+    def _leer(self, n: int) -> bytes:
+        trozo = self.rfile.read(n)
+        self._leidos += len(trozo)
+        return trozo
+
+    def _drenar(self) -> None:
+        """Contestar sin leer el cuerpo hace que el sistema cierre la conexión con un reinicio y el navegador pierda la
+        respuesta. Se lee lo que ya viene, hasta un tope y sin esperar; si queda más, la conexión se cierra."""
+        resto = (largo_valido(self.headers.get("Content-Length")) or 0) - self._leidos
+        if resto <= 0:
+            return
+        viejo = self.connection.gettimeout()
+        try:
+            self.connection.settimeout(0.2)
+            tope = min(resto, DRENAR_MAX)
+            while tope > 0:
+                trozo = self.rfile.read1(min(65536, tope))
+                if not trozo:
+                    break
+                tope -= len(trozo)
+                resto -= len(trozo)
+                self._leidos += len(trozo)
+        except OSError:
+            pass
+        finally:
+            try:
+                self.connection.settimeout(viejo)
+            except OSError:
+                pass
+        if resto > 0:
+            self.close_connection = True
 
     def _json(self, codigo: int, cuerpo: dict) -> None:
+        if self.command == "POST":
+            self._drenar()
         datos = json.dumps(cuerpo, ensure_ascii=False).encode("utf-8")
         self.send_response(codigo)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -586,6 +761,7 @@ class ConSubida(SoloElPanel):
         return super().do_GET()
 
     def do_POST(self):  # noqa: N802
+        self._leidos = 0
         try:
             self._atender_post()
         finally:  # el lugar apartado solo cuida la subida: lo que ya entró a la fila se cuenta allá
@@ -621,24 +797,32 @@ class ConSubida(SoloElPanel):
         if largo is None or not 12 <= largo <= tope_mb * 1024 * 1024:
             self.close_connection = True  # no se lee lo que no se va a usar
             return self._json(400, {"error": texto(idioma, "muy_pesado", mb=tope_mb)})
-        cabeza = self.rfile.read(12)
+        if not cabe(self.casos, largo, bool(self.en_linea)):
+            self.close_connection = True
+            return self._json(503, {"error": texto(idioma, "sin_espacio")})
+        cabeza = self._leer(12)
         tipo = tipo_de_video(cabeza)
         if tipo is None or (self.en_linea and formato_riesgoso(cabeza)):
             return self._json(400, {"error": texto(idioma, "no_es_video")})
         id_ = secrets.token_hex(6)
         carpeta = self.casos / id_
         carpeta.mkdir()
-        with (carpeta / ("video.mp4" if tipo == "mp4" else SUBIDA)).open("wb") as f:
-            f.write(cabeza)
-            falta = largo - len(cabeza)
-            while falta > 0:
-                trozo = self.rfile.read(min(1 << 20, falta))
-                if not trozo:
-                    break
-                f.write(trozo)
-                falta -= len(trozo)
-        if falta > 0:
-            shutil.rmtree(carpeta, ignore_errors=True)
+        completo = False
+        try:  # una conexión que se cae a media subida no deja una carpeta fantasma
+            with (carpeta / ("video.mp4" if tipo == "mp4" else SUBIDA)).open("wb") as f:
+                f.write(cabeza)
+                falta = largo - len(cabeza)
+                while falta > 0:
+                    trozo = self._leer(min(1 << 20, falta))
+                    if not trozo:
+                        break
+                    f.write(trozo)
+                    falta -= len(trozo)
+            completo = falta <= 0
+        finally:
+            if not completo:
+                shutil.rmtree(carpeta, ignore_errors=True)
+        if not completo:
             return self._json(400, {"error": texto(idioma, "incompleto")})
         if version_a is not None:  # antes de la fila: la revisión de la B ya sabe que va a comparar
             (carpeta / COMPARAR_CON).write_text(version_a.name, encoding="utf-8")
@@ -670,12 +854,14 @@ def main() -> None:
     a.casos.mkdir(parents=True, exist_ok=True)
     if (n := marcar_interrumpidas(a.casos)):
         print(f"Aviso: {n} revisión(es) quedaron a medias la última vez que se cerró Retina; el panel las marca como interrumpidas.")
+    limpiar_al_arrancar(a.casos)
     from . import meta_api
     from .publico import cargar_modelo
     meta_api._cargar_env()  # FFMPEG y RETINA_* del .env: el orquestador los necesita antes de la primera llamada
     en_linea = config_en_linea(os.environ) if a.en_linea else None
     if en_linea:
         os.environ["RETINA_DURACION_MAXIMA_S"] = str(DURACION_EN_LINEA_S)
+        os.environ["RETINA_FFMPEG_TIEMPO_S"] = str(FFMPEG_EN_LINEA_S)
     talentos = sorted({f["talento"] for f in cargar_modelo(a.modelo).filas if f.get("talento")}) if a.modelo else []
     listo = salud()
     if not listo["ffmpeg"]:

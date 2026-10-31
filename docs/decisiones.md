@@ -597,3 +597,29 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **La tarjeta se perdía justo cuando el video traía un anzuelo.** Un paso decía «Ubica la frase “Comparte…”» y el filtro solo reconocía verbos de quitar, así que tiraba
   toda la tarjeta. Ahora señalar lo que el video ya dice no cuenta como sugerirlo, el filtro le dice al modelo en qué campo falló y las instrucciones suben a
   explicar-v9. Sigue en pie que nada que no pase el filtro llega a la persona. No se volvió a medir el juez de tarjetas: esa medición es de una versión anterior.
+
+## 31-oct-2026 · Cuarta medición: apertura-v3 en videos nuevos. Regla escrita antes de medir
+
+- **Por qué.** La revisión del 30-oct encontró dos aperturas reales peores que el original: enumeraban todas las señales y borraban la autoridad de quien habla. Los cuadros 2 y
+  3 no los revisaba nadie, y el juez nunca había visto una apertura mala plantada, así que no se sabía si sabe decir que no.
+- **Qué cambió (apertura-v3).** Una regla de código rechaza las listas. Conserva la autoridad y los giros del original. Muse Spark 1.3 mira los cuadros que SAM no revisó y, si no
+  muestran lo escrito, se corrige. Cifras también en cuadros, magnitudes como «miles» y cifras pegadas («100kg») o compuestas. Spark Open puede decir que el inicio ya funciona, y el
+  código lo confirma: sin saludo, sin anzuelo y con el tema en las primeras 12 palabras.
+- **Cómo se afinó.** Con 6 casos aparte (`--piloto`, semilla 20261102), corridos dos veces, que no entran a esta medición.
+- **Qué se mide** (`eval/apertura_v3.py`, `eval/juez_aperturas.py`, `eval/juez_control.py`). Videos de jul-sep de 2026 de hasta 4 minutos que no están en ninguna medición ni piloto
+  anterior, barajados con la semilla 20261101: los primeros 30 cuyo título promete algo que SAM puede comprobar y los primeros 20 que no, de 96 títulos revisados. Sin retención y
+  sin video: el título y lo que se dice. La lista quedó fija antes de ver un resultado (sha256 de la lista privada: 6e4aba8e81ff3578ef81616ff958193395dd7cfbd85f256d1cf996d622aee0c0).
+- **Regla.** Todas tienen que pasar:
+  - A. Al menos 24 de los 30 con promesa pasan todo en 2 correcciones o menos, con SAM encontrando lo prometido, o el inicio se confirma como bueno.
+  - B. Al menos 16 de los 20 sin promesa pasan lo mismo menos SAM.
+  - C. Trampa lejana: SAM rechaza al menos 9 de 10 cuadros aprobados contra un objeto de otra familia.
+  - D. El juez, Muse Spark 1.3, con todo lo que se dice en el video: al menos 80 % de las aperturas aprobadas son fieles.
+  - E. El mismo juez: al menos 80 % dejan algo importante para el resto del video.
+  - F. El mismo juez compara sin saber cuál es cuál, en los dos órdenes, cada apertura con lo que el video dice en sus primeros 15 segundos. La nueva gana al menos 60 % de los pares
+    firmes decididos, con al menos 20 decididos.
+  - G. Control negativo: en 10 aperturas con un dato inventado plantado, el juez rechaza al menos 9 por infieles.
+  - H. Control negativo: en 10 resúmenes de todo el video usados como apertura, el juez dice en al menos 7 que no deja nada.
+  - I. Spark Open no se escapa: como máximo 10 de los 50 inicios se dan por buenos.
+- **Se reporta, sin ser condición.** Intervalos de Wilson, trampa cercana, correcciones, fallas, costo y cuántos cuadros revisó Spark.
+- **Lo que esto no mide.** Si la apertura nueva retiene más gente. El juez es un modelo, no una persona ni una audiencia. No hay video.
+- **Si no pasa.** Se publica igual y no se reajusta en estos casos. Estos 50 casos no se vuelven a usar para esto.

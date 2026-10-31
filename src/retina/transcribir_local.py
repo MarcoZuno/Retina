@@ -3,7 +3,7 @@
 Para entrenar y medir (no es el servicio del panel, que usa Voice Transcribe de
 Meta): lee el audio del archivo final con ffmpeg, lo pasa por Whisper en la
 GPU local y escribe `estado_wh_retina.jsonl` en el mismo formato que las
-transcripciones previas, para que `retina.base` lo junte solo.
+transcripciones previas, para juntarlas con la base privada.
 Reanudable; para pararlo limpio, crear un archivo PARAR junto al estado.
 
 Uso (con el Python que tenga faster-whisper):
@@ -25,14 +25,18 @@ from queue import Queue
 
 import numpy as np
 
+from .segmentar import PROTOCOLOS, entorno_ffmpeg
+
 FFMPEG = os.environ.get("FFMPEG", "ffmpeg")
 # Frases que Whisper inventa sobre música o silencio.
 FANTASMAS = re.compile(r"amara\.org|subt[ií]tulos (realizados |hechos )?por|subtitulado por", re.I)
 
 
 def audio_16k(ruta: str) -> np.ndarray:
-    p = subprocess.run([FFMPEG, "-v", "error", "-i", ruta, "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le", "pipe:1"],
-                       capture_output=True, timeout=600)
+    if not Path(ruta).is_file():  # solo archivos locales de la NAS, nunca una URL
+        raise FileNotFoundError(Path(ruta).name)
+    p = subprocess.run([FFMPEG, "-v", "error", *PROTOCOLOS, "-i", str(ruta), "-vn", "-ac", "1", "-ar", "16000", "-f", "s16le",
+                        "pipe:1"], capture_output=True, timeout=600, env=entorno_ffmpeg())
     return np.frombuffer(p.stdout, np.int16).astype(np.float32) / 32768.0
 
 

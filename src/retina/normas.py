@@ -13,10 +13,11 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
-from . import integridad, meta_api
+from . import meta_api
 from .esquemas import RAIZ
 
 MODELO = "muse-spark-1.3"
@@ -39,7 +40,26 @@ def instrucciones() -> str:
 
 
 def _plano(texto: str) -> str:
-    return " ".join(re.sub(r"[^\w\s]", " ", integridad.normalizar(texto)).split())
+    """Minúsculas Unicode, sin acentos ni signos. No se pasa a ASCII: eso borraba todo el texto en árabe, chino o hindi."""
+    t = unicodedata.normalize("NFKD", texto.casefold())
+    t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+    return " ".join(re.sub(r"[^\w\s]", " ", t).split())
+
+
+SIN_ESPACIOS = ("CJK", "HIRAGANA", "KATAKANA", "THAI", "LAO", "KHMER", "MYANMAR")
+
+
+def _palabras(cita: str) -> int:
+    """Palabras de una cita ya normalizada. El chino, el japonés y el tailandés no separan palabras con espacios: ahí cada
+    dos caracteres cuentan como una."""
+    n = 0
+    for t in cita.split():
+        n += max(1, sum(unicodedata.name(c, "").startswith(SIN_ESPACIOS) for c in t) // 2)
+    return n
+
+
+def _otro_alfabeto(texto: str) -> bool:
+    return any(c.isalpha() and not unicodedata.name(c, "").startswith("LATIN") for c in texto)
 
 
 def datos_del_video(carpeta: Path, titulo: str) -> dict:
@@ -67,9 +87,15 @@ def en_ese_segundo(datos: dict, segundo: float) -> list[str]:
 
 
 def filtrar(hallazgos: list, datos: dict) -> list[dict]:
-    """Lo que se sostiene en los datos. Ante cualquier duda, el hallazgo se descarta: un falso aviso cuesta confianza."""
+    return verificar(hallazgos, datos)["hallazgos"]
+
+
+def verificar(hallazgos: list, datos: dict) -> dict:
+    """Lo que se sostiene en los datos. Ante cualquier duda, el hallazgo se descarta: un falso aviso cuesta confianza.
+    Si lo que se descarta no se pudo comprobar por el alfabeto (la cita o el video están en árabe, chino, hindi…),
+    `no_verificado` es True: ahí «sin riesgos» no es una respuesta honesta."""
     validas = {n["id"] for n in reglas()}
-    salida, vistas = [], set()
+    salida, vistas, dudas = [], set(), 0
     for h in hallazgos:
         if not isinstance(h, dict):
             continue
@@ -81,12 +107,14 @@ def filtrar(hallazgos: list, datos: dict) -> list[dict]:
             continue
         if not por_que.strip() or len(por_que) > MAX_CARACTERES:
             continue
-        cita = _plano(evidencia)
-        if len(cita.split()) < MIN_PALABRAS_EVIDENCIA or not any(cita in t for t in en_ese_segundo(datos, segundo)):
+        cita, textos = _plano(evidencia), en_ese_segundo(datos, segundo)
+        if _palabras(cita) < MIN_PALABRAS_EVIDENCIA or not any(cita in t for t in textos):
+            if _otro_alfabeto(evidencia) or any(_otro_alfabeto(t) for t in textos):
+                dudas += 1
             continue
         vistas.add(norma)
         salida.append({"norma": norma, "segundo": segundo, "evidencia": evidencia.strip(), "por_que": por_que.strip()})
-    return salida[:MAX_HALLAZGOS]
+    return {"hallazgos": salida[:MAX_HALLAZGOS], "no_verificado": dudas > 0}
 
 
 def esquema() -> dict:
@@ -115,9 +143,10 @@ def revisar(carpeta: Path, idioma: str = "es", titulo: str = "") -> dict:
         return json.loads(ruta.read_text(encoding="utf-8"))
     datos = datos_del_video(carpeta, titulo)
     por_id = {n["id"]: n for n in reglas()}
+    revisado = verificar(pedir(datos, idioma), datos)
     hallazgos = [{**h, "nombre": por_id[h["norma"]]["name" if idioma == "en" else "nombre"], "fuente": por_id[h["norma"]]["fuente"]}
-                 for h in filtrar(pedir(datos, idioma), datos)]
-    salida = {"version": VERSION, "hallazgos": hallazgos, "revisadas": len(por_id),
+                 for h in revisado["hallazgos"]]
+    salida = {"version": VERSION, "hallazgos": hallazgos, "no_verificado": revisado["no_verificado"], "revisadas": len(por_id),
               "licencia": {"modelo": MODELO, "instrucciones": f"skills/normas.md ({VERSION})",
                            "reglas": json.loads(REGLAS.read_text(encoding="utf-8"))["version"]}}
     ruta.write_text(json.dumps(salida, ensure_ascii=False, indent=1), encoding="utf-8")

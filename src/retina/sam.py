@@ -176,7 +176,7 @@ def clip_de_imagen(imagen: Path) -> Path:
     """Un dibujo como video de 1 segundo: SAM 3.1 en la API de Meta solo recibe video."""
     clip = imagen.with_suffix(".clip.mp4")
     _correr(["-loop", "1", "-i", str(imagen), "-t", "1", "-r", str(FPS), "-vf", ESCALA,
-             "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", str(clip)])
+             "-c:v", "libx264", "-crf", "20", "-pix_fmt", "yuv420p", str(clip)], imagen=True)
     return clip
 
 

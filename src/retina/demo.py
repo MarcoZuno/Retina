@@ -1,7 +1,7 @@
 """Demo sin llave ni GPU: abre el panel de Retina con un caso ya procesado.
 
 Sirve la carpeta del repo solo en este equipo (127.0.0.1) y abre el navegador en el
-panel. Por omisión muestra el ejemplo de casos/demo/; con --caso, cualquier
+panel. Por omisión el panel elige el ejemplo por idioma (casos/demo o casos/demo-en); con --caso, cualquier
 resultado.json que esté dentro del repo.
 
 Con --casos CARPETA, los casos salen de una carpeta fuera del repo (por ejemplo, casos
@@ -25,6 +25,7 @@ class ServidorExclusivo(http.server.ThreadingHTTPServer):
     """En Windows SO_REUSEADDR deja que dos servidores tomen el mismo puerto y el pedido cae en el equivocado:
     aquí un puerto ocupado es un error, no un permiso."""
     allow_reuse_address = False
+    request_queue_size = 128  # la cola de 5 de http.server rechazaba ráfagas de cargas del panel
 
 
 CASO = re.compile(r"^/casos/[\w-]+/resultado\.json$")
@@ -91,9 +92,20 @@ class SoloElPanel(http.server.SimpleHTTPRequestHandler):
         return None
 
 
+def destino(caso: str | None) -> str:
+    """Sin caso explícito el panel elige el suyo por idioma (casos/demo o casos/demo-en); con uno, se abre ese."""
+    if caso is None:
+        return "/panel/"
+    ruta = (RAIZ / caso).resolve()
+    relativo = "/" + ruta.relative_to(RAIZ.resolve()).as_posix() if RAIZ.resolve() in ruta.parents else ""
+    if not ruta.is_file() or not CASO.match(relativo):
+        raise SystemExit(f"No encuentro {caso}: tiene que ser casos/<carpeta>/resultado.json dentro del repo.")
+    return f"/panel/?caso={relativo}"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--caso", default="casos/demo/resultado.json", help="Ruta dentro del repo a un resultado.json.")
+    ap.add_argument("--caso", default=None, help="Ruta dentro del repo a un resultado.json. Sin ella, el panel elige el ejemplo por idioma.")
     ap.add_argument("--casos", type=Path, help="Carpeta de casos fuera del repo (cada uno en su carpeta).")
     ap.add_argument("--puerto", type=int, default=8765)
     ap.add_argument("--sin-navegador", action="store_true")
@@ -101,14 +113,10 @@ def main() -> None:
     casos = a.casos.resolve() if a.casos else None
     if casos is not None and not casos.is_dir():
         raise SystemExit(f"No encuentro la carpeta de casos {a.casos}.")
-    caso = (RAIZ / a.caso).resolve()
-    relativo = "/" + caso.relative_to(RAIZ.resolve()).as_posix() if RAIZ.resolve() in caso.parents else ""
-    if not caso.is_file() or not CASO.match(relativo):
-        raise SystemExit(f"No encuentro {a.caso}: tiene que ser casos/<carpeta>/resultado.json dentro del repo.")
-    destino = f"/panel/?caso={relativo}"
+    ruta = destino(a.caso)
     manejador = functools.partial(type("Manejador", (SoloElPanel,), {"casos": casos}), directory=str(RAIZ))
     servidor = ServidorExclusivo(("127.0.0.1", a.puerto), manejador)
-    url = f"http://127.0.0.1:{servidor.server_port}{destino}"
+    url = f"http://127.0.0.1:{servidor.server_port}{ruta}"
     print(f"Retina está en {url}  (Ctrl+C para cerrar)")
     if not a.sin_navegador:
         webbrowser.open(url)

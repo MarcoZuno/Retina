@@ -49,6 +49,16 @@ JERGA = re.compile(r"\bpp\b|puntos porcentuales|%|de cada 100|\bs\d+(?:[.,]\d+)?
 INTOCABLES = RAIZ / "reglas" / "intocables-v1.json"
 
 
+# Un enlace, un correo o un dominio con ruta: lo que escribe el modelo para la persona nunca los lleva.
+ENLACE = re.compile(r"https?://|\bwww\.|[\w.+-]+@[\w-]+\.[a-z]{2,}|\b[a-z0-9-]+\.[a-z]{2,}/\S|"
+                    r"\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|mx|io|co|me|ly|tv|app|xyz|info|biz|ws|link|shop|store|site|online|us|ai|gg)\b",
+                    re.I)
+
+
+def enlaces(texto: str) -> list[str]:
+    return sorted({m.group(0).lower() for m in ENLACE.finditer(texto)})
+
+
 def _objeto(p: dict) -> dict:
     return {"type": "object", "additionalProperties": False, "properties": p, "required": list(p)}
 
@@ -160,6 +170,13 @@ def _lo_que_dice_el_video(datos: dict) -> str:
     return _sin_signos(" ".join(partes))
 
 
+def _fuente(datos: dict) -> str:
+    """Todo lo que el video dice o muestra, normalizado: de ahí tiene que salir lo que la tarjeta cita como anzuelo."""
+    partes = [_lo_que_dice_el_video(datos)]
+    partes += [_sin_signos(str(t.get("que_pasa") or "")) for t in datos.get("tramos", []) if isinstance(t, dict)]
+    return " ".join(partes)
+
+
 def sin_citas_a_quitar(texto: str, datos: dict | None = None) -> str:
     """«Corta “Comparte esta información…”» cita el anzuelo para quitarlo: esa cita no es la sugerencia.
     Cuenta si el verbo de quitar va justo antes, o más lejos en la misma frase si lo citado es lo que
@@ -254,6 +271,13 @@ def revisar(salida: dict, datos: dict) -> list[str]:
             problemas.append("el video trae un anzuelo: «que_cambiar» tiene que decir cómo quitarlo")
         if not 0 <= salida.get("anzuelo_momento_s", -1) <= datos["duracion_video_s"]:
             problemas.append("«anzuelo_momento_s» tiene que ser el segundo del video donde aparece el anzuelo")
+    visibles = [salida["por_que"], salida["lo_que_funciona"], salida["que_cambiar"], salida.get("anzuelo_frase") or "",
+                *salida["storyboard"], *pasos, *bueno, *mejoras, *lista(salida, "lo_flojo")]
+    if ligas := enlaces(" ".join(visibles)):
+        problemas.append(f"la tarjeta no puede llevar enlaces, correos ni dominios: {', '.join(ligas)}")
+    frase = _sin_signos(salida.get("anzuelo_frase") or "")
+    if salida["anzuelo_detectado"] != "ninguno" and frase and frase not in _fuente(datos):
+        problemas.append("«anzuelo_frase» tiene que ser copia de lo que se dice o se lee en el video, tal como aparece")
     if n := cifras_inventadas(salida, datos):
         problemas.append(f"cifras que no vienen en los datos: {', '.join(n)}")
     if not 0 <= salida["momento_s"] <= datos["primer_cuarto_s"][1]:
@@ -340,12 +364,12 @@ def escribir(datos: dict, motores: tuple, pedir=pedir) -> tuple[dict, list, str]
     salida, intentos = None, []
     for k, motor in enumerate(motores):
         aviso, hay_rescate = "", k + 1 < len(motores)
-        for _ in range(2):
+        for intento in range(2):
             try:
                 s = pedir(datos, aviso, motor)
                 problemas = revisar(s, datos)
-            except (RuntimeError, TypeError, KeyError, AttributeError) as e:
-                if not hay_rescate:
+            except (RuntimeError, TypeError, KeyError, AttributeError, ValueError) as e:  # ValueError: JSON truncado
+                if not hay_rescate and not (isinstance(e, ValueError) and intento == 0):
                     raise
                 intentos.append({"motor": motor, "sugerencia": "", "problemas": [f"respuesta con formato inválido ({type(e).__name__})"]})
                 continue

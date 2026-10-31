@@ -68,9 +68,10 @@ concurso vencen el 4 de noviembre; después se cobra a la cuenta de las API.
 docker build -f deploy/Dockerfile.en-linea -t retina-en-linea .
 docker run -d --name retina-en-linea --restart unless-stopped -p 127.0.0.1:8080:8080 \
   --env-file deploy/en-linea.env --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
-  --memory 4g --pids-limit 256 -v datos-demo:/datos retina-en-linea
+  --memory 4g --cpus 2 --pids-limit 256 -v datos-demo:/datos retina-en-linea
 ```
 
+`--cpus 2` y los tiempos de ffmpeg (`RETINA_FFMPEG_TIEMPO_S`, 180 s en línea) evitan que un video pesado ocupe la fila por horas.
 El puerto solo se abre a `127.0.0.1`: a internet se llega por el proxy con TLS (`deploy/proxy-en-linea.conf`). Copia
 `deploy/en-linea.env.ejemplo` a `deploy/en-linea.env` en el servidor. Ese archivo nunca se sube al repo.
 

@@ -26,7 +26,13 @@ N_TRAMOS = N_PUNTOS - 1
 DURACION_MAXIMA_S = 30 * 60
 MINIMO_S = 5
 # Ningún paso de ffmpeg se queda colgado: pasado este tiempo, la revisión falla con un aviso claro.
-TIEMPO_MAXIMO_S = 15 * 60
+TIEMPO_MAXIMO_S = 5 * 60
+
+
+def tiempo_maximo_s() -> int:
+    """RETINA_FFMPEG_TIEMPO_S solo lo baja: la demo en línea no deja que un video pesado ocupe la fila por horas."""
+    valor = os.environ.get("RETINA_FFMPEG_TIEMPO_S", "").strip()
+    return min(int(valor), TIEMPO_MAXIMO_S) if valor.isdigit() and int(valor) > 0 else TIEMPO_MAXIMO_S
 
 
 class Aviso(ValueError):
@@ -39,7 +45,9 @@ class Aviso(ValueError):
 
 # ffmpeg abre archivos de cualquiera: solo lee archivos locales y no ve las llaves. Un archivo armado a propósito
 # podría pedirle leer el entorno del proceso y dejarlo escrito en lo que produce.
-PROTOCOLOS = ("-protocol_whitelist", "file,pipe")
+PROTOCOLOS = ("-protocol_whitelist", "file,pipe",
+              # y solo los contenedores que la app acepta: sin concat, hls, image2 ni lavfi en un archivo armado a propósito
+              "-format_whitelist", "mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,avi,flv")
 
 
 def entorno_ffmpeg() -> dict:
@@ -84,12 +92,16 @@ def limites_tramos(duracion: float) -> list[tuple[float, float]]:
     return [(i * paso, (i + 1) * paso) for i in range(N_TRAMOS)]
 
 
-def _correr(args: list[str]) -> None:
+# Los dibujos de Muse Image (PNG, JPEG, WebP) que Retina convierte en clip: son nuestros, no de la persona.
+PROTOCOLOS_IMAGEN = ("-protocol_whitelist", "file,pipe", "-format_whitelist", "image2,png_pipe,jpeg_pipe,webp_pipe,mjpeg")
+
+
+def _correr(args: list[str], imagen: bool = False) -> None:
     try:
-        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *PROTOCOLOS, *args], capture_output=True,
-                           text=True, encoding="utf-8", errors="replace", timeout=TIEMPO_MAXIMO_S, env=entorno_ffmpeg())
+        p = subprocess.run([_ffmpeg(), "-hide_banner", "-loglevel", "error", "-y", *(PROTOCOLOS_IMAGEN if imagen else PROTOCOLOS), *args], capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", timeout=tiempo_maximo_s(), env=entorno_ffmpeg())
     except subprocess.TimeoutExpired:
-        raise Aviso("ffmpeg_lento", f"ffmpeg tardó más de {TIEMPO_MAXIMO_S // 60} minutos y se detuvo.") from None
+        raise Aviso("ffmpeg_lento", f"ffmpeg tardó más de {tiempo_maximo_s() // 60 or 1} minutos y se detuvo.") from None
     if p.returncode != 0:
         raise RuntimeError(p.stderr.strip()[-500:])
 
