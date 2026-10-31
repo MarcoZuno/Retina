@@ -45,7 +45,7 @@ Pass/fail rules were written before each run. The full list, including everythin
 ## Limits we say out loud
 
 - **Retina does not know whether the new opening keeps more people.** We never measured that, and it shows no number for the new opening.
-- **The tests used the title and the speech, not the video,** on one page's archive. Fourteen of the 30 cases with a promise were pets or
+- **The tests used the title and the speech, not the video,** on one page's archive. Fifteen of the 30 cases with a promise were pets or
   animals, so the intervals in the annex count as independent cases that are not.
 - **The "after" is a sketch,** drawings and voice, not a filmed video.
 - **The number cannot see the first 3 seconds.** Facebook's curve seems to count only people who got that far.

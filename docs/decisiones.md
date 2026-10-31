@@ -587,5 +587,5 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
   la promesa, los cuadros no se pudieron dibujar, un nombre y un anzuelo. Costo de escribir, dibujar y comprobar: USD 3.00. Referencia sobre las 29 aperturas de
   la versión anterior: 29 fieles y 26 que dejan algo.
 - **Cómo leerlo.** El juez es un modelo. F favorece a la nueva porque compara texto limpio contra voz transcrita. 45 de 46 contra 26 de 29 son videos
-  distintos y sus intervalos se tocan: es indicio, no prueba, de que apertura-v2 ya no vacía el video. 14 de los 30 con promesa son mascotas o animales. Sin
+  distintos y sus intervalos se tocan: es indicio, no prueba, de que apertura-v2 ya no vacía el video. 15 de los 30 con promesa son mascotas o animales. Sin
   video. Retención, no medida. Estos 50 casos ya no se usan para esto.

@@ -50,7 +50,7 @@ How to read it:
 - **Do not read D, E and F as people's opinion.** The judge is Muse Spark 1.3, a model. No person and no audience judged these openings.
 - **F favors the new opening.** It compares clean writing with raw transcribed speech, including greetings and false starts.
 - **The fix to the emptied video is a hint, not a result.** 45 of 46 against 26 of 29 are different videos and the intervals overlap.
-- **The cases are not independent.** Fourteen of the 30 with a promise are pets or animals.
+- **The cases are not independent.** Fifteen of the 30 with a promise are pets or animals.
 - **The near trap does not cover general words.** "Hospital" and "school" are still searched as "building".
 - **There was no video.** Like the second test, this one used the title and the speech. The first test is the one that used the video.
 - The instructions were tuned on 6 separate cases, run twice, which are not part of this test. The rule, the commit (c439813 in the
