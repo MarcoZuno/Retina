@@ -34,11 +34,19 @@ Pass/fail rules were written before each run. The full list, including everythin
 
 | Question | Result |
 |---|---|
-| PENDIENTE_FILAS
+| Does a new opening pass every check, with nothing ordered to the drawing? (third test, 50 new videos) | **Passed**: 29 of 30 with a visible promise and 17 of 20 without one, in 2 corrections or fewer. The 4 that failed were withheld, as designed |
+| Can the picture check be fooled? | SAM rejected 10 of 10 frames asked for an object of another family, and 10 of 10 asked for a close one, like a cat in a dog's frame |
+| Is the new opening faithful, and does it leave something for the rest of the video? | A blind judge said yes to both in 45 of 46. The judge is a model, not people |
+| Is it clearer than the video's real opening? | The same judge preferred the new one in 37 of 42 firm pairs. It compares clean writing with raw speech, which favors the new one |
+| Earlier tests | The first failed (10 of 18). The second passed (29 of 30), but it was a regression test, not a validation |
+| How far off is the number? | Give or take 11 people out of 100, on creators and dates it had not seen. It beats the fixed curve by little |
+| Does the new opening keep more people? | **Not measured** |
 
 ## Limits we say out loud
 
 - **Retina does not know whether the new opening keeps more people.** We never measured that, and it shows no number for the new opening.
+- **The tests used the title and the speech, not the video,** on one page's archive. Fourteen of the 30 cases with a promise were pets or
+  animals, so the intervals in the annex count as independent cases that are not.
 - **The "after" is a sketch,** drawings and voice, not a filmed video.
 - **The number cannot see the first 3 seconds.** Facebook's curve seems to count only people who got that far.
 - **Checking is not truth.** Retina checks that numbers and names come from your video, not that they are true. A name at the very start

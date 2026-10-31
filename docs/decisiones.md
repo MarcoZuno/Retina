@@ -575,3 +575,17 @@ están selladas; lo que estaba mal se corrige aquí.
   costo; y, como referencia, D y E sobre las 29 aperturas de la versión anterior, sin volver a escribirlas.
 - **Lo que esto no mide.** Si la apertura nueva retiene más gente. El juez es un modelo, no una persona ni una audiencia. No hay video.
 - **Si no pasa.** Se publica igual y no se reajusta en estos casos. Estos 50 casos no se vuelven a usar para esto.
+
+## 30-oct-2026 · Resultado de la tercera medición
+
+Va en una entrada aparte para que la huella de la regla no cambie. Corrida con el commit c439813, el de la regla, desde una copia congelada.
+
+- **Pasó las seis, a la primera.** A: 29 de 30, pedía 24 (intervalo de 95 %: de 83 % a 99 %). B: 17 de 20, pedía 16 (de 64 % a 95 %). C: SAM rechazó 10
+  de 10. D: 45 de 46 fieles, pedía 80 %. E: 45 de 46 dejan algo para el resto, pedía 80 %. F: la nueva ganó 37 de 42 pares firmes (88 %), pedía 60 % con
+  al menos 20; 4 pares cambiaron con el orden.
+- **Se reporta.** Trampa cercana: 10 de 10. De las 46 aprobadas, 41 a la primera, 3 con una corrección y 2 con dos. Las 4 que no pasaron: SAM no encontró
+  la promesa, los cuadros no se pudieron dibujar, un nombre y un anzuelo. Costo de escribir, dibujar y comprobar: USD 3.00. Referencia sobre las 29 aperturas de
+  la versión anterior: 29 fieles y 26 que dejan algo.
+- **Cómo leerlo.** El juez es un modelo. F favorece a la nueva porque compara texto limpio contra voz transcrita. 45 de 46 contra 26 de 29 son videos
+  distintos y sus intervalos se tocan: es indicio, no prueba, de que apertura-v2 ya no vacía el video. 14 de los 30 con promesa son mascotas o animales. Sin
+  video. Retención, no medida. Estos 50 casos ya no se usan para esto.

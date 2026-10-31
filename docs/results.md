@@ -11,7 +11,7 @@ unless a figure is given here.
 
 | Question | Rule written first | Result |
 |---|---|---|
-| Third test: does the opening pass every check with the final instructions and with nothing ordered to the drawing? | See below | **PENDIENTE_TERCERA** |
+| Third test, 50 new videos: does the opening pass every check with the final instructions and with nothing ordered to the drawing? | At least 24 of 30 with a visible promise, 16 of 20 without one, SAM rejects 9 of 10 far traps, and the blind judge's three conditions below | **Passed all six**, on the first run. 29 of 30 and 17 of 20 |
 | First test, 50 videos: can Retina rewrite an opening that keeps the title's promise and breaks no rule? | At least 15 of 18 openings with a visible promise pass every check in 2 corrections or fewer, 26 of the other 32 pass, SAM rejects 9 of 10 trap frames | **Did not pass.** 10 of 18. The other two parts passed (31 of 32, and 10 of 10). SAM did not know words like "tortilla" even when the drawing showed one |
 | Second test, 30 other videos, after calibrating SAM's vocabulary | At least 24 of 30 pass everything, SAM rejects 9 of 10 trap frames | **Passed, but read it as a regression test, not a validation.** 29 of 30, 23 on the first try, 9 of 10 traps |
 
@@ -31,7 +31,30 @@ only from what the writer wrote, so SAM checks the writing. The instructions no 
 to give the first proof and leave the rest to the video, because the old rule emptied the video (one example gave away the three
 tricks in 14 of 96 seconds). The test adds a group without a visible promise, traps from the same family, and a blind judge.
 
-PENDIENTE_DETALLE
+| Third test | Rule | Result |
+|---|---|---|
+| A. With a visible promise | At least 24 of 30 pass everything in 2 corrections or fewer | **29 of 30** (95 % interval 83 % to 99 %) |
+| B. Without a visible promise | At least 16 of 20 pass everything but SAM | **17 of 20** (64 % to 95 %) |
+| C. Far trap | SAM rejects at least 9 of 10 frames asked for an object of another family | **10 of 10** |
+| D. Blind judge: faithful | At least 80 % of approved openings | **45 of 46** |
+| E. Blind judge: leaves something important for the rest of the video | At least 80 % of approved openings | **45 of 46** |
+| F. Blind judge against the real first 15 seconds, in both orders | The new one wins at least 60 % of firm pairs, with at least 20 decided | **37 of 42 firm pairs** (88 %); 5 for the real opening, 4 changed with the order |
+
+Reported, not conditions: 10 of 10 near traps rejected, such as a cat asked of a dog's frame. Of the 46 approved, 41 passed on the first try, 3
+after one correction and 2 after two. The 4 that failed were withheld: one where SAM never found the promise, one where the frames could
+not be drawn, one with a name the rules rejected and one with engagement bait. The rewriting cost USD 3.00. As a reference, the same
+judge on the 29 openings of the previous version found 29 faithful, and 26 that leave something for the rest.
+
+How to read it:
+
+- **Do not read D, E and F as people's opinion.** The judge is Muse Spark 1.3, a model. No person and no audience judged these openings.
+- **F favors the new opening.** It compares clean writing with raw transcribed speech, including greetings and false starts.
+- **The fix to the emptied video is a hint, not a result.** 45 of 46 against 26 of 29 are different videos and the intervals overlap.
+- **The cases are not independent.** Fourteen of the 30 with a promise are pets or animals.
+- **The near trap does not cover general words.** "Hospital" and "school" are still searched as "building".
+- **There was no video.** Like the second test, this one used the title and the speech. The first test is the one that used the video.
+- The instructions were tuned on 6 separate cases, run twice, which are not part of this test. The rule, the commit (c439813 in the
+  original history) and the fingerprints are in [`decisiones.md`](decisiones.md).
 
 ## The reference number
 

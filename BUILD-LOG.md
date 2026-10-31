@@ -541,3 +541,7 @@ hasta 2 correcciones). La primera medición sellada no pasó (10 de 18). Se cali
 nuevos, pasó (29 de 30). Se probó volver a predecir con el arranque nuevo y no sirvió: el número no compara versiones de un video.
 Se sumaron la revisión de normas de Facebook y la demo en línea con código de acceso, y se quitó el cruce de fondos que parpadeaba.
 
+**Auditoría del mismo día.** Cinco revisiones rechazaron la entrega como estaba. Se corrigieron las frases que no se sostenían, el número ya cuenta
+desde los 3 segundos y trae su margen medido, el README bajó a una página con anexos en inglés, y salieron unas 20 fallas de código. El arranque pasó a
+apertura-v2: da la primera prueba y deja lo demás al video, y el código ya no le ordena al dibujo lo que SAM va a buscar. La tercera medición, con 50 videos
+nuevos, regla sellada y juez ciego, pasó sus seis condiciones. Costo de esa medición: USD 3.00, más el juez.
