@@ -623,3 +623,19 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **Se reporta, sin ser condición.** Intervalos de Wilson, trampa cercana, correcciones, fallas, costo y cuántos cuadros revisó Spark.
 - **Lo que esto no mide.** Si la apertura nueva retiene más gente. El juez es un modelo, no una persona ni una audiencia. No hay video.
 - **Si no pasa.** Se publica igual y no se reajusta en estos casos. Estos 50 casos no se vuelven a usar para esto.
+
+## 31-oct-2026 · Cuarta medición: resultado
+
+- **Pasó las nueve condiciones a la primera.** La regla es la sección anterior, que no se tocó; no se reajustó nada.
+  - A: 27 de 30, pedía 24. B: 20 de 20, pedía 16. C: 10 de 10, pedía 9.
+  - D: 44 de 47 fieles (IC 95 % 83 a 98), pedía 80 %. E: 46 de 47 dejan algo (89 a 100), pedía 80 %. Las dos a la vez: 43 de 47.
+  - F: la nueva ganó 36 de 41 pares firmes (88 %), pedía 60 % con al menos 20; 5 para la real y 6 cambiaron con el orden.
+  - G: 10 de 10 mentiras rechazadas, pedía 9. H: 9 de 10 resúmenes marcados como que no dejan nada, pedía 7. I: 0 de 50 inicios dados por buenos, pedía 10 o menos.
+- **Trampa cercana: 7 de 10.** Bajó contra el 10 de 10 de la tercera, con otros pares. «School» pasó en una casa dos veces, porque las dos se buscan como «building», y «medicine» pasó en una
+  píldora. Es un límite conocido y se reporta como está.
+- **«Tu inicio ya funciona» no se ejercitó.** Salió 0 veces en 50, y 1 en los 6 del piloto. La condición I no dice nada de qué tan bueno es ese veredicto.
+- **Correcciones.** De las 47 aprobadas, 37 a la primera, 8 tras una y 2 tras dos. Se corrigió: promesa 5, una sola prueba 5, anzuelos 3, cuadros 2, cifras 1, nombres 1, tema 1. Las 3 que fallaron
+  no salieron: 2 porque SAM no encontró lo prometido y 1 por un nombre. Spark revisó 114 cuadros, los 114 coinciden en las aprobadas. Sin fallas de SAM.
+- **Costo.** USD 4.12 en reescribir, USD 0.08 por video, más el juez.
+- **Lo mismo que antes sigue sin medirse:** si la apertura nueva retiene más gente. El juez es un modelo y en D y E sabe que lee la nueva.
+- **Código.** La medición corrió desde una copia congelada en `aeb92f5`. Lo que cambió después no toca instrucciones, reglas ni la apertura.

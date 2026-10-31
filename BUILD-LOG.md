@@ -545,3 +545,11 @@ Se sumaron la revisión de normas de Facebook y la demo en línea con código de
 desde los 3 segundos y trae su margen medido, el README bajó a una página con anexos en inglés, y salieron unas 20 fallas de código. El arranque pasó a
 apertura-v2: da la primera prueba y deja lo demás al video, y el código ya no le ordena al dibujo lo que SAM va a buscar. La tercera medición, con 50 videos
 nuevos, regla sellada y juez ciego, pasó sus seis condiciones. Costo de esa medición: USD 3.00, más el juez.
+
+## 31-oct-2026 · Las correcciones de la revisión final y la cuarta medición
+
+Una revisión a fondo de la entrega dejó una lista larga y se corrigió de una pasada. El inicio nuevo pasó a apertura-v3: no enumera todo, conserva la autoridad de
+quien habla, Muse Spark 1.3 revisa los cuadros que SAM no ve y Spark Open puede decir que el inicio ya funciona. Nuevos: aviso cuando el video no cumple el título,
+aviso de a dónde sale el video y cuánto cuesta, y la historia de correcciones a la vista. El panel abre en el idioma del navegador y los textos ya no dan a entender
+que el número es del inicio nuevo. Se endureció el despliegue y se quitaron pesos que el público no usa. La cuarta medición, con 50 videos nuevos y regla sellada, pasó
+sus nueve condiciones, con control negativo del juez. La trampa cercana bajó a 7 de 10 y se reporta. Costo: USD 4.12 más el juez.

@@ -262,7 +262,9 @@ class Navegador(unittest.TestCase):
         self.assertEqual(ES.findall(historia), [])
 
     def test_a_la_primera_se_dice_sin_inflarlo(self):
-        p = self.abre(demo())
+        r = demo()
+        r["apertura"].update(vueltas=0, intentos=[{"vuelta": 0, "problemas": []}])
+        p = self.abre(r)
         self.assertIn("Passed on the first try", self.texto(p, "#apertura-lazo"))
         self.assertEqual(p.locator("#lazo-lista li").count(), 1)
 
@@ -302,7 +304,9 @@ class Navegador(unittest.TestCase):
         self.assertEqual(p.locator(".sin-revisar").count(), 0)
 
     def test_sin_el_campo_no_se_finge_que_se_revisaron(self):
-        self.assertIn("Frames 2 and 3 weren't checked", self.texto(self.abre(demo()), "#apertura-comprobada"))
+        r = demo()
+        del r["apertura"]["despues"]["cuadros_revisados"]
+        self.assertIn("Frames 2 and 3 weren't checked", self.texto(self.abre(r), "#apertura-comprobada"))
 
     # ---- apertura.ya_funciona y modo sin voz ----
     def test_el_inicio_que_ya_funciona_es_un_logro(self):

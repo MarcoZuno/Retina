@@ -43,6 +43,13 @@ rewrites the opening, Muse Image draws it, fixed rules and SAM 3.1 check it, and
 first run: 29 of 30, 17 of 20, 10 of 10 far traps, and a model judge found 45 of 46 faithful, 45 of 46 leaving something for the rest of the
 video (44 of 46 both), and preferred the new opening in 37 of 42 firm pairs. The judge is a model. Whether the new opening keeps more people was not measured.
 
+**31 Oct, fourth test.** A review of the third test found two real openings worse than the original, frames 2 and 3 unchecked, and a judge that
+had never seen a bad opening. The instructions became `apertura-v3`: a code rule rejects lists, the speaker's authority stays, Muse Spark 1.3
+checks the other frames, Spark Open can say an opening already works, and the judge got a negative control. On 50 new videos, with the rule
+sealed first, it passed all nine conditions on its first run: 27 of 30, 20 of 20, 10 of 10 far traps, 44 of 47 faithful, 46 of 47 leaving
+something (43 of 47 both), 36 of 41 firm pairs, and the judge caught 10 of 10 planted lies and 9 of 10 planted summaries. The near trap fell
+to 7 of 10, and "already works" never came up. Whether the new opening keeps more people was not measured.
+
 ## How to read the record
 
 - A rule written first means written in `decisiones.md` before the run. From 29-Oct, sealed by a commit before measuring.
