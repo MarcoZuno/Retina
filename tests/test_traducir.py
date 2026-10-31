@@ -91,6 +91,9 @@ class Traducir(unittest.TestCase):
         with mock.patch.object(traducir, "pedir", return_value=BIEN):
             self.assertEqual(traducir.traducir(self.d, "es")["explicacion"]["por_que"], BIEN[0])
 
+    def test_ubica_es_encontrar_no_poner(self):
+        self.assertIn("«Ubica» significa encontrar", traducir.INSTRUCCIONES)
+
     def test_una_traduccion_no_puede_meter_un_anzuelo(self):
         self.assertFalse(traducir.aceptable("Cut 2 seconds.", "Corta 2 segundos y comenta abajo."))
         self.assertTrue(traducir.aceptable("Cut 2 seconds.", "Corta 2 segundos."))
