@@ -1,11 +1,12 @@
 # Demo en línea de Retina para los jueces: reciben videos, llaman a la API de Meta y a Baseten, y gastan de una tarjeta.
 # Va detrás de un proxy con TLS (deploy/proxy-en-linea.conf). Construir desde la raíz del repo:
 #   docker build -f deploy/Dockerfile.en-linea -t retina-en-linea .
-FROM python:3.12-slim
+FROM python:3.12-slim@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# requirements.lock sale de: uv pip compile requirements.txt --universal --generate-hashes --no-header -o requirements.lock
+COPY requirements.lock .
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock
 COPY src/ src/
 COPY panel/ panel/
 COPY reglas/ reglas/

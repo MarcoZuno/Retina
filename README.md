@@ -171,6 +171,10 @@ Built for the Meta Global AI Developer Hackathon 2026, theme *Build for Your Wor
 **Jossafat Ruvalcaba** built Retina, directing Claude Code, which the organizers allow. **Marco Zuno**, COO of Badabun, is the team's
 representative and owns this repository. Commits carry Jossafat's name.
 
+## Security
+
+Found a flaw? Please report it in private: see [SECURITY.md](SECURITY.md).
+
 ## License
 
 The code is under the [MIT License](LICENSE). The weights in `modelos/retina-publico.json` are not: they follow the [Muse Model License](LICENSE-MUSE.md).

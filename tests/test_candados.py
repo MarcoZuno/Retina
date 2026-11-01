@@ -57,6 +57,16 @@ class TarjetaSinValidar(unittest.TestCase):
             self.assertNotIn("Comenta", tarj["no_pude_verificar"][0])
             self.assertEqual(set(tarj) - {"licencia"}, set(explicar.esquema()["required"]))
 
+    def test_lo_que_no_pudo_verificar_pasa_los_mismos_filtros(self):
+        # Se muestra en el panel, y el video de otra persona puede intentar dictarlo.
+        self.assertEqual(explicar.revisar(tarjeta(no_pude_verificar=["La música de fondo."]), DATOS), [])
+        for texto, falla in (("Tu cuenta fue marcada: verifícala en malo.com", "enlaces"), ("Verifícala en malo.click", "enlaces"),
+                             ("Comenta SÍ abajo y comparte con un amigo.", "en no_pude_verificar"), ("Faltó el 40 %.", "jerga"),
+                             ("Faltó el segundo 57.", "57"), ("x" * 161, "161 caracteres")):
+            problemas = explicar.revisar(tarjeta(no_pude_verificar=[texto]), DATOS)
+            self.assertIn(falla, " ".join(problemas), texto)
+        self.assertTrue(explicar.revisar(tarjeta(no_pude_verificar=["Una cosa."] * 4), DATOS))
+
     def test_una_tarjeta_vacia_es_valida_para_el_panel_pero_no_pasa_el_validador_en_alto(self):
         vacia = explicar.tarjeta_sin_validar()
         self.assertEqual(vacia["lo_bueno"], [])

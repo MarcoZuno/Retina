@@ -82,7 +82,8 @@ def duracion_s(video: Path, info: str | None = None) -> float:
 
 def pistas(info: str) -> tuple[bool, bool]:
     """(trae imagen, trae audio) según lo que ffmpeg -i dice de sus pistas."""
-    lineas = [x for x in info.splitlines() if re.search(r"Stream #\S+.*?: (Video|Audio):", x)]
+    # Sin expresión regular y solo al inicio de la línea: ffmpeg imprime aquí el título del archivo, que escribe quien sube el video.
+    lineas = [x for x in info.split("\n") if x.lstrip(" ").startswith("Stream #")]
     return (any(": Video:" in x and "attached pic" not in x for x in lineas),  # la portada de un MP3 no es imagen
             any(": Audio:" in x for x in lineas))
 

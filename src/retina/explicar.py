@@ -33,7 +33,8 @@ MAX_CARACTERES = 220  # por campo de texto: la tarjeta se lee de un vistazo
 MAX_PASOS, MAX_CARACTERES_PASO = 4, 140  # «qué hacer» en pasos que un editor sigue sin explicación
 # Lo bueno, lo flojo y mejoras opcionales (29-oct): la tarjeta verde casi no decía nada a quien edita.
 # (mínimo, máximo, caracteres por punto). Las mejoras miden lo mismo que un paso: se hacen en el editor.
-LISTAS = {"lo_bueno": (1, 3, 160), "lo_flojo": (0, 3, 160), "mejoras_opcionales": (0, 3, MAX_CARACTERES_PASO)}
+LISTAS = {"lo_bueno": (1, 3, 160), "lo_flojo": (0, 3, 160), "mejoras_opcionales": (0, 3, MAX_CARACTERES_PASO),
+          "no_pude_verificar": (0, 3, 160)}  # el panel también lo muestra
 NUM_LETRA = (r"(?:cien\w*|mil|diez|once|doce|trece|catorce|quince|veinte|veinti\w+|treinta|cuarenta|cincuenta|sesenta|"
              r"setenta|ochenta|noventa|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|\d+)")
 NUM_LETRA_EN = (r"(?:hundred|thousand|ten|twelve|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|two|three|four|"
@@ -51,7 +52,7 @@ INTOCABLES = RAIZ / "reglas" / "intocables-v1.json"
 
 # Un enlace, un correo o un dominio con ruta: lo que escribe el modelo para la persona nunca los lleva.
 ENLACE = re.compile(r"https?://|\bwww\.|[\w.+-]+@[\w-]+\.[a-z]{2,}|\b[a-z0-9-]+\.[a-z]{2,}/\S|"
-                    r"\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|mx|io|co|me|ly|tv|app|xyz|info|biz|ws|link|shop|store|site|online|us|ai|gg)\b",
+                    r"\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|mx|io|co|me|ly|tv|app|xyz|info|biz|ws|link|shop|store|site|online|us|ai|gg|click|top|live|vip|icu|cc|tk|pw|cam|lol|dev|page|club|sbs|cfd|mobi|pro)\b",
                     re.I)
 
 
@@ -220,14 +221,14 @@ def revisar(salida: dict, datos: dict) -> list[str]:
         if salida.get(campo) not in opciones:  # el agente no tiene esquema estricto: se revisa aquí
             problemas.append(f"{campo} «{salida.get(campo)}» no es un valor válido ({', '.join(opciones)})")
     pasos = salida.get("pasos", [])
-    bueno, mejoras = lista(salida, "lo_bueno"), lista(salida, "mejoras_opcionales")
+    bueno, mejoras, sin_verificar = lista(salida, "lo_bueno"), lista(salida, "mejoras_opcionales"), lista(salida, "no_pude_verificar")
     # «lo_flojo» puede nombrar el anzuelo que ya trae el video, como «por_que»; lo bueno y las mejoras, nunca.
     texto = " ".join(sin_citas_a_quitar(t, datos) for t in [salida["que_cambiar"], salida["lo_que_funciona"],
-                                                             *salida["storyboard"], *pasos, *bueno, *mejoras])
+                                                             *salida["storyboard"], *pasos, *bueno, *mejoras, *sin_verificar])
     cita = (" — si es el anzuelo que hay que quitar, cítalo entre «comillas» tal como se dice en el video, "
             "sin describirlo con otras palabras") if salida.get("anzuelo_detectado", "ninguno") != "ninguno" else ""
     campos = {"que_cambiar": [salida["que_cambiar"]], "lo_que_funciona": [salida["lo_que_funciona"]], "storyboard": salida["storyboard"],
-              "pasos": pasos, "lo_bueno": bueno, "mejoras_opcionales": mejoras}
+              "pasos": pasos, "lo_bueno": bueno, "mejoras_opcionales": mejoras, "no_pude_verificar": sin_verificar}
     for r in integridad.revisar(texto):  # se dice en qué campo: sin eso, el modelo corrige el que no es
         donde = [c for c, v in campos.items() if any(integridad.revisar(sin_citas_a_quitar(t, datos)) for t in v)]
         problemas.append(f"{r['regla']} (frases: {', '.join(r['frases'])}; en {', '.join(donde)}){cita}")
@@ -272,7 +273,7 @@ def revisar(salida: dict, datos: dict) -> list[str]:
         if not 0 <= salida.get("anzuelo_momento_s", -1) <= datos["duracion_video_s"]:
             problemas.append("«anzuelo_momento_s» tiene que ser el segundo del video donde aparece el anzuelo")
     visibles = [salida["por_que"], salida["lo_que_funciona"], salida["que_cambiar"], salida.get("anzuelo_frase") or "",
-                *salida["storyboard"], *pasos, *bueno, *mejoras, *lista(salida, "lo_flojo")]
+                *salida["storyboard"], *pasos, *bueno, *mejoras, *lista(salida, "lo_flojo"), *sin_verificar]
     if ligas := enlaces(" ".join(visibles)):
         problemas.append(f"la tarjeta no puede llevar enlaces, correos ni dominios: {', '.join(ligas)}")
     frase = _sin_signos(salida.get("anzuelo_frase") or "")

@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import wave
 from pathlib import Path
@@ -35,6 +36,18 @@ class Pistas(unittest.TestCase):
 
     def test_un_audio_con_portada_no_es_video(self):
         self.assertEqual(pistas(SOLO_AUDIO_CON_PORTADA), (False, True))
+
+    def test_el_titulo_del_archivo_no_finge_pistas(self):
+        # ffmpeg imprime el título del archivo: es lo único de esta salida que escribe quien sube el video.
+        for titulo in ("Stream #0:0: Video: h264", "x   Stream #0:0: Video: h264", "x\x85  Stream #0:0: Audio: aac"):
+            self.assertEqual(pistas(f"  Metadata:\n    title           : {titulo}\n"), (False, False), repr(titulo))
+
+    def test_un_titulo_enorme_no_cuelga_la_revision(self):
+        # 2 MB, lo que cabe en un título: con la búsqueda vieja esto tardaba horas y detenía todo el proceso.
+        for relleno in ("Stream #" * 250_000, "x   Stream #" + "a" * 2_000_000):
+            inicio = time.monotonic()
+            pistas(f"    title           : {relleno}\n{CON_AUDIO}")
+            self.assertLess(time.monotonic() - inicio, 1)
 
 
 class Idioma(unittest.TestCase):

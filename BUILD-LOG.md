@@ -561,3 +561,9 @@ de 18 palabras. El inicio pasó a apertura-v4: Muse Spark 1.3 decide antes de ga
 regla de código rechaza saludos y el mínimo sube a 25 palabras. El panel pone el inicio arriba del número, avisa cuando un resultado salió incompleto y dice qué es inventado en el ejemplo. El ejemplo se
 rehízo con el lazo real y el número real. La quinta medición, con 50 videos nuevos, regla sellada y las mismas nueve condiciones, pasó a la primera: 25 de 30, 18 de 20, 10 de 10, 42 de 43, 42 de 43,
 35 de 37, 10 de 10, 8 de 10 y 0 de 50. Trampa cercana 8 de 10. De 234 títulos revisados, 125 quedaron fuera por tema. Costo: USD 4.82 más el juez.
+
+## 31-oct-2026 · Antes de abrir el repo
+
+Una revisión de seguridad no halló fallas críticas ni altas, y se corrigió lo que dejó. El título de un archivo ya no puede colgar el servidor ni fingir que el archivo trae video: se dejó
+de buscar con una expresión regular en la salida de ffmpeg. Lo que la tarjeta dice que no pudo verificar pasa ahora los mismos filtros que el resto. El proxy de ejemplo manda de http a https.
+Se agregó SECURITY.md para reportar fallas en privado. El filtro de enlaces reconoce más dominios, y las imágenes de Docker y las dependencias indirectas de la demo en línea quedaron con versión fija y huella.
