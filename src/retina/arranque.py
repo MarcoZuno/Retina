@@ -8,7 +8,7 @@ Aprende de todos los videos con curva y, cuando hay, con la voz del arranque
 «Perder de más» se mide contra la regla de hoy corregida por tipo de producción:
 la regla más el exceso medio de su tipo en los 180 días antes del corte. Sin esa
 corrección, el «alto» acertaba sobre todo por ser de un tipo que casi siempre
-pierde de más (auditoría del 28-oct, eval/arranque_privado.py).
+pierde de más (auditoría del 28-oct; cifras en la investigación privada).
 
 Uso:
     python -m retina.arranque --base BASE.csv --voz VOZ.jsonl --salida MODELO.json \

@@ -7,11 +7,11 @@ rules did not change.
 
 | Hash cited in the documents | Hash in this repository |
 |---|---|
-| `598b4bb` | `7101194` |
-| `8fcfaac` | `07225cc` |
-| `9e2f146` | `c700271` |
-| `acf17d2` | `1bd90ab` |
-| `aeb92f5` | `9754a1a` |
-| `c439813` | `27fad56` |
-| `d44e721` | `a2e3edb` |
-| `d809422` | `e207a83` |
+| `598b4bb` | `266d8a1` |
+| `8fcfaac` | `e191a51` |
+| `9e2f146` | `8101786` |
+| `acf17d2` | `0d7402e` |
+| `aeb92f5` | `a6ee708` |
+| `c439813` | `a6aae80` |
+| `d44e721` | `8ed613d` |
+| `d809422` | `8298f7b` |
