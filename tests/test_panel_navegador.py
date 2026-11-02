@@ -341,12 +341,17 @@ class Navegador(unittest.TestCase):
         self.assertFalse(self.visible(p, "#antes-despues"))
 
     def test_lo_que_no_se_comprobo_no_dice_que_paso_todo(self):
+        # Una lectura que no corrió deja la apertura sin aprobar (2-nov): el panel dice qué faltó y no entrega el inicio.
         r = demo()
-        r["apertura"]["no_comprobe"] = ["fidelidad"]
+        r["apertura"].update(aprobada=False, incompleta=True, despues=None, no_comprobe=["fidelidad"],
+                             intentos=[{"vuelta": 0, "problemas": []}], comprobaciones=[c for c in r["apertura"]["comprobaciones"] if c["id"] != "fidelidad"])
         p = self.abre(r)
-        self.assertIn("couldn't finish checking it", self.texto(p, "#sub"))
+        self.assertNotIn("new opening for your video", self.texto(p, "#titular"))
+        self.assertIn("couldn't finish checking this opening", self.texto(p, "#apertura-resumen"))
+        self.assertIn("Not everything could be checked", self.texto(p, "#apertura-lazo"))
         self.assertIn("Not fully checked.", self.texto(p, "#apertura-lazo"))
         self.assertIn("couldn't read it against your video", p.locator("#apertura-comprobada").inner_text())
+        self.assertFalse(self.visible(p, "#antes-despues"))
 
     def test_el_ejemplo_no_se_firma_como_de_un_modelo(self):
         self.assertNotIn("according to Muse Spark Open", self.abre(demo()).locator("body").inner_text())

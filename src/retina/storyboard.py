@@ -31,8 +31,11 @@ def _guardar(datos: dict, destino: Path) -> None:
 
 
 def dibujar_uno(prompt: str, destino: Path, refs: list | None = None, servicio: str = "storyboard") -> None:
-    """Una imagen con Muse Image. Con `refs` usa /v1/images/edits para mantener el mismo estilo."""
+    """Una imagen con Muse Image. Con `refs` usa /v1/images/edits para mantener el mismo estilo. Aparta su precio
+    antes de llamar, con el candado del tope (meta_api.reservar): dos dibujos a la vez no pasan por el mismo hueco."""
+    reserva = meta_api.reservar(servicio, meta_api.PRECIO_IMAGEN[MODELO])
     t0 = time.time()
+    # Si _pedir lanza (red, tiempo agotado) no sabemos si la API cobró: la reserva se queda apartada hasta que venza.
     if refs:
         r = meta_api._pedir("POST", "/images/edits", json={"model": MODELO, "prompt": prompt, "images": refs, "n": 1})
     else:
@@ -40,8 +43,9 @@ def dibujar_uno(prompt: str, destino: Path, refs: list | None = None, servicio: 
             "model": MODELO, "prompt": prompt, "n": 1, "size": "1024x1792",
             "response_format": "b64_json", "output_format": "png"})
     if r.status_code != 200:
+        meta_api.liberar(reserva)
         raise meta_api._error(r)
-    meta_api._registrar(servicio, MODELO, time.time() - t0, meta_api.PRECIO_IMAGEN[MODELO])
+    meta_api._registrar(servicio, MODELO, time.time() - t0, meta_api.PRECIO_IMAGEN[MODELO], reserva)
     _guardar(r.json(), destino)
 
 

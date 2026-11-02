@@ -584,16 +584,7 @@ class SamConImagenes(unittest.TestCase):
             subprocess.run([segmentar._ffmpeg(), "-v", "error", "-f", "lavfi", "-i", "color=c=red:s=64x64:d=1", "-frames:v", "1", str(png)], check=True)
             clip = sam.clip_de_imagen(png)
             self.assertTrue(clip.is_file() and clip.stat().st_size > 0)
-
-    def test_un_dibujo_real_de_casos_tambien_pasa(self):
-        from retina import sam
-        pngs = sorted(f for f in (RAIZ / "casos").rglob("*-ilustracion-ia.*") if f.suffix in (".png", ".jpg"))  # los .webp no los codifica ni ffmpeg sin filtro
-        if not pngs:
-            self.skipTest("casos/ no trae dibujos")
-        with tempfile.TemporaryDirectory() as d:
-            copia = Path(d) / ("x" + pngs[0].suffix)
-            copia.write_bytes(pngs[0].read_bytes())
-            self.assertTrue(sam.clip_de_imagen(copia).is_file())
+    # Los dibujos de casos/ van en WebP para el repo; los que SAM revisa son los PNG que dibuja Muse Image, cubiertos arriba.
 
     def test_el_filtro_de_formatos_de_videos_sigue_sin_dejar_pasar_imagenes(self):
         self.assertNotIn("png_pipe", segmentar.PROTOCOLOS[-1])

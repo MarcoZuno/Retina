@@ -13,7 +13,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 from pathlib import Path
 
 from .esquemas import RAIZ
@@ -56,13 +55,12 @@ def _tramos_hasta(man: dict, desc: dict, s: float) -> list[dict]:
 
 
 def _proporcion(video: Path) -> float | None:
-    from .segmentar import _ffmpeg
+    from .segmentar import _info  # el mismo envoltorio de todo ffmpeg: tiempo máximo, sin llaves y solo archivos locales
     try:
-        p = subprocess.run([_ffmpeg(), "-hide_banner", "-i", str(video)], capture_output=True, text=True,
-                           encoding="utf-8", errors="replace")
-    except (OSError, RuntimeError):
+        info = _info(video)
+    except (OSError, ValueError, RuntimeError):  # Aviso es un ValueError: sin lectura no hay proporción, y no es un fallo
         return None
-    m = re.search(r"Video:.*?\b(\d{2,5})x(\d{2,5})\b", p.stderr)
+    m = re.search(r"Video:.*?\b(\d{2,5})x(\d{2,5})\b", info)
     return int(m.group(1)) / int(m.group(2)) if m else None
 
 

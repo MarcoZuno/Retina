@@ -49,7 +49,9 @@ concurso vencen el 4 de noviembre; después se cobra a la cuenta de las API.
 ### Qué trae puesto
 
 - Solo responde a su dominio (`RETINA_SITIO`) y solo acepta pedidos de su propia página.
-- Código de acceso para subir un video y para arreglar el arranque, comparado en tiempo constante.
+- Código de acceso para subir un video, arreglar el arranque y leer lo que alguien subió (el panel lo manda en una cabecera
+  y, para el resultado y las imágenes que el navegador pide solo, en una cookie de la sesión), comparado en tiempo constante.
+  Los ejemplos inventados de `casos/demo` siguen públicos.
 - Tope duro: no arranca con `RETINA_TOPE_USD` arriba de 30. Antes de recibir un video revisa que quede presupuesto.
 - Videos de hasta 5 minutos y 200 MB, de uno en uno, y máximo 5 en la fila.
 - Cada revisión se borra a las 24 horas. Los videos van a la API de Meta y a Baseten para revisarlos.

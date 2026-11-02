@@ -197,6 +197,10 @@ def sin_citas_a_quitar(texto: str, datos: dict | None = None) -> str:
     return CITA.sub(cita, texto)
 
 
+# En la descripción de un dibujo, «sin logos» es el estilo de la casa (storyboard.ESTILO): el cuadro no lleva marcas. No es quitar el de la página.
+SIN_LOGOS = re.compile(r"\b(?:sin|without|with no|no)\s+logos?\b", re.I)
+
+
 def toca_intocable(texto: str) -> list[str]:
     """Elementos de marca, ley o línea editorial que la sugerencia quiere quitar o cambiar."""
     reglas = json.loads(INTOCABLES.read_text(encoding="utf-8"))
@@ -234,6 +238,9 @@ def revisar(salida: dict, datos: dict) -> list[str]:
         problemas.append(f"{r['regla']} (frases: {', '.join(r['frases'])}; en {', '.join(donde)}){cita}")
     if t := toca_intocable(" ".join([salida["que_cambiar"], *pasos])):
         problemas.append(f"la sugerencia toca algo intocable: {', '.join(t)}")
+    for i, c in enumerate(salida["storyboard"], 1):  # el storyboard también es un cambio que se va a editar: cuadro por cuadro
+        if t := toca_intocable(SIN_LOGOS.sub(" ", c)):
+            problemas.append(f"el cuadro {i} del storyboard toca algo intocable: {', '.join(t)}")
     for i, m in enumerate(mejoras, 1):  # una por una: cada mejora es un cambio aparte
         if t := toca_intocable(m):
             problemas.append(f"la mejora opcional {i} toca algo intocable: {', '.join(t)}")

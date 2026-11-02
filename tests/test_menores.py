@@ -208,6 +208,21 @@ class CarpetaDeOtroVideo(unittest.TestCase):
             retina.preparar_carpeta(video, salida)
             self.assertFalse((salida / "cuadros").exists() or (salida / "describir.json").exists())
 
+    def test_cambiar_el_titulo_borra_lo_que_depende_del_titulo_y_conserva_lo_del_video(self):
+        with tempfile.TemporaryDirectory() as d:
+            salida, video = Path(d) / "caso", Path(d) / "v.mp4"
+            video.write_bytes(b"uno")
+            retina.preparar_carpeta(video, salida, "Título anterior")
+            for nombre in ("transcribir.json", "describir.json", "sam.json", "apertura.json", "normas.json", "explicar.json"):
+                (salida / nombre).write_text("{}", encoding="utf-8")
+            (salida / "apertura-cuadro1-ilustracion-ia.png").write_bytes(b"x")
+            retina.preparar_carpeta(video, salida, "Título   anterior")  # el mismo título (los espacios no cuentan): se conserva todo
+            self.assertTrue((salida / "apertura.json").exists() and (salida / "apertura-cuadro1-ilustracion-ia.png").exists())
+            retina.preparar_carpeta(video, salida, "Título corregido")
+            self.assertTrue((salida / "transcribir.json").exists() and (salida / "describir.json").exists())  # solo miran el video
+            for nombre in ("sam.json", "apertura.json", "normas.json", "explicar.json", "apertura-cuadro1-ilustracion-ia.png"):
+                self.assertFalse((salida / nombre).exists(), nombre)
+
 
 class RegistroDeCostosTruncado(unittest.TestCase):
     """B16: una línea cortada a medias en costos.jsonl (corrida o disco caídos) tumbaba cada llamada a la API."""

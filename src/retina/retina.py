@@ -38,6 +38,9 @@ from .segmentar import Aviso, segmentar
 
 # Lo que se paga y depende del video: si el video cambia, se borra para no explicar otro.
 PAGADO = ("transcribir.json", "describir.json", "explicar.json", "agente.json", "sam.json", "primeros-3s.mp4", "apertura.json", "normas.json", "resultado-es.json", "resultado-en.json")
+# Lo que además depende del título: con otro título se vuelve a hacer (SAM busca lo que el título promete; la tarjeta, las
+# normas, la apertura y sus traducciones lo citan). Lo que solo mira el video (transcribir, describir) se conserva.
+DEL_TITULO = ("explicar.json", "agente.json", "sam.json", "apertura.json", "normas.json", "resultado-es.json", "resultado-en.json")
 
 
 def solo_publicados() -> bool:
@@ -54,9 +57,16 @@ def huella(video: Path) -> str:
     return h.hexdigest()
 
 
-def preparar_carpeta(video: Path, salida: Path) -> None:
-    """Reusa lo ya pagado solo si es del mismo video (misma huella)."""
+def preparar_carpeta(video: Path, salida: Path, titulo: str = "") -> None:
+    """Reusa lo ya pagado solo si es del mismo video (misma huella) y, lo que depende del título, solo con el mismo título."""
     salida.mkdir(parents=True, exist_ok=True)
+    anterior, limpio = salida / "titulo.txt", " ".join(titulo.split())
+    if anterior.exists() and anterior.read_text(encoding="utf-8").strip() != limpio:
+        for nombre in DEL_TITULO:
+            (salida / nombre).unlink(missing_ok=True)
+        for dibujo in salida.glob("apertura-cuadro*-ilustracion-ia.*"):
+            dibujo.unlink(missing_ok=True)
+    anterior.write_text(limpio, encoding="utf-8")
     nueva, archivo = huella(video), salida / "huella.txt"
     if archivo.exists() and archivo.read_text(encoding="utf-8").strip() != nueva:
         for nombre in PAGADO:
@@ -172,11 +182,12 @@ def anotar_avance(salida: Path, nombre: str, tiempos: dict) -> None:
     # El avance es solo para el panel: una revisión ya pagada no se tumba por no poder anotarlo.
 
 
-def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args, carpeta: Path | None = None):
-    """Corre un paso de la API; si falla, lo anota y sigue con lo demás. Con `carpeta`, el detalle queda en error-<paso>.txt."""
+def _paso(nombre: str, tiempos: dict, no_pude: list, que: str, funcion, *args, carpeta: Path | None = None, **kwargs):
+    """Corre un paso de la API; si falla, lo anota y sigue con lo demás. Con `carpeta`, el detalle queda en error-<paso>.txt.
+    Lo demás que llegue por nombre (`idioma=`) va al paso tal cual."""
     t = time.time()
     try:
-        salida = funcion(*args)
+        salida = funcion(*args, **kwargs)
         tiempos[nombre] = round(time.time() - t, 1)
         return salida
     except meta_api.TopeAlcanzado:  # no es una falla del paso: sin presupuesto la revisión no está completa y hay que decirlo
@@ -198,11 +209,11 @@ def correr(video: Path, modelo: Path, salida: Path, codigo: str, talento: str, f
         raise Aviso("candado", "El candado está encendido: a la API de Meta solo van videos ya publicados. "
                                "Marca «ya publicado», o apágalo con RETINA_SOLO_PUBLICADOS=0 si el video es tuyo.")
     tiempos, no_pude = {}, []
-    preparar_carpeta(video, salida)
+    preparar_carpeta(video, salida, titulo)
 
-    def paso(nombre: str, que: str, funcion, *args):
+    def paso(nombre: str, que: str, funcion, *args, **kwargs):
         anotar_avance(salida, nombre, tiempos)
-        return _paso(nombre, tiempos, no_pude, que, funcion, *args, carpeta=salida)
+        return _paso(nombre, tiempos, no_pude, que, funcion, *args, carpeta=salida, **kwargs)
 
     anotar_avance(salida, "segmentar", tiempos)
     t = time.time(); man = segmentar(video, salida); tiempos["segmentar"] = round(time.time() - t, 1)

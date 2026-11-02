@@ -253,7 +253,8 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
     """Escribe, revisa y corrige. `dibujar(i, cuadro)` deja el cuadro i y `medir(imagen, concepto)` lo busca con SAM;
     los dos cuestan, así que solo corren si el texto ya pasó. `fiel(voz, datos)` lee la apertura contra lo que dice el video. El primer cuadro se dibuja antes que los otros: si SAM no
     ve la promesa, los otros dos no se pagan. Quien escribe sabe qué objeto se va a buscar y debe describirlo: SAM comprueba
-    que el dibujo lo muestre, no que la idea sea buena. `comprobar(imagen, texto)` mira los cuadros que SAM no revisó."""
+    que el dibujo lo muestre, no que la idea sea buena. `comprobar(imagen, texto)` mira los cuadros que SAM no revisó.
+    Si una de esas lecturas no contesta, la apertura sale con `aprobada: false` e `incompleta: true`: nada sin comprobar llega a la persona."""
     if concepto:
         datos = {**datos, "objeto_prometido": concepto}
     intentos, no_comprobe, aviso, s, imagenes, vista, revisados = [], [], "", None, [], None, []
@@ -275,6 +276,8 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
             raise
         except RuntimeError as e:
             s, problemas = None, [{"id": "formato", "detalle": f"no llegó una respuesta válida ({type(e).__name__})"}]
+        # Una comprobación que no pudo correr no cuenta como pasada ni como fallada: se anota en `no_comprobe`, se deja
+        # de gastar y la apertura no se aprueba. El texto no estaba mal, así que tampoco se pide corregirlo.
         if not problemas:
             try:
                 if fiel:  # antes de dibujar: leer cuesta mucho menos que dibujar
@@ -285,7 +288,7 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
                     elif not veredicto["fiel"]:
                         problemas = [{"id": "fidelidad", "detalle": f"lo que dice el video no sostiene esto: {veredicto['que_agrega'][:300]}. "
                                                                     "Usa solo lo que el video dice, sin agregar ni exagerar"}]
-                if not problemas:
+                if not problemas and not no_comprobe:
                     avisar("dibujando", vuelta)
                     primero = dibujar(1, s["cuadros"][0])
                     if concepto:
@@ -297,7 +300,7 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
                         elif not vista.get("aparece") or vista["primer_segundo"] >= 1:
                             problemas = [{"id": "promesa", "detalle": f"en el primer cuadro no se ve «{concepto}»: tiene que "
                                                                       "ser lo principal de la escena, grande y al centro"}]
-                if not problemas:
+                if not problemas and not no_comprobe:
                     avisar("terminando", vuelta)
                     imagenes = [primero, dibujar(2, s["cuadros"][1]), dibujar(3, s["cuadros"][2])]
                     if comprobar:
@@ -306,6 +309,8 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
                         if malos := [r["cuadro"] for r in revisados if r["coincide"] is False]:
                             problemas = [{"id": "cuadros", "detalle": f"el dibujo del cuadro {', '.join(map(str, malos))} no muestra lo que "
                                                                       "describe: pide una escena más simple y concreta"}]
+                        elif any(r["coincide"] is None for r in revisados):
+                            no_comprobe.append("cuadros")
             except meta_api.TopeAlcanzado:
                 raise
             except Exception as e:  # noqa: BLE001 — Muse Image puede rechazar una escena: se pide otra
@@ -315,16 +320,17 @@ def lazo(datos: dict, concepto: str | None, pedir, dibujar, medir, avisar=_nada_
             break
         aviso = "; ".join(p["detalle"] for p in problemas)
     fallos = {p["id"]: p for p in intentos[-1]["problemas"]}
-    sin_correr = {"fidelidad"} if not fiel or "fidelidad" in no_comprobe else set()
+    sin_correr = {"fidelidad"} if not fiel else set()
+    sin_correr |= set(no_comprobe)
     if not datos.get("tema_obligatorio", True) or len(_claves(datos["titulo"])) < MIN_CLAVES_TITULO:
         sin_correr.add("tema")
     comprobaciones = [] if "formato" in fallos else [{"id": c, "paso": c not in fallos} for c in COMPROBACIONES if c not in sin_correr]
     if vista is not None:
         comprobaciones.append({"id": "promesa", "paso": "promesa" not in fallos, "objeto": vista.get("concepto", concepto),
                                "pct_maximo_del_cuadro": vista.get("pct_maximo_del_cuadro")})
-    if fallos:
-        return {"aprobada": False, "vueltas": len(intentos) - 1, "despues": None, "comprobaciones": comprobaciones,
-                "intentos": intentos, "no_comprobe": no_comprobe}
+    if fallos or no_comprobe:
+        return {"aprobada": False, "incompleta": not fallos, "vueltas": len(intentos) - 1, "despues": None,
+                "comprobaciones": comprobaciones, "intentos": intentos, "no_comprobe": no_comprobe}
     return {"aprobada": True, "vueltas": len(intentos) - 1,
             "despues": {"voz": s["voz"], "cuadros": s["cuadros"], "imagenes": [p.name for p in imagenes],
                         "cuadros_revisados": revisados},
@@ -424,8 +430,7 @@ def pedir(datos: dict, aviso: str = "") -> dict:
 def dibujar_cuadro(carpeta: Path, i: int, cuadro: str) -> Path:
     prompt = storyboard.ESTILO.format(i=i) + cuadro
     destino = carpeta / f"apertura-cuadro{i}-ilustracion-ia.png"
-    meta_api._revisar_tope(meta_api.PRECIO_IMAGEN[storyboard.MODELO])
-    storyboard.dibujar_uno(prompt, destino, servicio="apertura")
+    storyboard.dibujar_uno(prompt, destino, servicio="apertura")  # aparta su precio antes de llamar
     return destino
 
 
@@ -489,14 +494,15 @@ def armar(carpeta: Path, titulo: str, concepto: str | None, idioma: str = "es", 
                 tema = tema_fuera(titulo, dicho)
             except meta_api.TopeAlcanzado:
                 raise
-            except Exception:  # noqa: BLE001 — sin esta revisión se sigue, y la persona ve que no se hizo
+            except Exception:  # noqa: BLE001 — sin saber si el tema se puede reescribir, no se escribe: la persona ve que no se hizo
                 tema, sin_tema = None, ["tema_sensible"]
             if tema:
                 medido = {**no_va, "fuera_de_alcance": tema}
+            elif sin_tema:
+                medido = {**no_va, "incompleta": True, "no_comprobe": sin_tema}
             else:
                 medido = lazo(datos, concepto, pedir, lambda i, c: dibujar_cuadro(carpeta, i, c),
                               lambda imagen, c: sam.medir_imagen(imagen, sam.termino(c) or c), avisar, comprobar_cuadro, es_fiel)
-                medido["no_comprobe"] = [*sin_tema, *medido["no_comprobe"]]
     finally:
         if not (medido and medido["aprobada"]):  # lo que no pasó no se queda en la carpeta del caso
             for i in (1, 2, 3):

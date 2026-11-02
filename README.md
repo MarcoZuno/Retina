@@ -31,7 +31,8 @@ list of what failed. One prompt to one model cannot do this.
    what was asked. It does not prove the claim, or that your video shows it. Muse Spark 1.3 then looks at the other frames and says
    whether each one shows what was written.
 8. **Correct.** If anything fails, Spark Open receives the exact list of failures and tries again, up to twice. What does not pass
-   never reaches you, and anything Retina could not check is listed next to the result.
+   never reaches you. If one of these checks cannot run, Retina does not approve the opening either: it tells you what it could
+   not check, and you can try again.
 
 **A separate number, for the video you have now.** Retina estimates how many of every 100 people who get past the first 3 seconds will
 still be watching at 15 seconds. It learned this from 23,710 videos of a large Facebook page in Mexico. It is a modest reference, not a

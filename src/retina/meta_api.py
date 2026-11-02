@@ -19,6 +19,7 @@ import uuid
 from contextlib import contextmanager
 from email.utils import parsedate_to_datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import requests
 
@@ -74,10 +75,22 @@ def _llave() -> str:
 BASE_META = "https://api.meta.ai/"
 
 
+LOCALES = ("127.0.0.1", "localhost")
+
+
 def base() -> str:
+    """A dónde va la llave: la API de Meta por https o una prueba en este equipo por http. Se comparan esquema y
+    host exactos («localhost.otro.com» no es local), sin usuario, contraseña ni fragmento en la dirección."""
     _cargar_env()
     url = os.environ.get("META_API_BASE", BASE_META + "v1")
-    if not url.startswith((BASE_META, "http://127.0.0.1", "http://localhost")):
+    try:
+        p = urlsplit(url)
+        meta = p.scheme == "https" and p.hostname == urlsplit(BASE_META).hostname
+        local = p.scheme == "http" and p.hostname in LOCALES
+        limpia = not (p.username or p.password or p.fragment)
+    except ValueError:
+        meta = local = limpia = False
+    if not ((meta or local) and limpia):
         raise ValueError("META_API_BASE solo puede ser la API de Meta o una prueba en este equipo: la llave no sale a otro sitio.")
     return url
 
@@ -232,11 +245,37 @@ def liberar(reserva: str | None) -> None:
                 _guardar_reservas(reservas)
 
 
+CARACTERES_POR_TOKEN = 3  # por lo alto, para apartar: el costo real llega con la respuesta y reemplaza la reserva
+TOKENS_POR_IMAGEN = 2000  # una imagen adjunta, también por lo alto
+
+
+def entrada_estimada(cuerpo: dict) -> int:
+    """Tokens de entrada que se ven en el cuerpo: el texto y las imágenes adjuntas. Un video adjunto no sale aquí
+    (≈200 tokens por segundo: media hora son ~USD 0.45): lo declara quien llama en `entrada_tokens`."""
+    n = 0
+    for mensaje in cuerpo.get("input") or []:
+        contenido = mensaje.get("content") if isinstance(mensaje, dict) else None
+        if isinstance(contenido, str):
+            n += len(contenido) // CARACTERES_POR_TOKEN + 1
+            continue
+        for parte in contenido or []:
+            if not isinstance(parte, dict):
+                continue
+            if parte.get("type") == "input_text":
+                n += len(str(parte.get("text") or "")) // CARACTERES_POR_TOKEN + 1
+            elif parte.get("type") == "input_image":
+                n += TOKENS_POR_IMAGEN
+    if isinstance(cuerpo.get("instructions"), str):
+        n += len(cuerpo["instructions"]) // CARACTERES_POR_TOKEN + 1
+    return n
+
+
 def peor_caso_usd(cuerpo: dict, entrada_tokens: int = 0) -> float:
-    """Lo máximo que puede costar una llamada: toda la salida permitida más la entrada que quien llama sepa estimar.
-    La del texto es chica; la de un video no (≈200 tokens por segundo: media hora son ~USD 0.45), y no sale en `cuerpo`."""
+    """Lo máximo que puede costar una llamada: toda la salida permitida más la entrada. La del texto y las imágenes se
+    estima del cuerpo; la de un video la declara quien llama, ya contada con su texto, así que vale la mayor de las dos."""
     entrada, _, salida = PRECIOS_TOKENS.get(cuerpo.get("model", ""), (0.0, 0.0, 0.0))
-    return (cuerpo.get("max_output_tokens", 0) * salida + max(entrada_tokens, 0) * entrada) / 1e6
+    tokens = max(entrada_tokens, entrada_estimada(cuerpo), 0)
+    return (cuerpo.get("max_output_tokens", 0) * salida + tokens * entrada) / 1e6
 
 
 def _sin_salto_final(ruta: Path) -> bool:

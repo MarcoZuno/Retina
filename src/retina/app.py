@@ -42,6 +42,7 @@ import webbrowser
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from http.cookies import CookieError, SimpleCookie
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -51,6 +52,8 @@ from .segmentar import Aviso, _info, duracion_s, maximo_s, pistas, tiempo_maximo
 
 MAX_MB = 800
 ID = re.compile(r"^[0-9a-f]{12}$")
+CASO_SUBIDO = re.compile(r"^/casos/[0-9a-f]{12}/")  # lo que alguien subió; los ejemplos (casos/demo) son públicos
+GALLETA_ACCESO = "retina_acceso"
 CODIGO = re.compile(r"^[A-Z]{2,10}\d{2,12}$")
 # El avance se lee de los archivos que va dejando el orquestador, en este orden.
 # La tarjeta la deja agente.json (con --voz) o explicar.json (el flujo público): cualquiera cierra el paso.
@@ -383,7 +386,17 @@ def config_en_linea(entorno: Mapping) -> dict:
 
 
 def acceso_valido(cabeceras, codigo: str) -> bool:
-    return hmac.compare_digest(str(cabeceras.get("X-Retina-Acceso") or "").encode(), codigo.encode())
+    """El código llega en la cabecera (los pedidos que arma el panel) o en la cookie `retina_acceso` (el resultado y las
+    imágenes de un caso subido, que el navegador pide solo). Se compara en tiempo constante."""
+    dado = str(cabeceras.get("X-Retina-Acceso") or "")
+    if not dado:
+        galletas = SimpleCookie()
+        try:
+            galletas.load(str(cabeceras.get("Cookie") or ""))
+        except CookieError:
+            pass
+        dado = unquote(galletas[GALLETA_ACCESO].value) if GALLETA_ACCESO in galletas else ""
+    return hmac.compare_digest(dado.encode(), codigo.encode())
 
 
 def queda_presupuesto() -> bool:
@@ -758,6 +771,12 @@ class ConSubida(SoloElPanel):
             if m and (self.casos / m.group(1)).is_dir():
                 return self._json(200, estado_apertura(self.casos / m.group(1)))
             return self.send_error(404)
+        if self.en_linea and CASO_SUBIDO.match(ruta) and not acceso_valido(self.headers, self.en_linea["codigo"]):
+            # En línea, leer lo que alguien subió también pide el código: conocer el enlace no basta.
+            idioma = "en" if unquote(self.headers.get("X-Retina-Idioma") or "") == "en" else "es"
+            time.sleep(1)
+            self.close_connection = True
+            return self._json(401, {"error": texto(idioma, "sin_acceso")})
         return super().do_GET()
 
     def do_POST(self):  # noqa: N802

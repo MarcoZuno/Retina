@@ -92,24 +92,36 @@ class Lazo(unittest.TestCase):
         self.assertEqual(len(dibujados), 6)
         self.assertEqual([f["coincide"] for f in r["despues"]["cuadros_revisados"]], [True, True, True])
 
-    def test_falla_de_revision_no_cuenta_como_buena(self):
+    def test_falla_de_revision_no_cuenta_como_buena_ni_se_aprueba(self):
         def comprobar(imagen, texto):
             raise RuntimeError
 
-        r, _ = self.correr([{"voz": VOZ, "cuadros": CUADROS}], comprobar)
-        self.assertTrue(r["aprobada"])
-        self.assertEqual({f["coincide"] for f in r["despues"]["cuadros_revisados"]}, {None})
+        r, dibujados = self.correr([{"voz": VOZ, "cuadros": CUADROS}], comprobar)
+        self.assertFalse(r["aprobada"])
+        self.assertTrue(r["incompleta"])
+        self.assertIsNone(r["despues"])
+        self.assertIn("cuadros", r["no_comprobe"])
+        self.assertNotIn("cuadros", [c["id"] for c in r["comprobaciones"]])
+        self.assertEqual((r["vueltas"], dibujados), (0, [1, 2, 3]))  # no se pide corregir: el texto no estaba mal
 
-    def test_no_comprobe_se_reinicia_en_cada_vuelta(self):
-        vistas = iter([RuntimeError(), {"aparece": True, "primer_segundo": 0}])
-
+    def test_si_sam_no_contesta_se_deja_de_gastar_y_no_se_aprueba(self):
         def medir(imagen, c):
-            v = next(vistas)
-            if isinstance(v, Exception):
-                raise v
-            return v
+            raise RuntimeError("SAM no contestó")
 
-        dibujos = iter([Path("1"), RuntimeError(), Path("1"), Path("2"), Path("3")])
+        dibujados = []
+
+        def dibujar(i, c):
+            dibujados.append(i)
+            return Path(f"c{i}.png")
+
+        r = apertura.lazo(datos(), "dog", lambda _d, _a: {"voz": VOZ, "cuadros": CUADROS}, dibujar, medir)
+        self.assertFalse(r["aprobada"])
+        self.assertTrue(r["incompleta"])
+        self.assertEqual((r["no_comprobe"], r["vueltas"], dibujados), (["promesa"], 0, [1]))  # los otros dos cuadros no se pagan
+        self.assertEqual(r["intentos"][-1]["problemas"], [])
+
+    def test_un_dibujo_que_falla_se_vuelve_a_pedir(self):
+        dibujos = iter([RuntimeError(), Path("1"), Path("2"), Path("3")])
 
         def dibujar(i, c):
             d = next(dibujos)
@@ -117,7 +129,8 @@ class Lazo(unittest.TestCase):
                 raise d
             return d
 
-        r = apertura.lazo(datos(), "dog", lambda _d, _a: {"voz": VOZ, "cuadros": CUADROS}, dibujar, medir)
+        r = apertura.lazo(datos(), "dog", lambda _d, _a: {"voz": VOZ, "cuadros": CUADROS}, dibujar,
+                          lambda imagen, c: {"aparece": True, "primer_segundo": 0})
         self.assertTrue(r["aprobada"])
         self.assertEqual(r["vueltas"], 1)
         self.assertEqual(r["no_comprobe"], [])
@@ -194,11 +207,14 @@ class Fidelidad(unittest.TestCase):
         self.assertFalse(r["aprobada"])
         self.assertEqual(dibujados, [])
 
-    def test_si_no_contesta_no_finge_que_paso(self):
-        r, _ = self.correr([RuntimeError("sin respuesta")])
-        self.assertTrue(r["aprobada"])
+    def test_si_no_contesta_no_finge_que_paso_ni_se_dibuja(self):
+        r, dibujados = self.correr([RuntimeError("sin respuesta")])
+        self.assertFalse(r["aprobada"])
+        self.assertTrue(r["incompleta"])
+        self.assertIsNone(r["despues"])
         self.assertIn("fidelidad", r["no_comprobe"])
         self.assertNotIn("fidelidad", [c["id"] for c in r["comprobaciones"]])
+        self.assertEqual(dibujados, [])  # sin lectura no se gasta en dibujar
 
 
 class Saludo(unittest.TestCase):
@@ -228,10 +244,12 @@ class Tema(unittest.TestCase):
         self.assertFalse(r["aprobada"])
         lazo.assert_not_called()
 
-    def test_si_no_contesta_se_dice(self):
+    def test_si_no_contesta_se_dice_y_no_se_escribe(self):
         with tempfile.TemporaryDirectory() as t:
             r, lazo = self.armar(Path(t), {"side_effect": RuntimeError("sin respuesta")})
-        lazo.assert_called_once()
+        lazo.assert_not_called()  # sin saber si el tema se puede reescribir, no se gasta ni se entrega nada
+        self.assertFalse(r["aprobada"])
+        self.assertTrue(r["incompleta"])
         self.assertIn("tema_sensible", r["no_comprobe"])
 
 

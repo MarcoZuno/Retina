@@ -5,6 +5,7 @@ Corren con:  python -m unittest discover -s tests   (desde la raíz del repo)
 """
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import os
@@ -202,11 +203,13 @@ class Lazo(unittest.TestCase):
         self.assertTrue(r["aprobada"])
         self.assertEqual(r["vueltas"], 1)
 
-    def test_si_sam_no_contesta_no_se_presume_la_comprobacion(self):
+    def test_si_sam_no_contesta_no_se_presume_la_comprobacion_ni_se_aprueba(self):
         r = self.correr([buena()], [{"concepto": "bread", "error": "SAM no terminó"}])
-        self.assertTrue(r["aprobada"])
+        self.assertFalse(r["aprobada"])
+        self.assertTrue(r["incompleta"])
+        self.assertIsNone(r["despues"])
         self.assertNotIn("promesa", {c["id"] for c in r["comprobaciones"]})
-        self.assertTrue(r["no_comprobe"])
+        self.assertEqual((r["no_comprobe"], self.dibujos), (["promesa"], [1]))  # y no se pagan los otros dos cuadros
 
     def test_quien_escribe_recibe_el_objeto_prometido(self):
         self.correr([buena()], [self.SE_VE])
@@ -314,11 +317,19 @@ class Rehacer(unittest.TestCase):
             d = Path(t); self.preparar(d)
             self.assertEqual(apertura.datos_de_apertura(d, TITULO, "en")["idioma_de_la_apertura"], "español")
 
+    @contextlib.contextmanager
+    def lecturas(self):
+        """Las tres lecturas de Spark que no son el dibujo: sin ellas la apertura no se aprueba (2-nov)."""
+        with mock.patch.object(apertura, "tema_fuera", return_value=None), \
+                mock.patch.object(apertura, "es_fiel", return_value={"fiel": True, "que_agrega": ""}), \
+                mock.patch.object(apertura, "comprobar_cuadro", return_value=True):
+            yield
+
     def test_queda_anotada_en_el_resultado_con_el_titulo_intacto(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura.sam, "objeto_del_titulo", return_value=None), \
                 mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))), \
                 mock.patch.object(apertura, "dibujar_cuadro",
-                                  side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
+                                  side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"), self.lecturas():
             d = Path(t); self.preparar(d)
             salida = apertura.rehacer(d)
             r = json.loads((d / "resultado.json").read_text(encoding="utf-8"))
@@ -349,7 +360,21 @@ class Rehacer(unittest.TestCase):
                                   side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
             d = Path(t); self.preparar(d)
             (d / "apertura.json").write_text(json.dumps({"aprobada": False}), encoding="utf-8")
-            self.assertTrue(apertura.rehacer(d)["aprobada"])
+            with self.lecturas():
+                self.assertTrue(apertura.rehacer(d)["aprobada"])
+
+    def test_una_apertura_incompleta_tampoco_se_cobra_dos_veces_si_se_vuelve_a_pedir(self):
+        # Sin la lectura del tema no se escribe ni se dibuja; al volver a pedirla con las lecturas de vuelta, sí.
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura.sam, "objeto_del_titulo", return_value=None), \
+                mock.patch.object(apertura, "pedir", return_value=buena(voz=VOZ.replace("2 horas", "5 pasos"))) as pedir, \
+                mock.patch.object(apertura, "dibujar_cuadro", side_effect=lambda c, i, texto: c / f"apertura-cuadro{i}-ilustracion-ia.png"):
+            d = Path(t); self.preparar(d)
+            with mock.patch.object(apertura, "tema_fuera", side_effect=RuntimeError("sin respuesta")):
+                primera = apertura.rehacer(d)
+            self.assertEqual((primera["aprobada"], primera["incompleta"], primera["no_comprobe"]), (False, True, ["tema_sensible"]))
+            pedir.assert_not_called()
+            with self.lecturas():
+                self.assertTrue(apertura.rehacer(d)["aprobada"])
 
     def test_un_video_en_otro_alfabeto_no_gasta_y_lo_dice(self):
         with tempfile.TemporaryDirectory() as t, mock.patch.object(apertura, "lazo", side_effect=AssertionError("gastó")):

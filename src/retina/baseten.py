@@ -34,10 +34,12 @@ def gastado_usd() -> float:
     return meta_api.gastado_usd("baseten")
 
 
-def _reservar(servicio: str, max_tokens: int) -> str:
-    """Aparta el peor caso de la llamada. Respeta los dos topes: el de Baseten y el del usuario
-    (RETINA_TOPE_USD, el mismo de la API de Meta, que cuenta todo el gasto del registro)."""
-    peor = max_tokens * PRECIO[2] / 1e6
+def _reservar(servicio: str, max_tokens: int, mensajes: list[dict] | None = None) -> str:
+    """Aparta el peor caso de la llamada: toda la salida permitida más la entrada que se ve en los mensajes. Respeta
+    los dos topes: el de Baseten y el del usuario (RETINA_TOPE_USD, el mismo de la API de Meta, que cuenta todo el
+    gasto del registro)."""
+    entrada = sum(len(str(m.get("content") or "")) for m in (mensajes or []) if isinstance(m, dict)) // meta_api.CARACTERES_POR_TOKEN
+    peor = (max_tokens * PRECIO[2] + entrada * PRECIO[0]) / 1e6
     return meta_api.reservar(f"baseten-{servicio}", peor, "baseten", TOPE_BASETEN_USD)
 
 
@@ -56,7 +58,7 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
     from openai import OpenAI
 
     llave = _llave()  # sin llave no se aparta nada
-    reserva = _reservar(servicio, max_tokens)
+    reserva = _reservar(servicio, max_tokens, mensajes)
     cliente = OpenAI(api_key=llave, base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=2)
     t0 = time.time()
     extra = {"reasoning_effort": esfuerzo} if esfuerzo else {}

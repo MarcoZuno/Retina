@@ -33,7 +33,8 @@ Ejemplo inventado, sin datos reales: [`casos/demo/resultado.json`](../casos/demo
 | `normas.no_verificado` | Un hallazgo no se pudo comprobar por el alfabeto. | «No pudimos comprobarlo», nunca «sin riesgos» |
 | `apertura.otro_alfabeto` | Solo si el video no está en alfabeto latino: Retina no gastó y lo dice. | Resumen |
 | `apertura.fuera_de_alcance` | `fuera` o `salud`: Retina no reescribe ese video y lo dice. `despues` es null. | Resumen |
-| `apertura.no_comprobe` | Lo que no se pudo revisar (`tema_sensible`, `fidelidad`, `promesa`). Si trae algo, el panel dice que el resultado salió incompleto. | Aviso y lista |
+| `apertura.no_comprobe` | Lo que no se pudo revisar (`tema_sensible`, `fidelidad`, `promesa`, `cuadros`). Si trae algo, la apertura no viene aprobada y `despues` es null. | Lista |
+| `apertura.incompleta` | `true` cuando no se aprobó porque una comprobación no pudo correr, no porque fallara. Se puede volver a intentar. | Resumen |
 | `apertura.licencia` | Qué modelo escribió, dibujó y revisó. | Resumen |
 
 ## Lo que muestra la tarjeta

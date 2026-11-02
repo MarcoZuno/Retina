@@ -67,9 +67,11 @@ def _reglas(texto: str) -> set[str]:
 
 
 def sin_inventar(original: str, traducido: object) -> bool:
-    """Ni cifras nuevas, ni una regla de anzuelos que el original no rompía (se comparan cuáles, no cuántas), ni enlaces nuevos."""
+    """Ni cifras nuevas, ni una regla de anzuelos que el original no rompía (se comparan cuáles, no cuántas), ni enlaces
+    nuevos, ni tocar un intocable (logo, título, avisos) que el original no tocaba: la traducción pasa los mismos filtros."""
     return (isinstance(traducido, str) and bool(traducido.strip()) and set(_cifras(traducido)) <= set(_cifras(original))
-            and _reglas(traducido) <= _reglas(original) and set(explicar.enlaces(traducido)) <= set(explicar.enlaces(original)))
+            and _reglas(traducido) <= _reglas(original) and set(explicar.enlaces(traducido)) <= set(explicar.enlaces(original))
+            and set(explicar.toca_intocable(traducido)) <= set(explicar.toca_intocable(original)))
 
 
 def aceptable(original: str, traducido: object) -> bool:

@@ -54,6 +54,14 @@ class Acceso(unittest.TestCase):
         for malo in ({}, {"X-Retina-Acceso": ""}, {"X-Retina-Acceso": "otro"}, {"X-Retina-Acceso": CODIGO + "x"}):
             self.assertFalse(app.acceso_valido(malo, CODIGO), malo)
 
+    def test_la_cookie_de_la_sesion_tambien_abre(self):
+        # El resultado y las imágenes de un caso los pide el navegador solo, sin cabeceras: el panel deja el código en una cookie.
+        self.assertTrue(app.acceso_valido({"Cookie": f"retina_acceso={CODIGO}"}, CODIGO))
+        self.assertTrue(app.acceso_valido({"Cookie": f"otra=1; retina_acceso={CODIGO}; mas=2"}, CODIGO))
+        for mala in ("", "retina_acceso=otro", f"retina_acceso={CODIGO}x", "otra=1", "esto no es una cookie;;=", f"x={CODIGO}"):
+            self.assertFalse(app.acceso_valido({"Cookie": mala}, CODIGO), mala)
+        self.assertFalse(app.acceso_valido({"X-Retina-Acceso": "otro", "Cookie": f"retina_acceso={CODIGO}"}, CODIGO))  # la cabecera manda
+
     def test_acepta_pedidos_de_su_sitio_y_de_ningun_otro(self):
         self.assertTrue(app.pedido_propio({"X-Retina": "1", "Origin": SITIO}, 8080, SITIO))
         self.assertFalse(app.pedido_propio({"X-Retina": "1", "Origin": "https://otro.com"}, 8080, SITIO))
@@ -279,6 +287,15 @@ class EnVivo(unittest.TestCase):
 
     def test_el_panel_dice_que_hace_falta_el_codigo(self):
         self.assertEqual(self.pedir("GET", "/api/salud")[1].get("acceso"), True)
+
+    def test_un_caso_subido_no_se_lee_sin_el_codigo(self):
+        # Conocer el enlace no basta: el resultado y las imágenes de lo que alguien subió también piden el código.
+        for ruta in ("/casos/a1b2c3d4e5f6/resultado.json", "/casos/a1b2c3d4e5f6/apertura-cuadro1-ilustracion-ia.png"):
+            self.assertEqual(self.pedir("GET", ruta)[0], 401, ruta)
+            self.assertEqual(self.pedir("GET", ruta, {"Cookie": "retina_acceso=otro"})[0], 401, ruta)
+        for con in ({"X-Retina-Acceso": CODIGO}, {"Cookie": f"retina_acceso={CODIGO}"}):
+            self.assertNotEqual(self.pedir("GET", "/casos/a1b2c3d4e5f6/resultado.json", con)[0], 401, con)
+        self.assertNotEqual(self.pedir("GET", "/casos/demo/resultado.json")[0], 401)  # el ejemplo inventado sigue público
 
     def test_otro_host_no_entra(self):
         self.assertEqual(self.pedir("GET", "/api/salud", {"Host": "otro.com"})[0], 404)
