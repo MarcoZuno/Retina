@@ -3,14 +3,18 @@
 Las pruebas leen `.gitleaks.toml` y ejercitan la expresión con `re`. Los patrones usan solo lo que `re` y RE2 (el motor
 de gitleaks) comparten, así que lo que pasa aquí pasa igual en gitleaks: un cambio en la regla no puede dejar pasar un
 código ni bloquear el ejemplo inventado sin que se note. Los códigos de prueba se arman en tiempo de ejecución, para
-que ni este archivo ni su .pyc contengan uno y disparen el escáner."""
+que ni este archivo ni su .pyc contengan uno y disparen el escáner. El gancho se prueba ejecutando su bloque de
+fueraón de intérprete con `sh`, no leyéndolo: un gancho que solo tuviera las frases en comentarios no pasa."""
 import re
+import shutil
 import subprocess
+import sys
 import tomllib
 import unittest
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parents[1]
+GANCHO = RAIZ / ".githooks" / "pre-commit"
 
 
 def _pega(*partes: str) -> str:
@@ -61,15 +65,69 @@ class ReglaDeCodigos(unittest.TestCase):
             self.assertIsNone(re.search(r, _pega("sk_live_retina-explicar-v2_", "9f8e7d6c5b4a3f2e")))
 
 
+def _lineas_de_codigo() -> list[str]:
+    """Las líneas del gancho que se ejecutan: sin comentarios ni vacías."""
+    return [l for l in GANCHO.read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#")]
+
+
+def _bloque_del_interprete() -> str:
+    """Desde `PY=""` hasta la línea que exige que haya quedado uno: lo que elige el intérprete."""
+    lineas = GANCHO.read_text(encoding="utf-8").splitlines()
+    inicio = next(i for i, l in enumerate(lineas) if l.startswith('PY=""'))
+    fin = next(i for i, l in enumerate(lineas) if '[ -n "$PY" ]' in l)
+    return "\n".join(lineas[inicio:fin + 1])
+
+
+def _comprobacion_de_version() -> str:
+    """El Python de una línea con el que el gancho decide si un intérprete sirve."""
+    m = re.search(r"""-c '([^']*version_info[^']*)'""", GANCHO.read_text(encoding="utf-8"))
+    assert m, "el gancho no trae la comprobación de versión"
+    return m.group(1)
+
+
 class Gancho(unittest.TestCase):
-    def test_corre_pruebas_y_gitleaks_con_fines_de_linea_lf(self):
-        crudo = (RAIZ / ".githooks" / "pre-commit").read_bytes()
+    def test_es_sh_con_fines_de_linea_lf(self):
+        crudo = GANCHO.read_bytes()
         self.assertNotIn(b"\r", crudo)
-        texto = crudo.decode("utf-8")
-        self.assertTrue(texto.startswith("#!/bin/sh\n"))
-        self.assertIn("unittest discover -s tests", texto)
-        self.assertIn("gitleaks protect --staged", texto)
-        self.assertLess(texto.index("python3"), texto.index("python "), "primero python3, luego python")
+        self.assertTrue(crudo.startswith(b"#!/bin/sh\n"))
+
+    def test_los_controles_se_ejecutan_y_frenan_el_commit(self):
+        """Cada control está en una línea que corre (no en un comentario) y termina el gancho con 1 si falla."""
+        codigo = _lineas_de_codigo()
+        for control in ('-m unittest discover -s tests', 'gitleaks protect --staged', 'command -v gitleaks'):
+            linea = next((l for l in codigo if control in l), None)
+            self.assertIsNotNone(linea, control)
+            self.assertRegex(linea, r"\|\| \{.*exit 1; \}\s*$", linea)
+
+    def test_busca_python3_luego_python_luego_py_y_exige_3_12(self):
+        self.assertIn("for c in python3 python py; do", _bloque_del_interprete())
+        comprobacion = _comprobacion_de_version()
+        for version, esperado in (((3, 11, 9), 1), ((3, 12, 0), 0), ((3, 14, 1), 0)):
+            r = subprocess.run([sys.executable, "-c", f"import sys; sys.version_info = {version}; {comprobacion}"],
+                               capture_output=True, timeout=60)
+            self.assertEqual(r.returncode, esperado, (version, r.stderr))
+        self.assertEqual(subprocess.run([sys.executable, "-c", comprobacion], timeout=60).returncode, 0)
+
+    def _correr_bloque(self, python3: int, python: int, py: int) -> subprocess.CompletedProcess:
+        """Corre el bloque bajo `sh` con los tres intérpretes sustituidos por funciones que devuelven lo que se les diga."""
+        sh = shutil.which("sh")
+        if not sh:
+            self.skipTest("sin sh")
+        guion = (f"python3() {{ return {python3}; }}; python() {{ return {python}; }}; py() {{ return {py}; }}\n"
+                 f"{_bloque_del_interprete()}\n"
+                 'echo "PY=$PY"\n')
+        return subprocess.run([sh, "-c", guion], capture_output=True, text=True, encoding="utf-8", timeout=60)
+
+    def test_toma_el_primero_que_sirve(self):
+        self.assertIn("PY=python3", self._correr_bloque(0, 0, 0).stdout)
+        self.assertIn("PY=python", self._correr_bloque(1, 0, 0).stdout.replace("PY=python3", ""))
+        self.assertIn("PY=py\n", self._correr_bloque(1, 1, 0).stdout)
+
+    def test_sin_interprete_que_sirva_no_hay_commit(self):
+        r = self._correr_bloque(1, 1, 127)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("No encuentro Python", r.stdout + r.stderr)
+        self.assertNotIn("PY=", r.stdout)
 
     def test_es_ejecutable_en_git(self):
         try:

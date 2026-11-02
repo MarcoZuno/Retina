@@ -593,4 +593,6 @@ todo el historial. Una pasada más de Codex sobre ese commit dejó cinco detalle
 del ejemplo aceptaba otros códigos (ahora solo los dos ejemplos exactos), el permiso de los nombres de caché podía tapar una llave que los contuviera
 (ahora anclado al secreto completo), la regla consumía el separador y escondía un código pegado a un ejemplo (ya no cierra a la derecha), y el gancho
 prefería `python` aunque hubiera `python3` (ahora busca el primer intérprete 3.12 o más nuevo). Cada caso quedó en `tests/test_escaner_secretos.py`,
-con los códigos de prueba armados en ejecución para que ni la prueba ni su .pyc disparen el escáner. Pruebas: 568.
+con los códigos de prueba armados en ejecución para que ni la prueba ni su .pyc disparen el escáner. Pruebas: 568. La pasada de confirmación de Codex dio los cinco por corregidos y dejó una observación baja: la prueba del gancho
+era de texto y la pasaría un gancho con las frases en comentarios. Ahora ejecuta el bloque del gancho con `sh` (orden python3, python, py; versión mínima 3.12;
+sin intérprete no hay commit) y exige que cada control vaya en una línea que corre y termina con 1 si falla. Pruebas: 572.
