@@ -4,7 +4,7 @@ Las pruebas leen `.gitleaks.toml` y ejercitan la expresión con `re`. Los patron
 de gitleaks) comparten, así que lo que pasa aquí pasa igual en gitleaks: un cambio en la regla no puede dejar pasar un
 código ni bloquear el ejemplo inventado sin que se note. Los códigos de prueba se arman en tiempo de ejecución, para
 que ni este archivo ni su .pyc contengan uno y disparen el escáner. El gancho se prueba ejecutando su bloque de
-fueraón de intérprete con `sh`, no leyéndolo: un gancho que solo tuviera las frases en comentarios no pasa."""
+cómo escoge el intérprete con `sh`, no leyéndolo: un gancho que solo tuviera las frases en comentarios no pasa."""
 import re
 import shutil
 import subprocess

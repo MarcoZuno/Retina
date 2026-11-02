@@ -15,7 +15,7 @@ draft MP4 ─► segmentar ─► 40 stretches + WAV + light MP4
                └─► explicar     (Muse Spark Open, validator; Muse Spark 1.3 rescues) ─► card ─► panel
 
 press «Fix the opening» ─► apertura:
-    Muse Spark 1.3 reads the topic ─► out-of-scope topics or health advice: not rewritten, and the panel says so
+    Muse Spark 1.3 reads the topic ─► outside Retina's scope: not rewritten, and the panel says so
     Muse Spark Open writes ─► rules in code ─► Muse Spark 1.3 reads it against the video ─► Muse Image draws frame 1 ─► SAM 3.1 looks for the promise
           ▲                       │ fails                  │ adds something                                                │ fails
           └───────────────────────┴────────────────────────┴───────── exact list of failures, up to 2 times ─────────────┘

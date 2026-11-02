@@ -54,7 +54,7 @@ class FichaEnElNumero(unittest.TestCase):
             cod = f"ZZQ{i:04d}"
             filas.append({"codigo": cod, "fecha": inicio + timedelta(hours=int(azar.integers(0, 24 * 300))), "dur": dur,
                           "cubeta": cubeta(dur), "talento": "", "archivo": "receta", "titulo": "Receta casera", "reel": 0.0,
-                          "elegibilidad": 0.0, "curva": np.sort(azar.random(41))[::-1]})
+                          "incluir": True, "curva": np.sort(azar.random(41))[::-1]})
             voz[cod] = [[0.5, "hola"], [3.0, "hoy te enseño"]]
             fichas[cod] = valida({**BUENA, "gancho": str(azar.choice(["pregunta", "presentacion"]))})
         filas.sort(key=lambda x: x["fecha"])

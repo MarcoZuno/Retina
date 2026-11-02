@@ -15,15 +15,13 @@ fixed numbers that plain Python multiplies and adds, in `ModeloPublico.predecir`
 
 ## The data
 
-- **Source:** Facebook retention curves of a large page in Mexico (Badabun): 32,906 videos published from 2020 to 2026, with data
+- **Source:** Facebook retention curves of a large page in Mexico (Badabun): the page's videos published from 2020 to 2026, with data
   up to 24-Oct-2026. Each video has a 41-point curve: how many people were still watching at each 2.5 % of its length.
 - **What the curve does not see:** it stays near 100 until about 3 seconds at every length and drops right after, so Facebook seems
   to count only people who got that far (the shape is measured; the cause is our reading of it). In 2,953 videos of about a minute it
   reads 99.8 at 2.9 s and 79.8 at 4.4 s. People who leave earlier are not in this data, so Retina cannot see them.
 - **Who owns it:** Badabun, the company behind this entry. The raw data stays private and is not in this repository.
-- **What was left out:** videos with eligibility or no record of it, and videos about out-of-scope topics or out-of-scope topics
-  ([`reglas/alcance-v1.json`](../reglas/alcance-v1.json), checked against the title and the first 40 spoken
-  words; the published list leaves out people's proper names, which were also used). Revenue was never read.
+- **What was never read:** revenue. Nothing about any single video leaves the archive.
 - **What was used:** 23,710 videos. Of those, 974 have no speech and 9,003 have no opening sheet: they enter with zeros in those inputs.
 - **What was removed:** creator names, from both the title and the words the model learns.
 

@@ -8,8 +8,7 @@ código y solo con el título publicado. Se comparan:
   B. Retina de hoy (v0) con esos campos vacíos;
   C. cerebro para cualquier video: duración, reel, hora y día, título y la voz
      del arranque. Nada propio de Badabun.
-  D. el cerebro público (retina.publico): C entrenado sin videos no elegibles, sin
-     temas fuera de alcance ni graves y sin nombres de talentos, con la curva fija por
+  D. el cerebro público (retina.publico): C entrenado solo con videos elegibles y sin nombres de talentos, con la curva fija por
      duración que trae el archivo público en lugar de la de los últimos 90 días.
   E. D más la ficha del arranque que anota Muse Spark Open (retina.ficha), con --fichas.
 Aparte, en talentos conocidos: v0 contra C más la capa de la casa (talento y
@@ -37,7 +36,7 @@ from retina.curvas import VENTANA  # noqa: E402
 from retina.predecir import (LAMBDA_UNIVERSAL, Rasgos, ajustar_ridge, de_fuera, fijos_universales,  # noqa: E402
                              rasgos_universales, tipo_produccion)
 from retina.ficha import N_FICHA, ficha_a_vector  # noqa: E402
-from retina.publico import motivo_fuera, nombres, patrones, titulo_publico  # noqa: E402
+from retina.publico import motivo_fuera, nombres, titulo_publico  # noqa: E402
 
 GRUPOS = 5
 
@@ -114,8 +113,8 @@ def main() -> None:
         for l in a.fichas.open(encoding="utf-8"):
             d = json.loads(l); fichas[d.pop("codigo")] = d
     vf = lambda v: ficha_a_vector(fichas.get(v["codigo"])) if fichas else np.zeros(N_FICHA)  # noqa: E731
-    temas, fecha_corte = patrones(), datetime.fromisoformat(a.corte)
-    publicable = {v["codigo"] for v in filas if motivo_fuera(v, voz.get(v["codigo"]), temas) is None}
+    fecha_corte = datetime.fromisoformat(a.corte)
+    publicable = {v["codigo"] for v in filas if motivo_fuera(v) is None}
     orden, bases_a, lams = [], [], {"B": [], "C": []}
     for g in range(GRUPOS):
         hist = [v for v in filas if not (v["talento"] and grupo(v["talento"]) == g)]

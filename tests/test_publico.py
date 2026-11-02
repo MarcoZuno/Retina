@@ -14,7 +14,7 @@ sys.path.insert(0, str(RAIZ / "src"))
 
 from retina.curvas import cubeta  # noqa: E402
 from retina.publico import (ModeloPublico, cargar_modelo, entrenar, firma, motivo_fuera, nombres,  # noqa: E402
-                            patrones, titulo_publico)
+                            titulo_publico)
 
 ARCHIVO = RAIZ / "modelos" / "retina-publico.json"
 
@@ -32,24 +32,12 @@ def _textos(x, ruta=""):
 
 
 class QueQuedaFuera(unittest.TestCase):
-    def setUp(self):
-        self.temas = patrones()
-
-    def video(self, titulo="Así se tejen las bufandas de lana", elegibilidad=0.0):
-        return {"titulo": titulo, "elegibilidad": elegibilidad}
-
-    def test_elegib_o_sin_dato_de_elegib_queda_fuera(self):
-        self.assertEqual(motivo_fuera(self.video(elegibilidad=None), None, self.temas), "elegibilidad")
-        self.assertEqual(motivo_fuera(self.video(elegibilidad=0.3), None, self.temas), "elegibilidad")
-
-    def test_fuera_y_temas_fuera_en_titulo_o_en_lo_que_se_dice(self):
-        self.assertEqual(motivo_fuera(self.video("Lo que dijo el figura pública"), None, self.temas), "fuera")
-        self.assertEqual(motivo_fuera(self.video("Así murió el cantante"), None, self.temas), "graves")
-        self.assertEqual(motivo_fuera(self.video(), [[0.4, "Hoy hablamos de las temas fuera de alcance"]], self.temas), "fuera")
-        self.assertEqual(motivo_fuera(self.video("ACCIDENTE en la carretera"), None, self.temas), "graves")  # sin acentos ni mayúsculas
-
-    def test_un_video_ligero_elegibles_si_entra(self):
-        self.assertIsNone(motivo_fuera(self.video(), [[0.4, "Mira cómo se teje"]], self.temas))
+    def test_solo_entra_lo_marcado_como_elegible(self):
+        video = {"titulo": "Así se tejen las bufandas de lana"}
+        self.assertIsNone(motivo_fuera({**video, "incluir": True}))
+        self.assertEqual(motivo_fuera({**video, "incluir": False}), "no_elegible")
+        self.assertEqual(motivo_fuera({**video, "incluir": None}), "no_elegible")
+        self.assertEqual(motivo_fuera(video), "no_elegible")
 
 
 class SinNombres(unittest.TestCase):
@@ -77,7 +65,7 @@ class ArchivoPublico(unittest.TestCase):
             filas.append({"codigo": f"ZZQ{i:04d}", "fecha": inicio + timedelta(hours=int(azar.integers(0, 24 * 300))),
                           "dur": dur, "cubeta": cubeta(dur), "talento": str(azar.choice(["ZOE QUINTANAR", "IKER VALDIVIA"])),
                           "archivo": f"2025-01-01 ZZQ{i:04d} ZOE EDITOR receta", "titulo": "Receta casera 😱 Zoe Quintanar",
-                          "reel": float(dur < 60), "elegibilidad": 0.0 if i % 9 else 0.5,
+                          "reel": float(dur < 60), "incluir": bool(i % 9),
                           "curva": np.sort(azar.random(41))[::-1]})
             if i % 2:
                 voz[f"ZZQ{i:04d}"] = [[0.5, "hola soy Zoe"], [3.0, "hoy te enseño una receta"]]
@@ -91,7 +79,7 @@ class ArchivoPublico(unittest.TestCase):
             self.assertNotIn(prohibido, texto.replace("que_es", ""))
 
     def test_no_publica_conteos(self):
-        # Ni cuántos videos tuvieron elegibilidad, fuera de alcance o temas fuera de alcance, ni cuántos hay por duración.
+        # Ni cuántos videos quedaron fuera ni cuántos hay por duración.
         for llave in ("videos_fuera", "videos_que_aprendio", "videos_por_duracion"):
             self.assertNotIn(llave, self.d)
 

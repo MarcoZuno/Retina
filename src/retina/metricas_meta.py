@@ -45,8 +45,6 @@ METRICAS = {
     "vistas_1min_recomendaciones": ("Reproducciones de video de 1 minuto de Recomendaciones",),
     "vistas_1min_seguidores": ("Reproducciones de video de 1 minuto de Seguidores",),
     "vistas_1min_compartido": ("Reproducciones de video de 1 minuto de Contenido compartido",),
-    "vistas_x": ("Reproducciones de video de 3 segundos de Publicaciones promocionadas",
-                     "Visualizaciones de Publicaciones promocionadas", "Views from Publicaciones promocionadas"),
 }
 PROHIBIDAS = ("ingreso", "monetiz", "revenue", "earning")  # dinero: ni se lee
 

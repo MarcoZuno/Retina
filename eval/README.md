@@ -18,5 +18,5 @@ nunca la lista de videos ni sus curvas.
 - `margen_numero.py`: de cuánto suele ser el error del número, con creadores escondidos. De aquí sale el margen del panel.
 
 - `apertura_v3.py`, `juez_control.py`: cuarta medición de la apertura, con los tres dibujos revisados y control negativo del juez.
-- `apertura_v4.py`: quinta medición, la de la versión que se publica: solo videos dentro del alcance, con lectura de fidelidad en el producto. Usa `juez_aperturas.py` y `juez_control.py`.
+- `apertura_v4.py`: quinta medición, la de la versión que se publica: solo videos dentro del alcance de Retina, con lectura de fidelidad en el producto. Usa `juez_aperturas.py` y `juez_control.py`.
 - `tacticas_gancho.py`: descriptivo, sin regla. Qué tácticas de arranque van con más retención entre videos distintos. No prueba la reescritura.

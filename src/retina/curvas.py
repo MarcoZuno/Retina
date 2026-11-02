@@ -23,6 +23,12 @@ def cubeta(dur: float) -> int:
     return int(np.searchsorted(CUBETAS, dur, side="right") - 1)
 
 
+def _si_o_no(x) -> bool | None:
+    """«1», «true» o «sí» es True; «0», «false» o «no» es False; vacío o cualquier otra cosa es None (no se sabe)."""
+    s = str(x or "").strip().lower()
+    return True if s in ("1", "true", "si", "sí") else False if s in ("0", "false", "no") else None
+
+
 def cargar(ruta: Path) -> list[dict]:
     filas = []
     with ruta.open(encoding="utf-8-sig", newline="") as f:
@@ -35,8 +41,8 @@ def cargar(ruta: Path) -> list[dict]:
                 "archivo": r.get("archivo_nombre", ""),
                 "titulo": r.get("titulo", ""),
                 "reel": float(r.get("tipo_publicacion", "") == "Reels"),
-                # Parte de las vistas que vino de elegibilidad; vacío = no se sabe (el cerebro público lo deja fuera).
-                "elegibilidad": float(r["participacion_x"]) if r.get("participacion_x") else None,
+                # Si entra al cerebro público: columna «incluir» de la base, calculada fuera del repo; vacío = no se sabe (fuera).
+                "incluir": _si_o_no(r.get("incluir")),
                 "curva": np.array([float(r[f"c{i:02d}"]) for i in range(N_PUNTOS)]),
             })
     filas.sort(key=lambda x: x["fecha"])

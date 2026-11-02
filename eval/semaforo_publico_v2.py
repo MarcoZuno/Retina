@@ -42,12 +42,12 @@ def prueba(filas, voz, fichas, corte, fin) -> dict:
     cortes = {}
     for c in range(5):
         x = [predicho(m, v, voz, fichas)[0] for v in antes if v["cubeta"] == c and v["fecha"] >= corte - CALIBRA
-             and v.get("elegibilidad") == 0]
+             and v.get("incluir") is True]
         if len(x) >= MINIMO_DURACION:
             cortes[c] = (float(np.percentile(x, 40)), float(np.percentile(x, 75)))
     real, nivel, cub = [], [], []
     for v in filas:
-        if not (corte <= v["fecha"] < fin) or v.get("elegibilidad") != 0 or v["cubeta"] not in cortes:
+        if not (corte <= v["fecha"] < fin) or v.get("incluir") is not True or v["cubeta"] not in cortes:
             continue
         p, base = predicho(m, v, voz, fichas)
         medio, alto = cortes[v["cubeta"]]

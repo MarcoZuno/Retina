@@ -1,7 +1,7 @@
 {
   "version": "sam-permitidos-v1",
   "fecha": "2026-10-28",
-  "uso": "SAM 3.1 solo segmenta lo que nombra esta lista: objetos, comida, animales, lugares y fenómenos. Nunca personas, partes del cuerpo, ropa puesta ni oficios: la condiciones de uso de Meta prohíben seguir personas entre cuadros. Lista cerrada: el concepto se acepta solo si TODAS sus palabras (sin plural) están en «palabras» o en «modificadores», la última es una de «palabras» y ninguna es de «personas». Una palabra que no está en ninguna lista se rechaza. Todo se rechaza en código, antes de llamar a la API.",
+  "uso": "SAM 3.1 solo segmenta lo que nombra esta lista: objetos, comida, animales, lugares y fenómenos. Nunca personas, partes del cuerpo, ropa puesta ni oficios: las condiciones de uso de Meta prohíben seguir personas entre cuadros. Lista cerrada: el concepto se acepta solo si TODAS sus palabras (sin plural) están en «palabras» o en «modificadores», la última es una de «palabras» y ninguna es de «personas». Una palabra que no está en ninguna lista se rechaza. Todo se rechaza en código, antes de llamar a la API.",
   "palabras": [
     "tortilla", "bread", "food", "dish", "plate", "taco", "fruit", "vegetable", "meat", "cake", "coffee", "bean", "corn", "rice", "soup", "drink", "bottle", "can", "glass", "cup", "pan", "pot", "nopal", "cactus", "egg", "milk", "water", "candy", "pill", "medicine", "syringe", "vape", "cigarette",
     "dog", "cat", "puppy", "kitten", "bird", "horse", "cow", "pig", "chicken", "turtle", "fish", "animal", "pet", "rabbit", "snake", "monkey", "tiger", "lion", "bear", "insect", "bee", "mosquito",

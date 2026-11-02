@@ -250,9 +250,8 @@ para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V
 ## 29-oct-2026 (noche) · El cerebro público. Regla escrita antes de medir
 
 - **Por qué.** Quien clone el repo debe poder revisar su propio video sin los datos de Badabun. Lo que se
-  publica es lo aprendido de la retención, nunca un video: sin ingresos, y sin aprender de videos
-  no elegibles, de temas fuera de alcance o graves (`reglas/alcance-v1.json`, en título y primeras palabras
-  dichas; ante la duda, fuera) ni de nombres de talentos. Va en un JSON (`retina.publico`), no en pickle.
+  publica es lo aprendido de la retención, nunca un video: sin ingresos, solo con los videos que cumplen
+  los criterios de entrada y sin nombres de talentos. Va en un JSON (`retina.publico`), no en pickle.
 - **Qué se mide.** En `eval/cualquier_video.py`, la variante D arma el cerebro público con lo de antes
   del corte y sin el grupo escondido, y usa la curva fija por duración que trae el archivo (la de los
   90 días antes del corte), como pasará con quien lo use.
@@ -284,37 +283,6 @@ para predecir» que no ganan: voz (dos veces), juez por pares y lo que ya mide V
   de riesgo y la tarjeta lo dice. Probado de punta a punta con un video. Mientras no contesten, sigue apagado.
 
 
-## 29-oct-2026 (noche) · ¿Un mejor inicio trae más alcance en Facebook? Regla escrita antes de medir
-
-- **Por qué.** Retina promete revisar el inicio. Eso vale si un inicio que retiene más se traduce en lo que
-  le importa a una página: alcance y que Facebook lo recomiende. Si no, la curva sería un dato bonito.
-- **Datos.** La base de curvas más las demás métricas de los exports de Meta (`retina.metricas_meta`), por
-  publicación. Fuera: videos no elegibles o sin dato de elegibilidad, y sin alcance. Ninguna columna de ingresos se
-  lee.
-- **Qué se mide** (`eval/alcance_privado.py`).
-  - Inicio: cuánto retiene el video al terminar su primer cuarto (punto 10 de 41) contra sus parecidos
-    (la regla de siempre, solo con videos anteriores).
-  - Alcance relativo: su alcance contra la mediana de los videos de su misma duración de los 90 días
-    anteriores (en logaritmo).
-  - Recomendación: la parte de los segundos vistos que vino de Recomendaciones.
-- **Regla 1 (inicio y alcance).** Decimos que un mejor inicio va con más alcance si la correlación de orden
-  (spearman) entre las dos cosas es positiva con su intervalo de 95 % entero arriba de 0 en 2020-2023 y
-  también en 2024-2026, por separado. Para decirlo en palabras: el alcance mediano del tercio de videos con
-  mejor inicio contra el del tercio con peor, con su intervalo. Revisión aparte: lo mismo quitando el
-  efecto de cada talento (cada video contra el promedio de su talento). Es una relación, no prueba causa.
-- **Regla 2 (lo que Retina predice antes de publicar).** Con el modelo entrenado antes del 1-jul-2026, en
-  jul-sep 2026: si la correlación entre el inicio que predijo Retina y el alcance relativo real tiene su
-  intervalo de 95 % arriba de 0, decimos que la predicción de Retina sirve para anticipar alcance.
-- **Límite conocido.** Un video que Facebook reparte a gente que no lo buscaba suele retener menos; eso
-  empuja la correlación hacia abajo. Si aun así sale positiva, es evidencia conservadora.
-- **Resultado (29-oct, noche).** Pasan las dos reglas. Regla 1: en 2020-2023 y en 2024-2026, por separado,
-  la correlación entre el inicio y el alcance relativo es positiva con el intervalo entero arriba de 0, y
-  el tercio con mejor inicio llegó a varias veces más gente que el tercio con peor. Se sostiene quitando el
-  efecto de cada talento, y el inicio también va con una parte mayor de reproducciones por
-  Recomendaciones. Regla 2: en jul-sep 2026, lo que Retina predijo antes de publicar se relaciona con el
-  alcance real (intervalo arriba de 0): el tercio que Retina calificó mejor llegó a más gente que el que
-  calificó peor. Es una relación, no prueba causa. Cifras en la carpeta privada.
-
 ## 29-oct-2026 (noche) · Corrección: los créditos sí pueden entrenar con lo que se manda
 
 Una entrada anterior decía que lo que se manda con los créditos del concurso no se usa para entrenar.
@@ -332,7 +300,7 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   entrenando antes del 1-jul-2025 y probando jul-dic 2025; entrenando antes del 1-ene-2026 y probando
   ene-jun 2026. El cerebro público se arma solo con lo de antes del corte. Los cortes de «alto» y «medio»
   se recalculan por duración con los videos de los 180 días antes del corte, como pasaría al usarlo (40 % y
-  75 % de lo que predice). Los videos de prueba entran como de fuera (sin talento ni código), elegibles.
+  75 % de lo que predice). Los videos de prueba entran como de fuera (sin talento ni código), solo los elegibles.
   «Perdió de más» = su gancho y primer cuarto perdieron más gente que la curva de su duración, la misma
   que ve la persona en la tarjeta.
 - **Regla.** El semáforo se queda en el modo público solo si, en las dos pruebas: (1) «alto» sale en
@@ -373,7 +341,7 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   lotes de 20 videos por llamada. La temperatura 0 (para que el mismo video dé la misma ficha) entró después,
   y la app pide un video a la vez. La ficha que corre en la app no es idéntica a la que se midió, y esa
   diferencia no se ha medido. Cifras en la carpeta privada.
-- **Lo que pasó con cada táctica** (`eval/tacticas_gancho.py`, descriptivo, elegibles). En la tarjeta solo van,
+- **Lo que pasó con cada táctica** (`eval/tacticas_gancho.py`, descriptivo). En la tarjeta solo van,
   en palabras y sin cifras, los rasgos cuya diferencia contra videos parecidos tuvo un intervalo de 95 % lejos
   de cero: presentarse antes del tema, saludo o presentación como gancho, decir el tema tarde, poca curiosidad,
   arrancar con pura alegría o ternura (retuvieron menos); un dato o una cifra, un conflicto, mucha curiosidad,
@@ -410,7 +378,7 @@ el candado de `RETINA_SOLO_PUBLICADOS` (apagado por omisión, para revisar antes
   resultado de la v2 se queda publicado aquí como exploratorio. Esos dos periodos ya no se usan para ninguna prueba
   nueva.
 - **Cómo podría entrar.** Solo con una prueba hacia adelante, en videos que todavía no existen al escribir esta regla:
-  los que la página publique del 30-oct al 2-nov de 2026 (hora de México), elegibles, sin fuera de alcance ni temas fuera de alcance, como
+  los que la página publique del 30-oct al 2-nov de 2026 (hora de México), elegibles y dentro del alcance de Retina, como
   de fuera (sin talento ni código). Para cada uno, Retina anota con el cerebro público (con voz y ficha) la curva y el
   nivel de la v2 antes de bajar su retención, y la huella sha256 de ese archivo se publica antes de leer cualquier
   retención. Pasa el número si la diferencia pareja del error de toda la curva (curva fija por duración menos cerebro
@@ -526,12 +494,8 @@ están selladas; lo que estaba mal se corrige aquí.
 - **Erratas de entradas anteriores.**
   - «Unas 2 personas de cada 1,000» era solo lo que aporta la ficha (2.0 y 1.4). La fórmula completa contra la curva fija gana de 5 a 8
     de cada 1,000 en toda la curva.
-  - «Unos 30 mil videos» son 23,710 de 32,906: lo demás queda fuera por elegibilidad o temas. De los
-    que entraron, 9,003 no tienen ficha y 974 no tienen voz.
-  - λ = 300 no se eligió con 10 grupos de creadores escondidos: se eligió con el último 20 % por fecha, en la variante C, no elegibles y
-    sin ficha, y no se volvió a elegir para el archivo publicado.
-  - «3.5 veces» es el mejor tercio contra el peor en retención real. Con lo predicho fue 1.49 veces (intervalo de 95 %: 1.19 a 1.98), con
-    el modelo de la casa; el público no se midió. «Predicho antes de publicar» fue una corrida del 29-oct sobre videos ya publicados.
+  - «Unos 30 mil videos» son 23,710. De esos, 9,003 no tienen ficha y 974 no tienen voz.
+  - λ = 300 no se eligió con 10 grupos de creadores escondidos: se eligió con el último 20 % por fecha, en la variante C, sin ficha, y no se volvió a elegir para el archivo publicado.
   - La segunda medición de la apertura es una regresión, no una validación, por lo que dice `docs/results.md`.
   - En el «10 de 10» de la primera trampa, 3 usaron palabras que SAM casi no reconoce: informa 7 de 7.
 - **La curva cuenta desde los 3 segundos.** Marca casi 100 hasta unos 3 s en todas las duraciones y cae justo después: en 2,953 videos de
@@ -648,10 +612,10 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 
 ## 31-oct-2026 · Quinta medición: apertura-v4, la versión que se publica. Regla escrita antes de medir
 
-- **Por qué.** Una revisión con ojos de jurado sobre la versión medida ayer encontró cuatro cosas que cambian el producto. Retina reescribía videos de fuera de alcance y de salud, y ni la app ni las
+- **Por qué.** Una revisión con ojos de jurado sobre la versión medida ayer encontró cuatro cosas que cambian el producto. Retina reescribía videos fuera de su alcance, y ni la app ni las
   mediciones los filtraban: 25 de los 50 de la cuarta medición ya no se reescribirían. Nada en el producto frenaba una apertura infiel: el juez solo existía en las pruebas, y 3 de 47 habrían
   llegado a la persona. Pasaban saludos y aperturas de 18 palabras, que son 6 segundos. La cuarta medición ya no describe lo que se publica, así que no se usa como cifra principal.
-- **Qué cambió (apertura-v4).** Muse Spark 1.3 decide antes de gastar si el video es de fuera de alcance o de consejos de salud (`skills/tema.md`) y, si lo es, Retina no reescribe. Muse Spark 1.3 lee cada
+- **Qué cambió (apertura-v4).** Muse Spark 1.3 decide antes de gastar si el video está dentro de lo que Retina reescribe (`skills/tema.md`) y, si no lo está, Retina no reescribe. Muse Spark 1.3 lee cada
   apertura contra lo que dice el video antes de dibujarla (`skills/fidelidad.md`); si agrega algo, se corrige. Una regla de código rechaza saludos. El mínimo sube a 25 palabras. Más frases en la lista de anzuelos.
 - **Cómo se afinó.** Con 6 casos aparte (`--piloto`, semilla 20261104), corridos una vez, sin cambios después. No entran a esta medición.
 - **Qué se mide** (`eval/apertura_v4.py`, `eval/juez_aperturas.py`, `eval/juez_control.py`). Videos de jul-sep de 2026 de hasta 4 minutos que no están en ninguna medición ni piloto anterior, barajados con
@@ -685,7 +649,7 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **«Tu inicio ya funciona» no se ejercitó.** Salió 0 veces en 50, y 0 en los 6 del piloto.
 - **Correcciones.** De las 43 aprobadas, 27 a la primera, 12 tras una y 4 tras dos. Se corrigió: una sola prueba 13, fidelidad 8, promesa 7, nombres 3, anzuelos 2, cuadros 2. Las 7 que fallaron no
   salieron: 4 por fidelidad, 1 por promesa, 1 por cuadros y 1 por una sola prueba. La lectura de fidelidad regresó 11 de las 50 al menos una vez. Spark revisó 104 cuadros, los 104 coinciden en las aprobadas. No quedó nada sin comprobar.
-- **Tema.** 125 de 234 títulos revisados quedaron fuera por fuera de alcance o consejos de salud. La medición describe lo que queda, no todo el archivo.
+- **Tema.** 125 de 234 títulos revisados quedaron fuera del alcance de Retina. La medición describe lo que queda, no todo el archivo.
 - **Costo.** USD 4.82 en reescribir, unos USD 0.10 por video, más el juez.
 - **Lo mismo que antes sigue sin medirse:** si la apertura nueva retiene más gente. El juez es un modelo, en D y E sabe que lee la nueva, y D ya no es independiente del lazo.
 - **Código.** La medición corrió desde una copia congelada en `9e2f146`. Lo que cambió después son textos del panel, ejemplos y documentos: no toca instrucciones, reglas ni la apertura.
@@ -723,3 +687,21 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **Cuarta pasada (cierre).** Nada nuevo. Tres detalles del gasto, corregidos: en Baseten el último 429 también suelta su reserva (un 429 nunca cobra); `cerrar`
   suelta solo con un 4xx (un 2xx o 3xx inesperado se queda apartado, como un 5xx); y el cliente de SAM ya no reintenta por su cuenta (`max_retries=0`): un intento
   que falla se registra como cobrado una vez y la persona ve «no se pudo comprobar», en vez de repetir a escondidas y cobrar dos o tres veces.
+
+## 2-nov-2026 (tarde) · La estación «tema» decide por inclusión (tema-v2)
+
+- **Por qué.** La versión medida en la quinta prueba decidía qué videos no reescribir con una lista de lo que quedaba fuera. Decidir
+  por inclusión es más claro para quien usa Retina y más fácil de sostener: la lista dice qué sí reescribe y lo demás queda fuera.
+- **Qué cambió.** `skills/tema.md` (tema-v2) describe lo que Retina reescribe: entretenimiento, vida diaria y lo que le pasa a la
+  gente, con una lista cerrada; «salud» sigue aparte, y cualquier otro tema es «fuera». `apertura.fuera_de_alcance` vale `fuera` o
+  `salud`, y el panel lo dice en los dos idiomas. El cerebro público lee de la base una sola columna, «incluir», calculada fuera del
+  repo; el entrenamiento ya no depende de listas dentro del repo. Dos scripts de investigación que solo corrían con datos de la casa
+  salieron del repo.
+- **Comprobación, escrita antes de correr.** tema-v2 se corre sobre los mismos 50 videos de la quinta medición: si alguno sale «fuera»
+  o «salud», la medición deja de describir la versión publicada y se dice. Además, sobre 14 títulos inventados, sin datos de la
+  empresa: 6 que deben salir «fuera», 2 «salud» y 6 «dentro».
+- **Resultado (2-nov).** La primera redacción dejó fuera 14 de los 50 (crianza, religión, crónica, alertas cotidianas, obras y
+  servicios, causas sociales): se amplió la lista de «dentro» con esos rubros. Con la redacción publicada, 50 de 50 salen «dentro» y
+  los 14 inventados salen como se esperaba (una redacción sin la frase que describe lo que queda fuera falló 1 de 14). Costo:
+  centavos. Lo que la quinta medición dice de la apertura sigue valiendo para esta versión: la estación «tema» corre antes y no
+  cambia nada de lo que se mide después.

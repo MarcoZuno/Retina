@@ -191,7 +191,7 @@ the day's cost in USD.*
   gasto y respaldo a `explicar` de una vuelta.
 - `sam`: SAM 3.1 sobre los primeros 3 s (10 cuadros por segundo, 960 px): si aparece lo que
   promete el título, desde qué segundo y cuánto del cuadro ocupa. Nunca sobre personas: la
-  condiciones de uso de Meta prohíben seguir personas entre cuadros y el código rechaza el
+  las condiciones de uso de Meta prohíben seguir personas entre cuadros y el código rechaza el
   concepto antes de llamar a la API.
 - `docs/resultado-json.md`: el contrato del panel, con un ejemplo inventado en
   `casos/demo/resultado.json`.
@@ -225,8 +225,7 @@ ingeniería, producto, datos, seguridad, redes y negocio), auditaron Retina. Est
   buena parte del acierto del «alto» venía de ahí. Ahora «perder de más» se mide contra
   la regla corregida por tipo (su exceso medio en los 180 días antes del corte) y el
   modelo aprende contra esa misma regla (`arranque-v2`). La ventaja del «alto» se sostiene
-  dentro de cada tipo y con o elegibles (`eval/arranque_privado.py`; cifras en la
-  investigación privada).
+  dentro de cada tipo (cifras en la investigación privada).
 - Versión pública del modelo sin nombres de talento (`modelos/arranque-v2-publico.json`):
   pierde muy poco contra la privada.
 
@@ -431,9 +430,7 @@ tarjetas verdes, saber qué está bien, qué está flojo y qué más se puede me
   pedía el modelo con la historia de curvas, el riesgo y las transcripciones, todo privado.
 - `retina.publico`: arma `modelos/retina-publico.json` (0.8 MB), lo aprendido de la retención sin ningún
   video: pesos del cerebro para cualquier video, el riesgo del arranque sin talento ni tipo de producción y
-  cinco curvas promedio por duración. No aprende de videos no elegibles (o sin dato de elegibilidad), de temas
-  fuera de alcance ni graves (`reglas/alcance-v1.json`, título y primeras palabras dichas) ni de nombres
-  de talentos (lista de talentos y firmas al final de los títulos). JSON, no pickle.
+  cinco curvas promedio por duración. No aprende de nombres de talentos (lista de talentos y firmas al final de los títulos). JSON, no pickle.
 - `retina.app` y `retina.retina` corren solo con ese archivo: `--arranque` y `--voz` ya son opcionales;
   sin las transcripciones de la casa, la tarjeta es de una vuelta. La lista de talentos sale vacía.
 - Medido con talentos escondidos (regla escrita antes): le gana a la curva fija por duración y empata con
@@ -556,8 +553,8 @@ sus nueve condiciones, con control negativo del juez. La trampa cercana bajó a 
 
 ## 31-oct-2026 · apertura-v4 y la quinta medición
 
-Una revisión con ojos de jurado encontró cuatro cosas que cambiaban el producto: Retina reescribía fuera de alcance y salud, nada en el producto frenaba una apertura infiel, y pasaban saludos y aperturas
-de 18 palabras. El inicio pasó a apertura-v4: Muse Spark 1.3 decide antes de gastar si el video es de fuera de alcance o de consejos de salud, lee cada apertura contra lo que dice el video antes de dibujarla, una
+Una revisión con ojos de jurado encontró cuatro cosas que cambiaban el producto: Retina reescribía videos fuera de su alcance, nada en el producto frenaba una apertura infiel, y pasaban saludos y aperturas
+de 18 palabras. El inicio pasó a apertura-v4: Muse Spark 1.3 decide antes de gastar si el video está dentro de lo que Retina reescribe, lee cada apertura contra lo que dice el video antes de dibujarla, una
 regla de código rechaza saludos y el mínimo sube a 25 palabras. El panel pone el inicio arriba del número, avisa cuando un resultado salió incompleto y dice qué es inventado en el ejemplo. El ejemplo se
 rehízo con el lazo real y el número real. La quinta medición, con 50 videos nuevos, regla sellada y las mismas nueve condiciones, pasó a la primera: 25 de 30, 18 de 20, 10 de 10, 42 de 43, 42 de 43,
 35 de 37, 10 de 10, 8 de 10 y 0 de 50. Trampa cercana 8 de 10. De 234 títulos revisados, 125 quedaron fuera por tema. Costo: USD 4.82 más el juez.
@@ -596,3 +593,8 @@ prefería `python` aunque hubiera `python3` (ahora busca el primer intérprete 3
 con los códigos de prueba armados en ejecución para que ni la prueba ni su .pyc disparen el escáner. Pruebas: 568. La pasada de confirmación de Codex dio los cinco por corregidos y dejó una observación baja: la prueba del gancho
 era de texto y la pasaría un gancho con las frases en comentarios. Ahora ejecuta el bloque del gancho con `sh` (orden python3, python, py; versión mínima 3.12;
 sin intérprete no hay commit) y exige que cada control vaya en una línea que corre y termina con 1 si falla. Pruebas: 572.
+
+La estación «tema» pasó a decidir por inclusión (tema-v2): la lista dice qué reescribe Retina y lo demás queda fuera. Comprobada sobre los 50
+videos de la quinta medición (50 dentro) y sobre 14 títulos inventados (14 como se esperaba; la regla, en `docs/decisiones.md`). El cerebro
+público lee una sola columna «incluir» de la base, y dos scripts de investigación que solo corrían con datos de la casa salieron del repo. El
+repo se rehízo otra vez antes de publicarse, con los mismos sellos (`docs/hash-map.md`). Pruebas: 570.

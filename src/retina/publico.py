@@ -1,9 +1,8 @@
 """Cerebro público de Retina: lo que aprendió de la retención, sin ningún video.
 
 Es lo que va en el repo para que cualquiera revise su propio video sin los datos
-de la empresa. Se entrena solo con videos que no tuvieron elegibilidad y que no tocan
-fuera de alcance ni temas fuera de alcance (reglas/alcance-v1.json), y sin nombres de
-talentos en las palabras. Lo que sale es un JSON con pesos y cinco curvas
+de la empresa. Se entrena solo con los videos marcados como elegibles en la base (columna
+«incluir», calculada fuera del repo) y sin nombres de talentos en las palabras. Lo que sale es un JSON con pesos y cinco curvas
 promedio por duración: ningún título, talento, código ni cifra de un video.
 
 Adentro van dos piezas:
@@ -31,7 +30,6 @@ from .predecir import (LAMBDA_UNIVERSAL, N_ARRANQUE, N_PALABRAS, Rasgos, ajustar
                        en_bloques, fijos_universales, plano, rasgos_universales)
 
 RAIZ = Path(__file__).resolve().parents[2]
-TEMAS = RAIZ / "reglas" / "alcance-v1.json"
 VERSION = "retina-publico-v1"
 # Personas de cada 100 por las que suele fallar, en creadores escondidos y videos posteriores al entrenamiento: el número, y
 # el promedio de su duración cuando no hay voz para ajustarlo (eval/margen_numero.py, docs/numero.md).
@@ -39,21 +37,9 @@ MARGEN_PERSONAS, MARGEN_PROMEDIO = 11, 12
 N_CUBETAS = len(CUBETAS) - 1
 
 
-def patrones(ruta: Path = TEMAS) -> dict[str, re.Pattern]:
-    reglas = json.loads(ruta.read_text(encoding="utf-8"))
-    return {k: re.compile(r"\b(" + "|".join(re.escape(p) for p in reglas[k]) + ")") for k in ("fuera", "graves")}
-
-
-def motivo_fuera(v: dict, tramos: list | None, temas: dict[str, re.Pattern]) -> str | None:
-    """Por qué un video no entra al cerebro público, o None si entra. Ante la duda, fuera."""
-    if v.get("elegibilidad") is None or v["elegibilidad"] > 0:
-        return "elegibilidad"
-    dichas = " ".join(x for _, x in sorted(tramos or [], key=lambda t: float(t[0]))).split()[:40]
-    texto = plano(v.get("titulo", "") + " " + " ".join(dichas)) + " "
-    for k, p in temas.items():
-        if p.search(texto):
-            return k
-    return None
+def motivo_fuera(v: dict) -> str | None:
+    """Por qué un video no entra al cerebro público, o None si entra. Solo entran los marcados como elegibles; sin dato, fuera."""
+    return None if v.get("incluir") is True else "no_elegible"
 
 
 def firma(titulo: str) -> str:
@@ -83,8 +69,7 @@ def titulo_publico(titulo: str, quitar: frozenset) -> str:
 def entrenar(filas: list[dict], voz: dict, fichas: dict | None = None) -> dict:
     """`fichas` (retina.ficha, por código): si vienen, la ficha del arranque entra como rasgo del número."""
     from .ficha import ficha_a_vector
-    temas = patrones()
-    quedan = [v for v in filas if motivo_fuera(v, voz.get(v["codigo"]), temas) is None]
+    quedan = [v for v in filas if motivo_fuera(v) is None]
     quitar = nombres(filas)
     # Como llega un video de fuera: sin talento, sin código y con el título sin nombres.
     limpios = [{**v, "titulo": titulo_publico(v.get("titulo", ""), quitar)} for v in quedan]
@@ -109,7 +94,7 @@ def entrenar(filas: list[dict], voz: dict, fichas: dict | None = None) -> dict:
         "version": VERSION,
         "que_es": "Lo que Retina aprendió de la retención de una página grande de Facebook en México, sin ningún "
                   "video: pesos y curvas promedio por duración. No trae títulos, talentos, códigos, ingresos ni cifras "
-                  "de un video. No aprendió de videos no elegibles ni de temas fuera de alcance o graves.",
+                  "de un video.",
         "datos_hasta": hasta.strftime("%Y-%m-%d"),
         "rasgos": {"n_palabras": N_PALABRAS, "n_arranque": N_ARRANQUE, "lambda": LAMBDA_UNIVERSAL, "ficha": bool(fichas),
                    "cubetas_s": CUBETAS[:-1]},

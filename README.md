@@ -15,8 +15,8 @@ rule engine and a verification loop around Meta's models: the rules run in code,
 list of what failed. One prompt to one model cannot do this.
 
 1. **Watch and listen.** Muse Spark 1.3 describes what is on screen and Muse Voice Transcribe writes down what is said.
-2. **Decide whether to touch it.** Muse Spark 1.3 reads the title and the speech. Retina does not rewrite out-of-scope topics or health advice, and
-   it says so before spending anything else.
+2. **Decide whether to touch it.** Muse Spark 1.3 reads the title and the speech. Retina only rewrites videos within its scope (entertainment, animals, food,
+   home, curiosities, travel, family and practical tips that are not health advice), and it says so before spending anything else.
 3. **Rewrite.** **Muse Spark Open**, Meta's open-weight model, writes a new opening that gives the first proof of what the title
    promises and leaves the rest to the video. The title itself is never touched. If the opening already works, Spark Open can say so,
    and code has to agree: no greeting, no engagement bait, and the topic in the first 12 words.
@@ -63,9 +63,9 @@ nine of its conditions on the first run.
 ## Limits we say out loud
 
 - **Retina does not know whether the new opening keeps more people.** We never measured that, and it shows no number for the new opening.
-- **It leaves a lot of videos alone.** It does not rewrite out-of-scope topics or health advice, for people or for animals, and when in doubt it
-  declines. Of the 234 videos reviewed to pick the fifth test, 125 were out for that reason, so the results above describe the rest of
-  that page's archive, not all of it.
+- **It leaves a lot of videos alone.** It only rewrites videos within its scope (entertainment, animals, food, home, curiosities, travel, family
+  and practical tips that are not health advice), and when in doubt it declines. Of the 234 videos reviewed to pick the fifth test, 125 were
+  outside that scope, so the results above describe the rest of that page's archive, not all of it.
 - **The tests used the title and the speech, not the video,** on one page's archive. The intervals in the annex count as independent
   cases that are not: 13 of the 30 cases with a promise in the last test were animals.
 - **The "after" is a sketch,** drawings and voice, not a filmed video.
@@ -126,7 +126,7 @@ The optional GPU extras in `requirements-gpu.txt` (local transcription and V-JEP
 | Rewriting the opening (main step) | **Muse Spark Open** (open weights) | Baseten Model API | Writes the new opening and three frames, and fixes them when a check fails. Without a Baseten key, Muse Spark 1.3 does it |
 | Drawing it | **Muse Image 1.0** | Meta Model API | Draws the first frame and, once everything passes, the other two |
 | Checking the promise | Muse Spark 1.3 + **SAM 3.1** | Meta Model API | Spark picks what the title promises from a closed list; SAM looks for it in the first 3 s of the draft and in the first drawn frame |
-| Deciding whether to rewrite | Muse Spark 1.3 | Meta Model API | Reads the title and the speech and declines out-of-scope topics and health advice, before anything is written or drawn (the review of the draft has already run by then) |
+| Deciding whether to rewrite | Muse Spark 1.3 | Meta Model API | Reads the title and the speech and declines what is outside Retina's scope, before anything is written or drawn (the review of the draft has already run by then) |
 | Reading the opening back | Muse Spark 1.3 | Meta Model API | Reads each opening against what the video says, before it is drawn; anything added goes back to Spark Open |
 | Checking the other frames | Muse Spark 1.3 | Meta Model API | Looks at each frame SAM did not check; if one does not show what was written, the work goes back to Spark Open |
 | Checking the title | Muse Spark 1.3 | Meta Model API | Compares the title with what is said and shown. A warning only: the title is never changed |
@@ -139,8 +139,7 @@ The optional GPU extras in `requirements-gpu.txt` (local transcription and V-JEP
 
 - **The reference number** is a ridge regression fitted offline on Badabun's retention data: at runtime, a JSON file of fixed weights
   that plain Python multiplies and adds. It adjusts the average curve for the video's length, writes nothing and decides nothing. Ridge in
-  closed form, λ = 300, 1,703 inputs to the 41 points of the curve, on 23,710 of 32,906 videos; the rest were left out for eligibility,
-  no record of it, or out-of-scope topics and out-of-scope topics. Of those used, 9,003 have no opening sheet and 974 no speech. The weights are in
+  closed form, λ = 300, 1,703 inputs to the 41 points of the curve, on 23,710 videos. Of those, 9,003 have no opening sheet and 974 no speech. The weights are in
   [`modelos/retina-publico.json`](modelos/retina-publico.json) and the method in [`docs/numero.md`](docs/numero.md). The organizers ruled on
   30-Oct-2026 that ridge coefficients are acceptable when explained this way. `RETINA_SOLO_MODELOS_META=1` turns it off.
 - **The voice in the preview** is your browser's own speech synthesis, which may be a neural voice from your system or browser. Retina

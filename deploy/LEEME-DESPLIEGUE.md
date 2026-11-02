@@ -28,7 +28,7 @@ cabeceras de `deploy/nginx.conf`.
 ## Agregar casos
 
 Cada caso es una carpeta en `casos/` con su `resultado.json` (formato en `docs/resultado-json.md`).
-**Solo casos que se puedan mostrar en público:** videos ya publicados, sin temas de salud ni fuera de alcance, sin
+**Solo casos que se puedan mostrar en público:** videos ya publicados, dentro del alcance de Retina, sin
 datos de audiencia que no se puedan compartir. Después de agregar, volver a construir la imagen.
 
 ## Apagar

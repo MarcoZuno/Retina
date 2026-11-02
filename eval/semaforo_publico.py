@@ -4,7 +4,7 @@ Dos pruebas en periodos que el semáforo no ha visto. En cada una:
 1. El cerebro público se arma solo con lo publicado antes del corte (retina.publico.entrenar).
 2. Los cortes de «alto» y «medio» se recalculan por duración con lo que predice para los videos de los 180
    días antes del corte (40 % y 75 %), como pasaría al usarlo.
-3. Los videos de prueba (elegibles) entran como de fuera, sin talento ni código. «Perdió de más» = su gancho y
+3. Los videos de prueba (solo los elegibles) entran como de fuera, sin talento ni código. «Perdió de más» = su gancho y
    primer cuarto perdieron más gente que la curva fija de su duración, la que ve la persona en la tarjeta.
 Cada resultado guarda la huella del commit con el que corrió.
 
@@ -48,12 +48,12 @@ def prueba(filas: list[dict], voz: dict, corte: datetime, fin: datetime) -> dict
     cortes = {}
     for c in range(5):
         x = [predicho(m, arr, v)[0] for v in antes if v["cubeta"] == c and v["fecha"] >= corte - CALIBRA
-             and v.get("elegibilidad") == 0]
+             and v.get("incluir") is True]
         if len(x) >= MINIMO_DURACION:
             cortes[c] = (float(np.percentile(x, 40)), float(np.percentile(x, 75)))
     real, nivel, cub = [], [], []
     for v in filas:
-        if not (corte <= v["fecha"] < fin) or v.get("elegibilidad") != 0 or v["cubeta"] not in cortes:
+        if not (corte <= v["fecha"] < fin) or v.get("incluir") is not True or v["cubeta"] not in cortes:
             continue
         p, base = predicho(m, arr, v)
         medio, alto = cortes[v["cubeta"]]

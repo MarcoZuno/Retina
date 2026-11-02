@@ -33,7 +33,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from retina.curvas import cargar, en_segundo  # noqa: E402
-from retina.publico import ModeloPublico, entrenar, motivo_fuera, nombres, patrones, titulo_publico  # noqa: E402
+from retina.publico import ModeloPublico, entrenar, motivo_fuera, nombres, titulo_publico  # noqa: E402
 
 GRUPOS = 5
 MARGEN = 11  # el que enseña el panel: publico.MARGEN_PERSONAS
@@ -86,8 +86,7 @@ def main() -> None:
     fichas = {}
     for linea in a.fichas.open(encoding="utf-8"):
         d = json.loads(linea); fichas[d.pop("codigo")] = d
-    temas = patrones()
-    quedan = [v for v in filas if motivo_fuera(v, voz.get(v["codigo"]), temas) is None]
+    quedan = [v for v in filas if motivo_fuera(v) is None]
     quitar = nombres(filas)
     grupo = [zlib.crc32((v["talento"] or v["codigo"]).encode()) % GRUPOS for v in quedan]
     salida = {"videos_del_cerebro": len(quedan), "corte": a.corte, "procedimiento": "retina.publico.entrenar y ModeloPublico.curva por grupo"}

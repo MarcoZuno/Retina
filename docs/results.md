@@ -9,11 +9,11 @@ unless a figure is given here.
 
 ## The fifth test, the version published here
 
-A review of the fourth test's version, read as a jury would, found four things that changed the product. Retina was rewriting out-of-scope topics and
-health advice, and nothing filtered them: 25 of that test's 50 videos would no longer be rewritten. Nothing in the product stopped an
+A review of the fourth test's version, read as a jury would, found four things that changed the product. Retina was rewriting videos outside
+its scope, and nothing filtered them: 25 of that test's 50 videos would no longer be rewritten. Nothing in the product stopped an
 unfaithful opening; the judge existed only in the tests, and 3 of 47 would have reached the person. Greetings passed, and so did openings
 of 18 words, which is about 6 seconds. So the fourth test no longer described what we publish, and the version changed (`apertura-v4`).
-Muse Spark 1.3 now declines out-of-scope topics and health advice before spending, and reads each opening against what the video says before it is
+Muse Spark 1.3 now declines what is outside Retina's scope before spending, and reads each opening against what the video says before it is
 drawn. A code rule rejects greetings and the minimum rose to 25 words. The rule and the list of videos were sealed before running, with the
 same nine conditions and the same numbers as the fourth test.
 
@@ -31,7 +31,7 @@ same nine conditions and the same numbers as the fourth test.
 
 Reported, not conditions:
 
-- **What Retina left alone.** Picking these 50 meant reviewing 234 titles and speech; 125 were out as out-of-scope topics or health advice. Every figure
+- **What Retina left alone.** Picking these 50 meant reviewing 234 titles and speech; 125 were outside Retina's scope. Every figure
   above describes the rest.
 - **Near trap: 8 of 10 rejected.** "Store" passed on a shop and "dog" passed on a frame asked for an animal, both close to the same thing.
   The pairs change between tests, so read this with the fourth test's 7 of 10.
@@ -59,6 +59,9 @@ How to read it:
 - **The cases are not independent.** 13 of the 30 with a promise are animals, and 21 distinct objects cover the 30.
 - The instructions were tuned on 6 separate cases, run once and left unchanged, which are not part of this test.
 - **Whether the new opening keeps more people was not measured.**
+- **The topic station was reworded after this test** (tema-v2: it lists what Retina rewrites, and anything else is out). Run on
+  these same 50 videos, all 50 stay within scope, and 14 invented titles came out as expected, so the figures above still describe
+  the published version. The station runs before anything measured here and changes nothing after it.
 
 **About the seals.** A seal is a git commit in this repository's own history, made before the run, and that history was recreated for
 publication ([`hash-map.md`](hash-map.md) gives the new hashes). Nothing outside the repository timestamps it. The list of videos is
@@ -170,7 +173,6 @@ Method, data, fitting details and the margin are in [`numero.md`](numero.md).
 | Does reading the opening (a fixed sheet filled by Muse Spark Open) improve the number? | Better in both of two periods | **Passed**, by 1.4 to 2 people per 1,000 over the whole curve, with the rule sealed before measuring. One caveat: those sheets were written without a fixed temperature and 20 videos per call; the app asks for one video at temperature 0, and we have not measured that difference |
 | How far off is the number? | No pass/fail rule: this sets the margin the panel shows | Off by 10.0 people of 100 on hidden creators, and 10.6 on hidden creators after the training period, against 12.2 and 11.5 for the curve for the video's length alone (measured on 2 Nov with the public model's own training and prediction functions; the earlier simplified fit gave 8.9 and 10.2). That is an average, not a limit: in the harder check 4 in 10 videos miss by more. The panel says it is usually off by about 11 |
 | Can the number compare two versions of one video? | Exploratory, no rule | **No.** On 41 rewritten openings it fell in 27, rose in 7 and barely moved in 7. It learned from differences between videos, so Retina shows no number for the new opening. This does not show the new opening is worse: no real retention was involved |
-| Does a better opening go with more reach on Facebook? | A positive relation, in two separate periods and then on a later period with the prediction made as if before publishing | **Passed**, as a relation, not proof of cause. With real retention, the best third reached about 3.5 times more people than the worst third. With the prediction it was about 1.5 times (95 % interval 1.2 to 2.0), using the house model. The public brain was never measured for this. The third check was a backtest run on 29-Oct, not a prediction logged before publishing |
 
 ## The opening level
 
@@ -232,7 +234,7 @@ the gap was letting it work as an agent.
 
 Every measurement is on videos the model had not seen, but the periods and the comparison rule differ, so do not read the rows as one test.
 
-- **Predicted curve, opening level and reach** (house model): Jul-Sep 2026, against the average of videos of the same talent and duration
+- **Predicted curve and opening level** (house model): Jul-Sep 2026, against the average of videos of the same talent and duration
   over the previous 90 days.
 - **Creators it has never seen, the public brain, the opening sheet and the traffic light**: Jul-Dec 2025 and Jan-Jun 2026 (the
   creator-never-seen test also used Jul-Sep 2026), against a fixed curve by duration, the one the public mode uses. Several of these

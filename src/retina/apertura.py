@@ -8,7 +8,7 @@ falló, hasta MAX_CORRECCIONES veces. Cumple la promesa con su primera prueba, s
 
 Lo que Retina no sabe: si esta apertura retiene más gente. Eso nunca se midió y aquí no se promete.
 
-No reescribe videos de fuera de alcance ni consejos de salud: Muse Spark 1.3 lo decide antes de gastar y se le dice a la persona.
+Solo reescribe videos dentro de su alcance: Muse Spark 1.3 lo decide antes de gastar y se le dice a la persona.
 
 Cuesta, así que corre solo cuando la persona lo pide (en la app, el botón; aquí, --aprobar).
 
@@ -369,7 +369,7 @@ def comprobar_cuadro(imagen: Path, cuadro: str) -> bool:
 ESQUEMA_FIEL = {"type": "object", "additionalProperties": False, "required": ["fiel", "que_agrega"],
                 "properties": {"fiel": {"type": "boolean"}, "que_agrega": {"type": "string"}}}
 ESQUEMA_TEMA = {"type": "object", "additionalProperties": False, "required": ["tema", "por_que"],
-                "properties": {"tema": {"type": "string", "enum": ["fuera", "salud", "ninguno"]}, "por_que": {"type": "string"}}}
+                "properties": {"tema": {"type": "string", "enum": ["dentro", "salud", "fuera"]}, "por_que": {"type": "string"}}}
 
 
 def _preguntar(estacion: str, esquema: dict, nombre: str, texto: str) -> dict:
@@ -390,10 +390,10 @@ def es_fiel(voz: str, datos: dict) -> dict:
 
 
 def tema_fuera(titulo: str, dicho: str) -> str | None:
-    """«fuera» o «salud» si Retina no debe reescribir este video; None si puede. Corre antes de gastar en escribir."""
+    """«fuera» o «salud» si Retina no debe reescribir este video; None si está dentro de su alcance. Corre antes de gastar en escribir."""
     texto = meta_api.como_dato("TITULO", titulo) + "\n\n" + meta_api.como_dato("LO_QUE_SE_DICE", " ".join(dicho.split()[:PALABRAS_TEMA_FUERA]))
-    tema = _preguntar("tema", ESQUEMA_TEMA, "tema_v1", texto)["tema"]
-    return None if tema == "ninguno" else tema
+    tema = _preguntar("tema", ESQUEMA_TEMA, "tema_v2", texto)["tema"]
+    return None if tema == "dentro" else tema
 
 
 def _pedir_spark(sistema: str, texto: str) -> dict:

@@ -1,6 +1,6 @@
 """¿Qué tácticas de arranque retienen mejor y llegan a más gente? (descriptivo, con intervalos)
 
-Con la ficha del arranque (retina.ficha) de cada video y su curva real, elegibles:
+Con la ficha del arranque (retina.ficha) de cada video y su curva real, solo los elegibles:
   - primer cuarto: retención al terminar el primer cuarto contra sus parecidos (puntos);
   - alcance: alcance contra la mediana de su duración en los 90 días anteriores (veces lo normal).
 Por cada rasgo de la ficha (tipo de gancho, si se presenta antes del tema, si el tema llega en la primera frase,
@@ -52,7 +52,7 @@ def main() -> None:
     videos = []
     for v in filas:
         m = metricas.get(post.get(v["codigo"], ""))
-        if v["codigo"] in fichas and v.get("elegibilidad") == 0 and m and m["alcance"] and m["alcance"] > 0:
+        if v["codigo"] in fichas and v.get("incluir") is True and m and m["alcance"] and m["alcance"] > 0:
             videos.append({**v, "alcance": m["alcance"], "ficha": fichas[v["codigo"]]})
     alcance_relativo(videos)
     for v in videos:

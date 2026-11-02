@@ -6,7 +6,7 @@ SAM 3.1 que segmente un objeto nombrado con una frase corta («bread», «floode
 road»). Devuelve en qué segundo aparece por primera vez, en cuántos cuadros se
 ve y cuánto del cuadro ocupa como máximo.
 
-Nunca se usa sobre personas: la condiciones de uso de Meta prohíben seguir a
+Nunca se usa sobre personas: las condiciones de uso de Meta prohíben seguir a
 personas entre cuadros, y Retina no identifica a nadie. El código rechaza el
 concepto antes de llamar a la API.
 

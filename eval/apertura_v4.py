@@ -2,7 +2,7 @@
 
 La regla está sellada en docs/decisiones.md. Es la misma forma de la cuarta (eval/apertura_v3.py): título y lo que se dice, sin
 retención y sin el video. Cambia que Muse Spark 1.3 lee cada apertura contra lo que dice el video antes de dibujarla, que no entran
-videos de fuera de alcance ni consejos de salud, porque Retina no los reescribe, y que el saludo y el largo son más estrictos.
+videos fuera del alcance de Retina, porque no los reescribe, y que el saludo y el largo son más estrictos.
 
 --elegir fija los casos antes de medir. --piloto elige otros 6 para afinar: esos no entran a la medición. Se puede retomar: lo ya
 hecho no se vuelve a pagar. Los casos, títulos e imágenes se quedan fuera del repo; a la consola solo salen conteos.

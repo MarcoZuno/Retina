@@ -333,12 +333,13 @@ class Navegador(unittest.TestCase):
         p = self.abre(demo())
         self.assertLess(p.locator("#bloque-apertura").bounding_box()["y"], p.locator("#cifras").bounding_box()["y"])
 
-    def test_salud_y_fuera_no_se_reescriben(self):
-        r = demo()
-        r["apertura"].update(aprobada=False, despues=None, vueltas=0, intentos=[], comprobaciones=[], fuera_de_alcance="salud")
-        p = self.abre(r)
-        self.assertIn("doesn't rewrite health advice", self.texto(p, "#apertura-resumen"))
-        self.assertFalse(self.visible(p, "#antes-despues"))
+    def test_lo_que_queda_fuera_del_alcance_no_se_reescribe(self):
+        for motivo, frase in (("salud", "doesn't rewrite health advice"), ("fuera", "outside what Retina rewrites")):
+            r = demo()
+            r["apertura"].update(aprobada=False, despues=None, vueltas=0, intentos=[], comprobaciones=[], fuera_de_alcance=motivo)
+            p = self.abre(r)
+            self.assertIn(frase, self.texto(p, "#apertura-resumen"))
+            self.assertFalse(self.visible(p, "#antes-despues"))
 
     def test_lo_que_no_se_comprobo_no_dice_que_paso_todo(self):
         # Una lectura que no corrió deja la apertura sin aprobar (2-nov): el panel dice qué faltó y no entrega el inicio.
