@@ -689,3 +689,23 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
 - **Costo.** USD 4.82 en reescribir, unos USD 0.10 por video, más el juez.
 - **Lo mismo que antes sigue sin medirse:** si la apertura nueva retiene más gente. El juez es un modelo, en D y E sabe que lee la nueva, y D ya no es independiente del lazo.
 - **Código.** La medición corrió desde una copia congelada en `9e2f146`. Lo que cambió después son textos del panel, ejemplos y documentos: no toca instrucciones, reglas ni la apertura.
+
+## 2-nov-2026 · Auditoría externa (Codex) y lo que cambió
+
+- **Qué pasó.** Un modelo de fuera (Codex, de OpenAI, en solo lectura) auditó el repo y dejó 12 hallazgos; 10 aplicaban a esta copia. Se corrigieron todos el mismo
+  día y se volvió a auditar la versión corregida.
+- **Lo que cambia el producto.** Una comprobación que no pudo correr (tema sensible, fidelidad, SAM o la revisión de cuadros) ya no deja pasar la apertura: sale sin
+  aprobar, con `incompleta: true` y la lista de lo que faltó, no gasta en lo que sigue y se puede volver a pedir. Antes se aprobaba y el panel avisaba. La quinta
+  medición no se repite: en sus 43 aprobadas no quedó nada sin comprobar (sección anterior), así que su resultado describe también la regla nueva.
+- **Gasto.** Cada dibujo aparta su precio con el candado antes de llamar; antes se revisaba el tope y se cobraba en dos pasos separados, y dos dibujos a la vez podían
+  pasar por el mismo hueco. La reserva de texto cuenta la entrada que se ve en el cuerpo y Baseten aparta también la entrada. El techo duro no cambió.
+- **El margen, medido con el procedimiento publicado.** Hasta el 1-nov `eval/margen_numero.py` ajustaba con promedios por duración como base y sin la ventana de 90
+  días: no era el mismo procedimiento que `publico.entrenar`. Desde hoy entrena y predice cada grupo con las funciones reales del cerebro público. Resultado, con la
+  lista pública de temas (23,932 videos): con creadores escondidos el número falla por 10.0 de cada 100 y la curva de su duración por 12.2; con creadores escondidos
+  y después del corte de 2026 (2,011 videos), 10.6 contra 11.5. Dentro del margen de 11 cae 62 % y 57 %. «No vemos diferencia» sale en 95 % y 99 % de los videos; de
+  esos, 46 % y 48 % se apartaron 11 o más en la realidad. El margen del panel sigue en 11: el mayor de los dos errores medios, redondeado hacia arriba. Las cifras
+  anteriores (8.9 y 10.2 contra 10.4 y 11.7) eran del ajuste simplificado y quedan sustituidas en README, `numero.md` y `results.md`.
+- **Lo demás.** Los intocables se revisan también en el storyboard y en lo traducido; el paso del agente acepta el idioma por nombre; con otro título se rehace lo que
+  depende del título; la proporción del video se lee con el envoltorio de ffmpeg de siempre; el destino de la llave se compara por esquema y host exactos; en línea,
+  leer un caso subido también pide el código. Pruebas: 536, todas pasan.
+- **Lo que no aplicaba a esta copia.** El registro de gasto en el historial de git y el mapa de hashes faltante estaban solo en la copia local de trabajo.

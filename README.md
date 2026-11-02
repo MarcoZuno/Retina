@@ -36,7 +36,7 @@ list of what failed. One prompt to one model cannot do this.
 
 **A separate number, for the video you have now.** Retina estimates how many of every 100 people who get past the first 3 seconds will
 still be watching at 15 seconds. It learned this from 23,710 videos of a large Facebook page in Mexico. It is a modest reference, not a
-promise: it is usually off by about 11 people, and 4 times in 10 by more. In 97 to 98 % of videos it sees no difference from the curve
+promise: it is usually off by about 11 people, and 4 times in 10 by more. In 95 to 99 % of videos it sees no difference from the curve
 for the video's length, and it says so instead of inventing one. It gives no number for the new opening, because it cannot compare two
 versions of one video.
 

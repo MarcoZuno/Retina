@@ -141,17 +141,22 @@ class ModeloPublico:
     def de_la_casa(self, v: dict) -> bool:
         return False
 
-    def predecir(self, v: dict, emb=None, audio=None, tramos: list | None = None, ficha: dict | None = None) -> dict:
+    def curva(self, v: dict, bloques: list | None, ficha: dict | None = None) -> tuple[np.ndarray, np.ndarray]:
+        """(curva predicha, curva de videos como el tuyo). `bloques`: la voz ya en bloques [inicio_s, texto], como se guarda
+        para entrenar; `predecir` los arma desde los tramos del transcriptor y `eval/margen_numero.py` los lee del archivo de
+        voz, para que el margen se mida con esta misma función. Sin voz, el número es la curva de su duración."""
         base = self.curvas[v["cubeta"]]
-        if tramos:
-            f = de_fuera(v)
-            x = rasgos_universales(f, base, fijos_universales(f["archivo"], en_bloques(tramos), v["dur"]))
-            if self.d["rasgos"].get("ficha"):
-                from .ficha import ficha_a_vector
-                x = np.concatenate([x, ficha_a_vector(ficha)])
-            p = np.clip(base + x @ self.W, 0, 1)
-        else:
-            p = base.copy()
+        if not bloques:
+            return base.copy(), base
+        f = de_fuera(v)
+        x = rasgos_universales(f, base, fijos_universales(f["archivo"], bloques, v["dur"]))
+        if self.d["rasgos"].get("ficha"):
+            from .ficha import ficha_a_vector
+            x = np.concatenate([x, ficha_a_vector(ficha)])
+        return np.clip(base + x @ self.W, 0, 1), base
+
+    def predecir(self, v: dict, emb=None, audio=None, tramos: list | None = None, ficha: dict | None = None) -> dict:
+        p, base = self.curva(v, en_bloques(tramos) if tramos else None, ficha)
         t = tramo_exceso(p, base)
         return {
             "curva_predicha": [round(float(x), 4) for x in p],

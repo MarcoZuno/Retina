@@ -567,3 +567,12 @@ rehízo con el lazo real y el número real. La quinta medición, con 50 videos n
 Una revisión de seguridad no halló fallas críticas ni altas, y se corrigió lo que dejó. El título de un archivo ya no puede colgar el servidor ni fingir que el archivo trae video: se dejó
 de buscar con una expresión regular en la salida de ffmpeg. Lo que la tarjeta dice que no pudo verificar pasa ahora los mismos filtros que el resto. El proxy de ejemplo manda de http a https.
 Se agregó SECURITY.md para reportar fallas en privado. El filtro de enlaces reconoce más dominios, y las imágenes de Docker y las dependencias indirectas de la demo en línea quedaron con versión fija y huella.
+
+## 2-nov-2026 · Auditoría externa con Codex y correcciones
+
+Un modelo de fuera (Codex, de OpenAI, en solo lectura) auditó el repo y dejó 12 hallazgos; 10 aplicaban a esta copia y se corrigieron el mismo día. Lo que cambia el
+producto: una comprobación que no pudo correr ya no deja pasar la apertura (sale sin aprobar, dice qué faltó y se puede volver a pedir), y cada dibujo aparta su precio
+con el candado del tope antes de llamar. Además: intocables en el storyboard y en lo traducido, el idioma por nombre en el paso del agente, el título entra en la clave
+de reuso de la carpeta, ffmpeg siempre por el mismo envoltorio, el destino de la llave por host exacto y, en línea, el código también para leer un caso subido. El margen
+se volvió a medir con las funciones reales del cerebro público: 10.0 y 10.6 de cada 100 (la curva de su duración, 12.2 y 11.5); el panel sigue diciendo «más o menos 11».
+Se vuelve a pasar Codex sobre la versión corregida. Pruebas: 536. **Costo:** USD 0 (ninguna llamada a las API; el margen corre con datos locales).
