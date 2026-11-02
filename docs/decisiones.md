@@ -715,3 +715,8 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
   frena intocables; una traducción no puede cambiar qué citas se mandan quitar («Corta “Comenta abajo”» no se vuelve «Di “Comenta abajo”»); en la comparación de dos
   versiones una diferencia solo se sostiene si el mismo aspecto aparece en los dos órdenes, nunca por ir en la misma posición; el README instala desde
   `requirements.lock` con hashes y dice que el filtro de temas corre antes de reescribir y dibujar, no antes de toda la revisión.
+- **Tercera pasada.** Quedaba a medias el gasto por intento: ahora toda llamada que cuesta (texto, imagen y transcripción) pasa por `meta_api._pedir_cobrado`,
+  que aparta antes de salir y otro tanto antes de cada reintento que pudo cobrarse; tras una respuesta que no es 200, un 4xx (también 429) suelta lo apartado y un
+  5xx lo conserva hasta que venza, en la API de Meta y en Baseten. Nuevo y bajo: las imágenes de Docker no llevaban las licencias; ahora copian `LICENSE`, `NOTICE`
+  y, la que lleva los pesos, `LICENSE-MUSE.md`. Regla de gasto que queda: lo apartado para un intento del que no se sabe si cobró no se suelta nunca a mano, vence
+  solo a las 24 horas.

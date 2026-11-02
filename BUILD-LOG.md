@@ -579,4 +579,7 @@ La segunda pasada de Codex sobre la versión corregida dio 9 de 12 corregidos, 3
 (un 5xx o una falla de red, en Meta y en Baseten) aparta lo suyo y la estimación de entrada cuenta todo lo que viaja, también herramientas; el generador suelto de
 storyboard frena intocables; una traducción no puede volver recomendación una cita que se manda quitar; una diferencia de la comparación solo se sostiene con el mismo
 aspecto en los dos órdenes, nunca por su posición; el README instala desde `requirements.lock` con hashes y ya no dice que el filtro de temas corre antes que todo.
-Pruebas: 550. **Costo:** USD 0 (ninguna llamada a las API; el margen corre con datos locales).
+La tercera pasada dejó a medias solo el gasto por intento (los reintentos de imagen y transcripción, y qué reserva se suelta tras un 5xx) y un aviso bajo (las
+imágenes de Docker no llevaban las licencias); los dos se corrigieron: toda llamada que cuesta pasa por el mismo envoltorio, un 4xx suelta lo apartado y un 5xx lo
+conserva, y las imágenes copian LICENSE, NOTICE y, la que lleva los pesos, LICENSE-MUSE.md. Pruebas: 556. **Costo:** USD 0 (ninguna llamada a las API; el margen
+corre con datos locales).

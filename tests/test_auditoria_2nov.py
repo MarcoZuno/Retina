@@ -164,6 +164,40 @@ class CadaIntentoApartaLoSuyo(ConRegistro):
             meta_api.responder("prueba", cuerpo)
         self.assertEqual((pedir.call_count, len(self.filas())), (2, 0))
 
+    def test_tres_5xx_dejan_apartados_los_tres_intentos(self):
+        cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 1000}
+        with self.respuestas(500, 500, 503) as pedir, mock.patch.object(meta_api.time, "sleep"), self.assertRaises(RuntimeError):
+            meta_api.responder("prueba", cuerpo)
+        self.assertEqual((pedir.call_count, len(self.filas())), (3, 0))
+        self.assertAlmostEqual(meta_api.reservado_usd(), 3 * meta_api.peor_caso_usd(cuerpo), places=9)  # ninguno se sabe si cobró
+
+    def test_un_5xx_y_luego_un_4xx_deja_apartado_solo_el_incierto(self):
+        cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 1000}
+        with self.respuestas(500, 400) as pedir, mock.patch.object(meta_api.time, "sleep"), self.assertRaises(RuntimeError):
+            meta_api.responder("prueba", cuerpo)
+        self.assertEqual((pedir.call_count, len(self.filas())), (2, 0))
+        self.assertAlmostEqual(meta_api.reservado_usd(), meta_api.peor_caso_usd(cuerpo), places=9)  # el 400 no cobró; el 500 no se sabe
+
+    def test_un_dibujo_tambien_aparta_por_intento(self):
+        cola = iter([mock.Mock(status_code=500, headers={}), mock.Mock(status_code=502, headers={}), RespuestaDeImagen()])
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(meta_api.requests, "request", side_effect=lambda *a, **k: next(cola)) as pedir, \
+                mock.patch.object(meta_api.time, "sleep"):
+            storyboard.dibujar_uno("una escena", Path(d) / "c.png")
+            self.assertTrue((Path(d) / "c.png").is_file())
+        self.assertEqual((pedir.call_count, len(self.filas())), (3, 1))
+        self.assertAlmostEqual(meta_api.reservado_usd(), 2 * PRECIO_DIBUJO, places=9)
+
+    def test_la_transcripcion_tambien_aparta_por_intento(self):
+        buena = mock.Mock(status_code=200, **{"json.return_value": {"audioDurationMs": 60_000}})
+        cola = iter([mock.Mock(status_code=500, headers={}), mock.Mock(status_code=500, headers={}), buena])
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(meta_api.requests, "request", side_effect=lambda *a, **k: next(cola)) as pedir, \
+                mock.patch.object(meta_api.time, "sleep"):
+            wav = Path(d) / "a.wav"
+            wav.write_bytes(b"RIFF" + b"\0" * 100)
+            meta_api.transcribir_wav(wav)
+        self.assertEqual((pedir.call_count, len(self.filas())), (3, 1))
+        self.assertAlmostEqual(meta_api.reservado_usd(), 2 * meta_api.PRECIO_HORA_AUDIO["muse-voice-transcribe-1.0"] * 10 / 60, places=9)
+
 
 class FalsoOpenAIQueFalla(FalsoOpenAI):
     fallos: list = []  # lo que lanza antes de contestar bien
@@ -220,6 +254,27 @@ class BasetenApartaCadaIntento(ConRegistro):
         with self.assertRaises(ConnectionError):
             baseten.completar("prueba", self.MENSAJES, 1000)
         self.assertAlmostEqual(meta_api.reservado_usd(), 3 * uno, places=9)
+
+    def test_un_5xx_y_luego_un_4xx_deja_apartado_solo_el_incierto(self):
+        uno = self.uno()
+        FalsoOpenAIQueFalla.fallos = [self.error(500), self.error(400)]
+        with self.assertRaises(Exception):
+            baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertEqual(len(self.filas()), 0)
+        self.assertAlmostEqual(meta_api.reservado_usd(), uno, places=9)  # el 400 no cobró; el 500 no se sabe
+
+
+# 7. Las imágenes de Docker llevan las licencias ------------------------------------------------------------------
+
+class DockerConLicencias(unittest.TestCase):
+    def test_cada_imagen_copia_sus_licencias(self):
+        demo = (RAIZ / "deploy" / "Dockerfile").read_text(encoding="utf-8")
+        en_linea = (RAIZ / "deploy" / "Dockerfile.en-linea").read_text(encoding="utf-8")
+        for archivo in ("LICENSE", "NOTICE"):
+            self.assertRegex(demo, rf"(?m)^COPY .*\b{archivo}\b", archivo)
+            self.assertRegex(en_linea, rf"(?m)^COPY .*\b{archivo}\b", archivo)
+        self.assertRegex(en_linea, r"(?m)^COPY .*LICENSE-MUSE\.md")  # los pesos van en esa imagen: su licencia también
+        self.assertNotIn("LICENSE-MUSE", demo)  # la demo estática no lleva pesos
 
 
 # 3. Los intocables se revisan en todo lo que se va a editar ----------------------------------------------------

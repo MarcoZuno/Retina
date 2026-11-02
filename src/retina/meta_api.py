@@ -375,24 +375,31 @@ def _error(r: requests.Response) -> RuntimeError:
     return RuntimeError(f"HTTP {r.status_code}: {msg}")
 
 
+def _pedir_cobrado(servicio: str, peor: float, metodo: str, ruta: str, intentos: int = 3, **kwargs) -> tuple[requests.Response, str]:
+    """Una llamada que cuesta. Aparta `peor` antes de salir y otro tanto antes de cada reintento que pudo cobrarse (un 5xx
+    o una falla de red; un 429 no se cobra): lo apartado para un intento incierto se queda hasta que venza. Devuelve la
+    respuesta y la reserva del intento que contestó; quien llama la cierra con `_registrar` (200) o con `cerrar`.
+    Sin presupuesto para repetir, `reservar` lanza y no se repite. Si `_pedir` lanza (red, tiempo agotado) no sabemos
+    si la API cobró: todo lo apartado se queda. 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede
+    cobrar doble."""
+    reservas = [reservar(servicio, peor)]
+    r = _pedir(metodo, ruta, intentos=intentos, al_repetir=lambda _r: reservas.append(reservar(servicio, peor)), **kwargs)
+    return r, reservas[-1]
+
+
+def cerrar(reserva: str, r: requests.Response) -> None:
+    """La respuesta no fue 200: un 4xx (también 429) no se cobró y suelta lo apartado; un 5xx se queda hasta que venza."""
+    if r.status_code < 500:
+        liberar(reserva)
+
+
 def responder(servicio: str, cuerpo: dict, entrada_tokens: int = 0) -> dict:
     """POST /v1/responses. Devuelve el JSON y registra el costo real (usage). `entrada_tokens`: la entrada que se
     sabe de más (un video adjunto), para que la reserva la cuente."""
-    peor = peor_caso_usd(cuerpo, entrada_tokens)
-    reserva = reservar(servicio, peor)  # aparta el peor caso antes de llamar
     t0 = time.time()
-
-    def apartar_otro(_r) -> None:
-        # Un 5xx o una falla de red a veces sí se cobran: lo apartado para ese intento se queda hasta que venza y el
-        # intento siguiente aparta lo suyo. Sin presupuesto para repetir, `reservar` lanza y no se repite.
-        nonlocal reserva
-        reserva = reservar(servicio, peor)
-
-    # Si _pedir lanza (red, tiempo agotado) no sabemos si la API cobró: la reserva se queda apartada.
-    # 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble.
-    r = _pedir("POST", "/responses", intentos=3, json=cuerpo, al_repetir=apartar_otro)
+    r, reserva = _pedir_cobrado(servicio, peor_caso_usd(cuerpo, entrada_tokens), "POST", "/responses", json=cuerpo)
     if r.status_code != 200:
-        liberar(reserva)
+        cerrar(reserva, r)
         raise _error(r)
     datos = r.json()
     uso = datos.get("usage") or {}
@@ -458,17 +465,16 @@ def transcribir_wav(ruta: Path, modo: str = "ENDPOINTING", idiomas=("Spanish",))
     if ruta.stat().st_size > 32 * 1024 * 1024:
         raise ValueError("El audio pasa de 32 MB (unos 10 min): Voice Transcribe no lo acepta.")
     # Peor caso: el audio más largo que acepta (10 min).
-    reserva = reservar("transcribir", PRECIO_HORA_AUDIO[modelo] * 10 / 60)
     t0 = time.time()
-    r = _pedir(
-        "POST", "/asr/transcribe",
+    r, reserva = _pedir_cobrado(
+        "transcribir", PRECIO_HORA_AUDIO[modelo] * 10 / 60, "POST", "/asr/transcribe",
         archivos=lambda: {
             "request": (None, json.dumps(ajustes), "application/json"),
             "audio": (ruta.name, ruta.open("rb"), "audio/wav"),
         },
     )
     if r.status_code != 200:
-        liberar(reserva)
+        cerrar(reserva, r)
         raise _error(r)
     datos = r.json()
     horas = datos.get("audioDurationMs", 0) / 3_600_000

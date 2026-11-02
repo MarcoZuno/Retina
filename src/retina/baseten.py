@@ -79,9 +79,8 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
             break
         except Exception as e:
             estado = getattr(e, "status_code", None)
-            if estado is not None and estado != 429 and estado < 500:  # la API contestó con error: no cobró
-                for x in reservas:
-                    meta_api.liberar(x)
+            if estado is not None and estado != 429 and estado < 500:  # la API contestó con error: este intento no cobró
+                meta_api.liberar(reservas[-1])  # los intentos anteriores (5xx o red) se quedan apartados hasta que venzan
                 raise
             if intento == INTENTOS - 1:
                 raise  # sin respuesta (red, tiempo) o 5xx repetido: no sabemos si cobró, lo apartado se queda hasta que venza

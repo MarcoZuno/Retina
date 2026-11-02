@@ -6,6 +6,7 @@ FROM nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
 COPY panel/ /usr/share/nginx/html/panel/
 COPY casos/ /usr/share/nginx/html/casos/
+COPY LICENSE NOTICE /usr/share/nginx/html/
 RUN sed -i 's/^user .*/user nginx;/' /etc/nginx/nginx.conf \
  && sed -i 's#pid .*#pid /tmp/nginx.pid;#' /etc/nginx/nginx.conf
 USER nginx

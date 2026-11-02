@@ -306,11 +306,15 @@ class TopeEnParalelo(ConRegistro):
         self.assertEqual(total, 2)
         self.assertEqual(len(self.filas()), 2)
 
-    def test_una_llamada_que_falla_con_error_http_suelta_lo_apartado(self):
-        malo = mock.Mock(status_code=500, **{"json.return_value": {"error": {"message": "x"}}})
+    def test_una_llamada_que_falla_con_un_4xx_suelta_lo_apartado_y_con_un_5xx_lo_conserva(self):
+        malo = mock.Mock(status_code=400, **{"json.return_value": {"error": {"message": "x"}}})
         with mock.patch.object(meta_api, "_pedir", return_value=malo), self.assertRaises(RuntimeError):
             meta_api.responder("prueba", {"model": "muse-spark-1.3", "max_output_tokens": TOKENS_20_USD})
-        self.assertEqual(meta_api.reservado_usd(), 0)
+        self.assertEqual(meta_api.reservado_usd(), 0)  # un 4xx no se cobró
+        malo.status_code = 503
+        with mock.patch.object(meta_api, "_pedir", return_value=malo), self.assertRaises(RuntimeError):
+            meta_api.responder("prueba", {"model": "muse-spark-1.3", "max_output_tokens": TOKENS_20_USD})
+        self.assertAlmostEqual(meta_api.reservado_usd(), 20, delta=0.01)  # un 5xx a veces sí se cobra: se queda hasta que venza
 
     def test_si_no_sabemos_si_cobro_el_peor_caso_se_queda_apartado(self):
         with mock.patch.object(meta_api, "_pedir", side_effect=ConnectionError("sin red")), self.assertRaises(ConnectionError):
