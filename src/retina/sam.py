@@ -118,7 +118,9 @@ async def _segmentar(file_id: str, concepto: str):
                 yield {"type": "response.output_text.done", "item_id": d.get("item_id"),
                        "output_index": d.get("output_index"), "content_index": d.get("content_index"), "text": parte["text"]}
 
-    async with AsyncOpenAI(base_url=meta_api.base(), api_key=meta_api._llave()) as api:
+    # max_retries=0: el cliente no repite por su cuenta. Un intento que falla a media corrida se registra como cobrado
+    # (ver _medir_clip) y la persona ve «no se pudo comprobar»; repetir a escondidas podría cobrar dos o tres veces.
+    async with AsyncOpenAI(base_url=meta_api.base(), api_key=meta_api._llave(), max_retries=0) as api:
         stream = await api.responses.create(model=MODELO, stream=True, input=[{
             "type": "message", "role": "user",
             "content": [{"type": "input_text", "text": concepto}, {"type": "input_video", "file_id": file_id}]}])

@@ -388,8 +388,9 @@ def _pedir_cobrado(servicio: str, peor: float, metodo: str, ruta: str, intentos:
 
 
 def cerrar(reserva: str, r: requests.Response) -> None:
-    """La respuesta no fue 200: un 4xx (también 429) no se cobró y suelta lo apartado; un 5xx se queda hasta que venza."""
-    if r.status_code < 500:
+    """La respuesta no fue 200: un 4xx (también 429) no se cobró y suelta lo apartado. Cualquier otra cosa (un 5xx, o un
+    2xx o 3xx que no se esperaba) se queda apartada hasta que venza: no se sabe si cobró."""
+    if 400 <= r.status_code < 500:
         liberar(reserva)
 
 

@@ -263,6 +263,60 @@ class BasetenApartaCadaIntento(ConRegistro):
         self.assertEqual(len(self.filas()), 0)
         self.assertAlmostEqual(meta_api.reservado_usd(), uno, places=9)  # el 400 no cobró; el 500 no se sabe
 
+    def test_tres_429_no_dejan_nada_apartado(self):
+        FalsoOpenAIQueFalla.fallos = [self.error(429)] * 3
+        with self.assertRaises(Exception):
+            baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertEqual((len(self.filas()), meta_api.reservado_usd()), (0, 0))  # ningún 429 cobró
+
+    def test_un_5xx_y_dos_429_dejan_apartado_solo_el_5xx(self):
+        uno = self.uno()
+        FalsoOpenAIQueFalla.fallos = [self.error(500), self.error(429), self.error(429)]
+        with self.assertRaises(Exception):
+            baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertAlmostEqual(meta_api.reservado_usd(), uno, places=9)
+
+
+class SamSinReintentosEscondidos(unittest.TestCase):
+    def test_el_cliente_de_sam_no_reintenta_por_su_cuenta(self):
+        # _medir_clip aparta y registra una sola llamada: si el cliente repitiera a escondidas, podría cobrar dos o tres veces.
+        import asyncio
+
+        from retina import sam
+
+        visto: dict = {}
+
+        class FalsoAsync:
+            def __init__(self, **kw):
+                visto.update(kw)
+                self.responses = self
+
+            async def __aenter__(self):
+                return self
+
+            async def __aexit__(self, *_a):
+                return False
+
+            async def create(self, **_kw):
+                raise RuntimeError("alto aquí: ya se vio cómo se armó el cliente")
+
+        falsos = {"openai": types.SimpleNamespace(AsyncOpenAI=FalsoAsync),
+                  "meta_sam_parser": types.SimpleNamespace(parse_responses_stream=lambda *a, **k: None, video_segmentation_format=lambda: None)}
+        with mock.patch.dict(sys.modules, falsos), mock.patch.object(meta_api, "base", return_value="https://api.meta.ai/v1"), \
+                mock.patch.object(meta_api, "_llave", return_value="x"), self.assertRaises(RuntimeError):
+            asyncio.run(sam._segmentar("file-1", "dog"))
+        self.assertEqual(visto.get("max_retries"), 0)
+
+
+class CerrarSoloSueltaLoQueNoCobro(ConRegistro):
+    def test_solo_un_4xx_suelta(self):
+        for estado, queda in ((400, 0), (404, 0), (429, 0), (201, 1), (302, 1), (500, 1), (503, 1)):
+            with self.subTest(estado=estado):
+                reserva = meta_api.reservar("prueba", 1.0)
+                meta_api.cerrar(reserva, mock.Mock(status_code=estado))
+                self.assertEqual(meta_api.reservado_usd(), queda)
+                meta_api.liberar(reserva)
+
 
 # 7. Las imágenes de Docker llevan las licencias ------------------------------------------------------------------
 

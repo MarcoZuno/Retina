@@ -581,5 +581,6 @@ storyboard frena intocables; una traducción no puede volver recomendación una 
 aspecto en los dos órdenes, nunca por su posición; el README instala desde `requirements.lock` con hashes y ya no dice que el filtro de temas corre antes que todo.
 La tercera pasada dejó a medias solo el gasto por intento (los reintentos de imagen y transcripción, y qué reserva se suelta tras un 5xx) y un aviso bajo (las
 imágenes de Docker no llevaban las licencias); los dos se corrigieron: toda llamada que cuesta pasa por el mismo envoltorio, un 4xx suelta lo apartado y un 5xx lo
-conserva, y las imágenes copian LICENSE, NOTICE y, la que lleva los pesos, LICENSE-MUSE.md. Pruebas: 556. **Costo:** USD 0 (ninguna llamada a las API; el margen
-corre con datos locales).
+conserva, y las imágenes copian LICENSE, NOTICE y, la que lleva los pesos, LICENSE-MUSE.md. La cuarta pasada no encontró nada nuevo; dejó dos detalles del gasto
+(el último 429 de Baseten se quedaba apartado y `cerrar` soltaba con cualquier código que no fuera 5xx) y una sospecha (el cliente de SAM reintentaba por su cuenta
+con una sola reserva): los tres corregidos. Pruebas: 560. **Costo:** USD 0 (ninguna llamada a las API; el margen corre con datos locales).

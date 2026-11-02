@@ -79,12 +79,15 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
             break
         except Exception as e:
             estado = getattr(e, "status_code", None)
-            if estado is not None and estado != 429 and estado < 500:  # la API contestó con error: este intento no cobró
-                meta_api.liberar(reservas[-1])  # los intentos anteriores (5xx o red) se quedan apartados hasta que venzan
+            sin_cobro = estado is not None and 400 <= estado < 500  # un 4xx, también el 429, no se cobra
+            if sin_cobro and estado != 429:  # la API contestó con error: este intento no cobró; los anteriores (5xx o red) se quedan
+                meta_api.liberar(reservas[-1])
                 raise
             if intento == INTENTOS - 1:
+                if sin_cobro:  # el último 429 tampoco cobró: su reserva no se queda 24 horas apartada
+                    meta_api.liberar(reservas[-1])
                 raise  # sin respuesta (red, tiempo) o 5xx repetido: no sabemos si cobró, lo apartado se queda hasta que venza
-            if estado != 429:  # un 5xx o una falla de red a veces sí se cobran: ese intento se queda apartado y el siguiente aparta lo suyo
+            if not sin_cobro:  # un 5xx o una falla de red a veces sí se cobran: ese intento se queda apartado y el siguiente aparta lo suyo
                 reservas.append(_reservar(servicio, max_tokens, mensajes, herramientas))
             time.sleep(meta_api._espera(None, intento))
     meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage), reservas[-1],

@@ -720,3 +720,6 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
   5xx lo conserva hasta que venza, en la API de Meta y en Baseten. Nuevo y bajo: las imágenes de Docker no llevaban las licencias; ahora copian `LICENSE`, `NOTICE`
   y, la que lleva los pesos, `LICENSE-MUSE.md`. Regla de gasto que queda: lo apartado para un intento del que no se sabe si cobró no se suelta nunca a mano, vence
   solo a las 24 horas.
+- **Cuarta pasada (cierre).** Nada nuevo. Tres detalles del gasto, corregidos: en Baseten el último 429 también suelta su reserva (un 429 nunca cobra); `cerrar`
+  suelta solo con un 4xx (un 2xx o 3xx inesperado se queda apartado, como un 5xx); y el cliente de SAM ya no reintenta por su cuenta (`max_retries=0`): un intento
+  que falla se registra como cobrado una vez y la persona ve «no se pudo comprobar», en vez de repetir a escondidas y cobrar dos o tres veces.
