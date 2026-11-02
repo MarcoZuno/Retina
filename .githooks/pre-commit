@@ -1,0 +1,11 @@
+#!/bin/sh
+# Antes de cada commit: las pruebas y el escáner de secretos. Si algo falla, no se hace el commit.
+# Se activa una vez por copia del repo:  git config core.hooksPath .githooks
+cd "$(git rev-parse --show-toplevel)" || exit 1
+PY=python
+command -v python3 >/dev/null 2>&1 && PY=python3
+command -v python >/dev/null 2>&1 && PY=python
+"$PY" -m unittest discover -s tests -q || { echo "Las pruebas fallaron: no se hace el commit."; exit 1; }
+command -v gitleaks >/dev/null 2>&1 || { echo "No encuentro gitleaks (https://github.com/gitleaks/gitleaks): no se hace el commit."; exit 1; }
+# Lee .gitleaks.toml de la raíz: además de las reglas de fábrica, bloquea códigos internos de producción.
+gitleaks protect --staged --no-banner --log-level error || { echo "gitleaks encontró algo: no se hace el commit."; exit 1; }

@@ -1,0 +1,19 @@
+# Además de las reglas de siempre, bloquea códigos internos de producción de Badabun
+# (letras y de 6 a 9 dígitos, como en los nombres de archivo, también pegados a un «_»).
+# Los de ejemplo usan XYZ000000N.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "codigo-produccion-badabun"
+description = "Código interno de producción de Badabun: no va al repo público"
+regex = '''(?:^|[^A-Za-z0-9])([A-Z]{2,6}[0-9]{6,9})(?:[^0-9]|$)'''
+secretGroup = 1
+
+[[rules.allowlists]]
+regexes = ['''XYZ0+[0-9]''']
+
+# Los nombres de caché de los prompts («retina-explicar-v2») parecen llaves, pero no lo son.
+[[allowlists]]
+description = "Nombres de caché de prompts de Retina"
+regexes = ['''retina-[a-z-]+-v[0-9]+''']

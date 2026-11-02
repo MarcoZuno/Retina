@@ -9,7 +9,8 @@ Código y textos de interfaz en español de México; README y anexos en inglés 
 ## Cómo correr
 
 - Tests (sin llave ni datos): `python -m unittest discover -s tests`. El hook de pre-commit los
-  corre con el escáner de secretos; si fallan, no hay commit.
+  corre con el escáner de secretos (`gitleaks`, con las reglas de `.gitleaks.toml`); si fallan, no hay commit.
+  El hook vive en `.githooks/`; se activa una vez por copia con `git config core.hooksPath .githooks`.
 - Demo sin llave: `PYTHONPATH=src python -m retina.demo`.
 - Retina completo con la API de Meta: ver README («Try it with your own video»).
 

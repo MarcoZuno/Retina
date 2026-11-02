@@ -584,3 +584,9 @@ imágenes de Docker no llevaban las licencias); los dos se corrigieron: toda lla
 conserva, y las imágenes copian LICENSE, NOTICE y, la que lleva los pesos, LICENSE-MUSE.md. La cuarta pasada no encontró nada nuevo; dejó dos detalles del gasto
 (el último 429 de Baseten se quedaba apartado y `cerrar` soltaba con cualquier código que no fuera 5xx) y una sospecha (el cliente de SAM reintentaba por su cuenta
 con una sola reserva): los tres corregidos. Pruebas: 560. **Costo:** USD 0 (ninguna llamada a las API; el margen corre con datos locales).
+
+Una revisión del repo contra lectores hostiles (árbol y los 770 archivos del historial) no halló llaves, datos internos ni más nombres que los dos
+inscritos, pero esta copia no traía el escáner con la regla de códigos de producción ni el gancho de pre-commit que este `CLAUDE.md` describe.
+Los dos entran al repo: `.gitleaks.toml` (reglas de fábrica más códigos internos, con el ejemplo `XYZ000000N` permitido) y `.githooks/pre-commit`
+(pruebas y gitleaks antes de cada commit), que se activa con `git config core.hooksPath .githooks`. gitleaks con esa regla no encuentra nada en
+todo el historial.
