@@ -34,11 +34,17 @@ def gastado_usd() -> float:
     return meta_api.gastado_usd("baseten")
 
 
-def _reservar(servicio: str, max_tokens: int, mensajes: list[dict] | None = None) -> str:
-    """Aparta el peor caso de la llamada: toda la salida permitida más la entrada que se ve en los mensajes. Respeta
-    los dos topes: el de Baseten y el del usuario (RETINA_TOPE_USD, el mismo de la API de Meta, que cuenta todo el
-    gasto del registro)."""
-    entrada = sum(len(str(m.get("content") or "")) for m in (mensajes or []) if isinstance(m, dict)) // meta_api.CARACTERES_POR_TOKEN
+INTENTOS = 3  # como en meta_api.responder: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble
+
+
+def _reservar(servicio: str, max_tokens: int, mensajes: list | None = None, herramientas: list | None = None) -> str:
+    """Aparta el peor caso de la llamada: toda la salida permitida más la entrada que viaja (los mensajes completos,
+    con llamadas y salidas de herramientas, y las definiciones de herramientas), estimada por lo alto. Respeta los dos
+    topes: el de Baseten y el del usuario (RETINA_TOPE_USD, el mismo de la API de Meta, que cuenta todo el gasto)."""
+    import json
+
+    viaja = json.dumps(mensajes or [], ensure_ascii=False) + json.dumps(herramientas or [], ensure_ascii=False)
+    entrada = len(viaja) // meta_api.CARACTERES_POR_TOKEN + 1
     peor = (max_tokens * PRECIO[2] + entrada * PRECIO[0]) / 1e6
     return meta_api.reservar(f"baseten-{servicio}", peor, "baseten", TOPE_BASETEN_USD)
 
@@ -58,21 +64,31 @@ def completar(servicio: str, mensajes: list[dict], max_tokens: int = 8000, esfue
     from openai import OpenAI
 
     llave = _llave()  # sin llave no se aparta nada
-    reserva = _reservar(servicio, max_tokens, mensajes)
-    cliente = OpenAI(api_key=llave, base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=2)
+    reservas = [_reservar(servicio, max_tokens, mensajes, herramientas)]
+    # Los reintentos los lleva Retina y no el cliente: cada intento que pudo cobrarse aparta lo suyo.
+    cliente = OpenAI(api_key=llave, base_url=BASE, timeout=meta_api.TIEMPO[1], max_retries=0)
     t0 = time.time()
     extra = {"reasoning_effort": esfuerzo} if esfuerzo else {}
     if herramientas:
         extra["tools"] = herramientas
     if temperatura is not None:  # 0 = el mismo video da la misma respuesta
         extra["temperature"] = temperatura
-    try:
-        r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens, **extra)
-    except Exception as e:
-        if getattr(e, "status_code", None) is not None:  # la API contestó con error: no cobró
-            meta_api.liberar(reserva)
-        raise  # sin respuesta (red, tiempo): no sabemos si cobró, la reserva se queda hasta que venza
-    meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage), reserva,
+    for intento in range(INTENTOS):
+        try:
+            r = cliente.chat.completions.create(model=MODELO, messages=mensajes, max_tokens=max_tokens, **extra)
+            break
+        except Exception as e:
+            estado = getattr(e, "status_code", None)
+            if estado is not None and estado != 429 and estado < 500:  # la API contestó con error: no cobró
+                for x in reservas:
+                    meta_api.liberar(x)
+                raise
+            if intento == INTENTOS - 1:
+                raise  # sin respuesta (red, tiempo) o 5xx repetido: no sabemos si cobró, lo apartado se queda hasta que venza
+            if estado != 429:  # un 5xx o una falla de red a veces sí se cobran: ese intento se queda apartado y el siguiente aparta lo suyo
+                reservas.append(_reservar(servicio, max_tokens, mensajes, herramientas))
+            time.sleep(meta_api._espera(None, intento))
+    meta_api._registrar(f"baseten-{servicio}", MODELO, time.time() - t0, usd(r.usage), reservas[-1],
                         entrada=getattr(r.usage, "prompt_tokens", 0), salida=getattr(r.usage, "completion_tokens", 0))
     return r.choices[0].message
 

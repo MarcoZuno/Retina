@@ -256,8 +256,9 @@ def mapear(juicio: dict, orden: str) -> dict:
                              "mejor": letra[d["mejor"]]} for d in juicio["diferencias"]]}
 
 
-def _pareja(d: dict, i: int, otras: list[dict]) -> dict | None:
-    """El mismo aspecto en el otro orden: mismo nombre, o uno contiene al otro, o el de la misma posición."""
+def _pareja(d: dict, otras: list[dict]) -> dict | None:
+    """El mismo aspecto en el otro orden: mismo nombre, o uno contiene al otro. Sin eso no hay pareja: la posición en
+    la lista no dice nada («Encuadre» no es «Voz» por ir en el mismo lugar)."""
     nombre = integridad.normalizar(d["aspecto"]).strip(" .")
     nombres = [integridad.normalizar(o["aspecto"]).strip(" .") for o in otras]
     for k, n in enumerate(nombres):
@@ -266,17 +267,17 @@ def _pareja(d: dict, i: int, otras: list[dict]) -> dict | None:
     for k, n in enumerate(nombres):
         if n and nombre and (n in nombre or nombre in n):
             return otras[k]
-    return otras[i] if i < len(otras) else None
+    return None
 
 
 def combinar(ab: dict, ba: dict) -> dict:
     """Solo cuenta lo que los dos órdenes dicen igual. El texto sale del orden AB (A llegó primero, como se subió).
-    Cada diferencia se busca en el orden BA (por nombre y, si no, por posición); si allá favorece a otra
-    versión o no aparece, queda «igual»: así ninguna diferencia depende de qué versión se leyó primero.
+    Cada diferencia se busca en el orden BA por el nombre del aspecto; si allá favorece a otra versión o no aparece,
+    queda «igual»: así ninguna diferencia depende de qué versión se leyó primero.
     Una ganadora necesita que los dos órdenes la elijan y que al menos una diferencia la sostenga en los dos."""
     diferencias = []
-    for i, d in enumerate(ab["diferencias"]):
-        otra = _pareja(d, i, ba["diferencias"])
+    for d in ab["diferencias"]:
+        otra = _pareja(d, ba["diferencias"])
         diferencias.append({**d, "mejor": d["mejor"] if otra is not None and otra["mejor"] == d["mejor"] else "igual"})
     if ab["mejor"] != ba["mejor"]:
         veredicto, por_que = "empate", NO_COINCIDEN

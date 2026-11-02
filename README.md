@@ -96,7 +96,7 @@ You need Python 3.12, ffmpeg and your own key for the Meta Model API. On Windows
 in a very long path, `pip` cannot finish installing `openai`, and the review comes out without its card.
 
 ```bash
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock   # every package, direct and indirect, pinned with its hash (requirements.txt lists the direct ones)
 # ffmpeg:  winget install Gyan.FFmpeg  (Windows) · brew install ffmpeg (macOS) · apt install ffmpeg (Linux)
 cp .env.example .env          # Windows PowerShell: Copy-Item .env.example .env
 # Put your Meta Model API key in MODEL_API_KEY. Add BASETEN_API_KEY for Muse Spark Open; without it, Muse Spark 1.3 does the writing and the number goes without the opening sheet.
@@ -116,7 +116,8 @@ PYTHONPATH=src python -m retina.retina VIDEO --salida FOLDER --titulo "Your titl
 PYTHONPATH=src python -m retina.apertura FOLDER --idioma en --aprobar
 ```
 
-Tests need no key and no private data: `pip install -r requirements.txt`, then `PYTHONPATH=src python -m unittest discover -s tests`.
+Tests need no key and no private data: `pip install --require-hashes -r requirements.lock`, then `PYTHONPATH=src python -m unittest discover -s tests`.
+The optional GPU extras in `requirements-gpu.txt` (local transcription and V-JEPA 2) are pinned but have no hash lock.
 
 ## Meta models in Retina
 
@@ -125,7 +126,7 @@ Tests need no key and no private data: `pip install -r requirements.txt`, then `
 | Rewriting the opening (main step) | **Muse Spark Open** (open weights) | Baseten Model API | Writes the new opening and three frames, and fixes them when a check fails. Without a Baseten key, Muse Spark 1.3 does it |
 | Drawing it | **Muse Image 1.0** | Meta Model API | Draws the first frame and, once everything passes, the other two |
 | Checking the promise | Muse Spark 1.3 + **SAM 3.1** | Meta Model API | Spark picks what the title promises from a closed list; SAM looks for it in the first 3 s of the draft and in the first drawn frame |
-| Deciding whether to rewrite | Muse Spark 1.3 | Meta Model API | Reads the title and the speech and declines out-of-scope topics and health advice, before any other model runs |
+| Deciding whether to rewrite | Muse Spark 1.3 | Meta Model API | Reads the title and the speech and declines out-of-scope topics and health advice, before anything is written or drawn (the review of the draft has already run by then) |
 | Reading the opening back | Muse Spark 1.3 | Meta Model API | Reads each opening against what the video says, before it is drawn; anything added goes back to Spark Open |
 | Checking the other frames | Muse Spark 1.3 | Meta Model API | Looks at each frame SAM did not check; if one does not show what was written, the work goes back to Spark Open |
 | Checking the title | Muse Spark 1.3 | Meta Model API | Compares the title with what is said and shown. A warning only: the title is never changed |

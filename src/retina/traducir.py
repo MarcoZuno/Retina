@@ -66,12 +66,29 @@ def _reglas(texto: str) -> set[str]:
     return {r["id"] for r in integridad.revisar(texto)}
 
 
+def _citas_a_quitar(texto: str) -> frozenset[str]:
+    """Las citas que el texto manda quitar: entre comillas, con un verbo de quitar antes en la misma frase y sin otra orden
+    en medio (la misma regla que usa el validador de la tarjeta). «Corta “Comenta abajo”» la manda quitar; «Di “Comenta
+    abajo”», no."""
+    citas = set()
+    for m in explicar.CITA.finditer(texto):
+        antes = texto[:m.start()]
+        cortes = list(explicar.FIN_DE_FRASE.finditer(antes))
+        frase = antes[cortes[-1].end():] if cortes else antes
+        verbos = list(explicar.QUITAR.finditer(frase))
+        if verbos and not explicar.OTRA_ORDEN.search(explicar.SENALA_LUGAR.sub(" ", frase[verbos[-1].end():])):
+            citas.add(explicar._sin_signos(m.group(1)))
+    return frozenset(citas)
+
+
 def sin_inventar(original: str, traducido: object) -> bool:
     """Ni cifras nuevas, ni una regla de anzuelos que el original no rompía (se comparan cuáles, no cuántas), ni enlaces
-    nuevos, ni tocar un intocable (logo, título, avisos) que el original no tocaba: la traducción pasa los mismos filtros."""
+    nuevos, ni tocar un intocable (logo, título, avisos) que el original no tocaba, ni cambiar qué citas se mandan quitar:
+    «Corta “Comenta abajo”» no puede volverse «Di “Comenta abajo”». La traducción pasa los mismos filtros que la tarjeta."""
     return (isinstance(traducido, str) and bool(traducido.strip()) and set(_cifras(traducido)) <= set(_cifras(original))
             and _reglas(traducido) <= _reglas(original) and set(explicar.enlaces(traducido)) <= set(explicar.enlaces(original))
-            and set(explicar.toca_intocable(traducido)) <= set(explicar.toca_intocable(original)))
+            and set(explicar.toca_intocable(traducido)) <= set(explicar.toca_intocable(original))
+            and _citas_a_quitar(traducido) == _citas_a_quitar(original))
 
 
 def aceptable(original: str, traducido: object) -> bool:

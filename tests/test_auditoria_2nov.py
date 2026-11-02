@@ -14,6 +14,7 @@ import os
 import sys
 import tempfile
 import time
+import types
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -22,8 +23,8 @@ from unittest import mock
 RAIZ = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RAIZ / "src"))
 
-from retina import baseten, explicar, meta_api, retina, revision_meta, segmentar, storyboard, traducir  # noqa: E402
-from test_candados import ConRegistro  # noqa: E402
+from retina import baseten, comparar, explicar, meta_api, retina, revision_meta, segmentar, storyboard, traducir  # noqa: E402
+from test_candados import TOKENS_20_USD, ConRegistro, FalsoOpenAI, RespuestaFalsa  # noqa: E402
 from test_reglas import DATOS, tarjeta  # noqa: E402
 
 PRECIO_DIBUJO = meta_api.PRECIO_IMAGEN[storyboard.MODELO]
@@ -95,10 +96,20 @@ class ReservaConEntrada(ConRegistro):
         cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 1000,
                   "input": [{"type": "message", "role": "user", "content": [{"type": "input_text", "text": texto}, {"type": "input_image", "image_url": "data:x"}]}]}
         entrada = 30_000 // meta_api.CARACTERES_POR_TOKEN + 1 + meta_api.TOKENS_POR_IMAGEN
-        self.assertEqual(meta_api.entrada_estimada(cuerpo), entrada)
-        self.assertAlmostEqual(meta_api.peor_caso_usd(cuerpo), (1000 * 4.25 + entrada * 1.25) / 1e6, places=9)
+        estimada = meta_api.entrada_estimada(cuerpo)
+        self.assertGreaterEqual(estimada, entrada)  # el texto y la imagen, más las etiquetas que también viajan
+        self.assertLess(estimada, entrada + 50)
+        self.assertAlmostEqual(meta_api.peor_caso_usd(cuerpo), (1000 * 4.25 + estimada * 1.25) / 1e6, places=9)
         self.assertAlmostEqual(meta_api.peor_caso_usd(cuerpo, entrada_tokens=360_000), (1000 * 4.25 + 360_000 * 1.25) / 1e6, places=9)  # lo declarado ya cuenta su texto
-        self.assertEqual(meta_api.entrada_estimada({"model": "muse-spark-1.3"}), 0)
+        self.assertEqual(meta_api.entrada_estimada({"model": "muse-spark-1.3", "max_output_tokens": 100}), 0)
+
+    def test_la_entrada_cuenta_herramientas_sus_argumentos_y_sus_salidas(self):
+        base = {"model": "muse-spark-1.3", "max_output_tokens": 100}
+        salida = {**base, "input": [{"type": "function_call_output", "call_id": "c1", "output": "y" * 30_000}]}
+        argumentos = {**base, "input": [{"type": "function_call", "name": "buscar", "call_id": "c1", "arguments": "w" * 30_000}]}
+        herramientas = {**base, "tools": [{"type": "function", "name": "buscar", "description": "z" * 30_000, "parameters": {}}]}
+        for cuerpo in (salida, argumentos, herramientas):
+            self.assertGreaterEqual(meta_api.entrada_estimada(cuerpo), 10_000, list(cuerpo))
 
     def test_responder_aparta_la_entrada_aunque_nadie_la_declare(self):
         cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 100,
@@ -112,7 +123,103 @@ class ReservaConEntrada(ConRegistro):
         mensajes = [{"role": "system", "content": "a" * 3000}, {"role": "user", "content": "b" * 3000}]
         reserva = baseten._reservar("prueba", 1000, mensajes)
         self.addCleanup(meta_api.liberar, reserva)
-        self.assertAlmostEqual(meta_api.reservado_usd(), (1000 * 4.25 + (6000 // meta_api.CARACTERES_POR_TOKEN) * 1.25) / 1e6, places=9)
+        minimo = (1000 * 4.25 + (6000 // meta_api.CARACTERES_POR_TOKEN) * 1.25) / 1e6
+        self.assertGreaterEqual(meta_api.reservado_usd(), minimo)
+        self.assertLess(meta_api.reservado_usd(), minimo * 1.1)
+
+    def test_baseten_cuenta_llamadas_y_definiciones_de_herramientas(self):
+        con_llamada = [{"role": "assistant", "content": None, "tool_calls": [{"id": "1", "type": "function", "function": {"name": "buscar", "arguments": "q" * 30_000}}]}]
+        herramientas = [{"type": "function", "function": {"name": "buscar", "description": "d" * 30_000}}]
+        for mensajes, tools in ((con_llamada, None), ([{"role": "user", "content": "hola"}], herramientas)):
+            reserva = baseten._reservar("prueba", 1000, mensajes, tools)
+            self.assertGreaterEqual(meta_api.reservado_usd(), (1000 * 4.25 + 10_000 * 1.25) / 1e6)
+            meta_api.liberar(reserva)
+
+
+# 2b. Cada intento que pudo cobrarse aparta lo suyo ------------------------------------------------------------
+
+class CadaIntentoApartaLoSuyo(ConRegistro):
+    def respuestas(self, *estados):
+        cola = iter([RespuestaFalsa(1000) if e == 200 else mock.Mock(status_code=e, headers={}) for e in estados])
+        return mock.patch.object(meta_api.requests, "request", side_effect=lambda *a, **k: next(cola))
+
+    def test_un_5xx_deja_apartado_su_intento_y_el_siguiente_aparta_otro(self):
+        cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 1000}
+        peor = meta_api.peor_caso_usd(cuerpo)
+        with self.respuestas(500, 502, 200) as pedir, mock.patch.object(meta_api.time, "sleep"):
+            meta_api.responder("prueba", cuerpo)
+        self.assertEqual(pedir.call_count, 3)
+        self.assertEqual(len(self.filas()), 1)
+        self.assertAlmostEqual(meta_api.reservado_usd(), 2 * peor, places=9)  # los dos intentos que pudieron cobrarse se quedan apartados
+
+    def test_un_429_se_repite_sin_apartar_otro(self):
+        cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": 1000}
+        with self.respuestas(429, 200) as pedir, mock.patch.object(meta_api.time, "sleep"):
+            meta_api.responder("prueba", cuerpo)
+        self.assertEqual((pedir.call_count, len(self.filas()), meta_api.reservado_usd()), (2, 1, 0))
+
+    def test_sin_presupuesto_para_repetir_no_se_repite(self):
+        cuerpo = {"model": "muse-spark-1.3", "max_output_tokens": TOKENS_20_USD}  # 20 USD por intento con tope de 50: caben dos
+        with self.respuestas(500, 500, 200) as pedir, mock.patch.object(meta_api.time, "sleep"), self.assertRaises(meta_api.TopeAlcanzado):
+            meta_api.responder("prueba", cuerpo)
+        self.assertEqual((pedir.call_count, len(self.filas())), (2, 0))
+
+
+class FalsoOpenAIQueFalla(FalsoOpenAI):
+    fallos: list = []  # lo que lanza antes de contestar bien
+
+    def create(self, **kw):
+        if FalsoOpenAIQueFalla.fallos:
+            raise FalsoOpenAIQueFalla.fallos.pop(0)
+        return super().create(**kw)
+
+
+class BasetenApartaCadaIntento(ConRegistro):
+    MENSAJES = [{"role": "user", "content": "hola"}]
+
+    def setUp(self):
+        super().setUp()
+        for parche in (mock.patch.dict(sys.modules, {"openai": types.SimpleNamespace(OpenAI=FalsoOpenAIQueFalla)}),
+                       mock.patch.object(baseten.time, "sleep")):
+            parche.start()
+            self.addCleanup(parche.stop)
+        FalsoOpenAIQueFalla.fallos = []
+
+    @staticmethod
+    def error(estado: int) -> Exception:
+        return type("ErrorDeApi", (Exception,), {"status_code": estado})("falló")
+
+    def uno(self) -> float:
+        r = baseten._reservar("prueba", 1000, self.MENSAJES)
+        try:
+            return meta_api.reservado_usd()
+        finally:
+            meta_api.liberar(r)
+
+    def test_dos_5xx_y_luego_bien_dejan_apartados_los_dos_intentos(self):
+        uno = self.uno()
+        FalsoOpenAIQueFalla.fallos = [self.error(500), self.error(503)]
+        baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertEqual(len(self.filas()), 1)
+        self.assertAlmostEqual(meta_api.reservado_usd(), 2 * uno, places=9)
+
+    def test_un_429_se_repite_sin_apartar_otro(self):
+        FalsoOpenAIQueFalla.fallos = [self.error(429)]
+        baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertEqual((len(self.filas()), meta_api.reservado_usd()), (1, 0))
+
+    def test_un_400_suelta_todo_y_no_se_repite(self):
+        FalsoOpenAIQueFalla.fallos = [self.error(400)]
+        with self.assertRaises(Exception):
+            baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertEqual((len(self.filas()), meta_api.reservado_usd()), (0, 0))
+
+    def test_sin_respuesta_tres_veces_todo_se_queda_apartado(self):
+        uno = self.uno()
+        FalsoOpenAIQueFalla.fallos = [ConnectionError("sin red")] * 3
+        with self.assertRaises(ConnectionError):
+            baseten.completar("prueba", self.MENSAJES, 1000)
+        self.assertAlmostEqual(meta_api.reservado_usd(), 3 * uno, places=9)
 
 
 # 3. Los intocables se revisan en todo lo que se va a editar ----------------------------------------------------
@@ -129,6 +236,48 @@ class IntocablesEnTodoElRecorrido(unittest.TestCase):
         self.assertFalse(traducir.sin_inventar("Corta el saludo del video.", "Remove the logo from the video."))
         self.assertFalse(traducir.aceptable("Corta el saludo del video.", "Remove the logo from the video."))
         self.assertTrue(traducir.aceptable("Corta el saludo del video.", "Cut the greeting from the video."))
+
+    def test_el_generador_suelto_de_storyboard_tambien_frena_un_intocable(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.object(storyboard, "dibujar_uno") as dibujar, mock.patch.object(meta_api, "_revisar_tope"):
+            e = Path(d) / "explicar.json"
+            e.write_text(json.dumps({"storyboard": ["Quita el logo del video.", "Un perro al centro", "Una mesa"]}), encoding="utf-8")
+            with self.assertRaises(RuntimeError) as cm:
+                storyboard.generar(e, [], aprobar=True)
+            self.assertIn("intocable", str(cm.exception))
+            dibujar.assert_not_called()
+            e.write_text(json.dumps({"storyboard": ["Una bolsa de pan cerrada, sin logos.", "Un perro al centro", "Una mesa"]}), encoding="utf-8")
+            self.assertEqual(len(storyboard.generar(e, [], aprobar=True)), 3)  # «sin logos» es el estilo de la casa
+
+
+# 3b. Una traducción no puede volver recomendación lo que se manda quitar ------------------------------------
+
+class TraduccionQueInvierte(unittest.TestCase):
+    def test_la_cita_que_se_manda_quitar_sigue_mandándose_quitar(self):
+        self.assertFalse(traducir.sin_inventar("Corta «Comenta abajo».", "Say «Comenta abajo»."))
+        self.assertFalse(traducir.aceptable("Corta «Comenta abajo».", "Say «Comenta abajo»."))
+        self.assertTrue(traducir.aceptable("Corta «Comenta abajo».", "Cut «Comenta abajo»."))
+        self.assertTrue(traducir.aceptable("Quita el saludo del segundo 2.", "Remove the greeting at second 2."))
+
+    def test_que_citas_se_mandan_quitar(self):
+        quitar = traducir._citas_a_quitar("Corta «Comenta abajo» y di «hola».")
+        self.assertIn(explicar._sin_signos("Comenta abajo"), quitar)
+        self.assertNotIn(explicar._sin_signos("hola"), quitar)  # tiene otra orden en medio: no es una cita que se quita
+        self.assertEqual(traducir._citas_a_quitar("Say «Comenta abajo»."), frozenset())
+
+
+# 3c. Una diferencia solo se sostiene con el mismo aspecto en los dos órdenes ---------------------------------
+
+class ParejasPorNombre(unittest.TestCase):
+    def test_sin_el_mismo_aspecto_no_hay_pareja(self):
+        self.assertIsNone(comparar._pareja({"aspecto": "Encuadre"}, [{"aspecto": "Voz", "mejor": "A"}]))
+        self.assertEqual(comparar._pareja({"aspecto": "Voz en off"}, [{"aspecto": "Voz", "mejor": "A"}])["aspecto"], "Voz")
+
+    def test_una_diferencia_sin_pareja_no_sostiene_a_la_ganadora(self):
+        ab = {"mejor": "A", "por_que": "A arranca mejor.", "diferencias": [{"aspecto": "Encuadre", "a": "x", "b": "y", "mejor": "A"}]}
+        ba = {"mejor": "A", "por_que": "A arranca mejor.", "diferencias": [{"aspecto": "Voz", "a": "x", "b": "y", "mejor": "A"}]}
+        s = comparar.combinar(ab, ba)
+        self.assertEqual([d["mejor"] for d in s["diferencias"]], ["igual"])
+        self.assertEqual(s["veredicto"], "empate")
 
 
 # 4. El paso del agente acepta argumentos por nombre ------------------------------------------------------------

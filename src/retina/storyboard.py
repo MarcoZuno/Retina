@@ -70,9 +70,13 @@ def generar(explicacion: Path, estilo: list[Path], aprobar: bool) -> list[Path]:
     if not cuadros:
         print("La explicación no trae storyboard (o no pasó el filtro de integridad).")
         return []
-    for c in cuadros:  # el filtro vuelve a correr aquí: el storyboard también es una sugerencia
+    from .explicar import SIN_LOGOS, toca_intocable  # aquí y no arriba: explicar también importa de este módulo por apertura
+
+    for i, c in enumerate(cuadros, 1):  # los filtros vuelven a correr aquí: el storyboard también es una sugerencia
         if integridad.revisar(c):
             raise RuntimeError(f"Cuadro bloqueado por integridad: {c}")
+        if t := toca_intocable(SIN_LOGOS.sub(" ", c)):
+            raise RuntimeError(f"Cuadro {i} bloqueado: toca algo intocable ({', '.join(t)}): {c}")
     print(f"{len(cuadros)} imágenes · costo estimado USD {0.01 * len(cuadros):.2f}")
     if not aprobar:
         print("Sin --aprobar no se genera nada.")

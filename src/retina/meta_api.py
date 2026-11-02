@@ -249,25 +249,27 @@ CARACTERES_POR_TOKEN = 3  # por lo alto, para apartar: el costo real llega con l
 TOKENS_POR_IMAGEN = 2000  # una imagen adjunta, también por lo alto
 
 
+NO_SE_COBRAN = ("model", "max_output_tokens", "store", "reasoning")  # ajustes de la llamada, no entrada del modelo
+
+
+def _tokens_de(valor, clave: str = "") -> int:
+    if clave == "image_url":  # una imagen adjunta cuenta por lo alto, no por los caracteres de su base64
+        return TOKENS_POR_IMAGEN
+    if isinstance(valor, str):
+        return len(valor) // CARACTERES_POR_TOKEN + 1
+    if isinstance(valor, dict):
+        return sum(_tokens_de(v, k) for k, v in valor.items())
+    if isinstance(valor, list):
+        return sum(_tokens_de(v) for v in valor)
+    return 0
+
+
 def entrada_estimada(cuerpo: dict) -> int:
-    """Tokens de entrada que se ven en el cuerpo: el texto y las imágenes adjuntas. Un video adjunto no sale aquí
-    (≈200 tokens por segundo: media hora son ~USD 0.45): lo declara quien llama en `entrada_tokens`."""
-    n = 0
-    for mensaje in cuerpo.get("input") or []:
-        contenido = mensaje.get("content") if isinstance(mensaje, dict) else None
-        if isinstance(contenido, str):
-            n += len(contenido) // CARACTERES_POR_TOKEN + 1
-            continue
-        for parte in contenido or []:
-            if not isinstance(parte, dict):
-                continue
-            if parte.get("type") == "input_text":
-                n += len(str(parte.get("text") or "")) // CARACTERES_POR_TOKEN + 1
-            elif parte.get("type") == "input_image":
-                n += TOKENS_POR_IMAGEN
-    if isinstance(cuerpo.get("instructions"), str):
-        n += len(cuerpo["instructions"]) // CARACTERES_POR_TOKEN + 1
-    return n
+    """Tokens de entrada que se ven en el cuerpo, por lo alto: todo texto que viaja (mensajes, instrucciones, salidas y
+    argumentos de herramientas, definiciones de herramientas, esquema de la respuesta) y las imágenes adjuntas. Un video
+    adjunto no sale aquí (≈200 tokens por segundo: media hora son ~USD 0.45): lo declara quien llama en `entrada_tokens`.
+    Es una estimación para apartar, no un máximo garantizado: el costo real llega con la respuesta y la reemplaza."""
+    return _tokens_de({k: v for k, v in cuerpo.items() if k not in NO_SE_COBRAN})
 
 
 def peor_caso_usd(cuerpo: dict, entrada_tokens: int = 0) -> float:
@@ -332,17 +334,20 @@ def _espera(r: requests.Response | None, intento: int) -> float:
     return min(60, 2 ** intento) + random.random()
 
 
-def _pedir(metodo: str, ruta: str, intentos: int = 5, archivos=None, **kwargs) -> requests.Response:
+def _pedir(metodo: str, ruta: str, intentos: int = 5, archivos=None, al_repetir=None, **kwargs) -> requests.Response:
     """Petición con reintentos para 429, 5xx y fallas de red.
 
     `archivos` es una función que abre los archivos de nuevo en cada intento: un
     archivo ya leído en el primer intento se mandaría vacío en el segundo.
+    `al_repetir(r)` corre antes de repetir un intento que pudo haberse cobrado (un 5xx o una falla de red; un 429 no
+    se cobra): quien paga aparta ahí el peor caso del intento siguiente. Si no hay presupuesto, lanza y no se repite.
     """
     cabeceras = kwargs.pop("headers", {})
     cabeceras["Authorization"] = f"Bearer {_llave()}"
     r = None
     for intento in range(intentos):
         abiertos = archivos() if archivos else None
+        r = None
         try:
             r = requests.request(metodo, f"{base()}{ruta}", headers=cabeceras, timeout=TIEMPO,
                                  files=abiertos, **kwargs)
@@ -355,6 +360,8 @@ def _pedir(metodo: str, ruta: str, intentos: int = 5, archivos=None, **kwargs) -
             for f in (abiertos or {}).values():
                 if isinstance(f, tuple) and len(f) > 1 and hasattr(f[1], "close"):
                     f[1].close()
+        if al_repetir and intento < intentos - 1 and (r is None or r.status_code >= 500):
+            al_repetir(r)
         time.sleep(_espera(r, intento))
     return r
 
@@ -371,11 +378,19 @@ def _error(r: requests.Response) -> RuntimeError:
 def responder(servicio: str, cuerpo: dict, entrada_tokens: int = 0) -> dict:
     """POST /v1/responses. Devuelve el JSON y registra el costo real (usage). `entrada_tokens`: la entrada que se
     sabe de más (un video adjunto), para que la reserva la cuente."""
-    reserva = reservar(servicio, peor_caso_usd(cuerpo, entrada_tokens))  # aparta el peor caso antes de llamar
+    peor = peor_caso_usd(cuerpo, entrada_tokens)
+    reserva = reservar(servicio, peor)  # aparta el peor caso antes de llamar
     t0 = time.time()
+
+    def apartar_otro(_r) -> None:
+        # Un 5xx o una falla de red a veces sí se cobran: lo apartado para ese intento se queda hasta que venza y el
+        # intento siguiente aparta lo suyo. Sin presupuesto para repetir, `reservar` lanza y no se repite.
+        nonlocal reserva
+        reserva = reservar(servicio, peor)
+
     # Si _pedir lanza (red, tiempo agotado) no sabemos si la API cobró: la reserva se queda apartada.
     # 3 intentos y no 5: un 5xx a veces sí se cobra, y repetir de más puede cobrar doble.
-    r = _pedir("POST", "/responses", intentos=3, json=cuerpo)
+    r = _pedir("POST", "/responses", intentos=3, json=cuerpo, al_repetir=apartar_otro)
     if r.status_code != 200:
         liberar(reserva)
         raise _error(r)

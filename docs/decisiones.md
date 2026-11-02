@@ -709,3 +709,9 @@ Va en una entrada aparte para que la huella de la regla no cambie. Corrida con e
   depende del título; la proporción del video se lee con el envoltorio de ffmpeg de siempre; el destino de la llave se compara por esquema y host exactos; en línea,
   leer un caso subido también pide el código. Pruebas: 536, todas pasan.
 - **Lo que no aplicaba a esta copia.** El registro de gasto en el historial de git y el mapa de hashes faltante estaban solo en la copia local de trabajo.
+- **Segunda pasada.** Codex volvió a auditar la versión corregida: 9 de 12 corregidos, 3 a medias (gasto, intocables, instalación) y 3 nuevos. Se arregló también:
+  cada intento que pudo cobrarse (un 5xx o una falla de red, en la API de Meta y en Baseten) deja apartado lo suyo y el siguiente aparta otro peor caso, y la estimación
+  de entrada cuenta todo lo que viaja (mensajes, herramientas, sus argumentos y salidas, el esquema); el generador suelto de storyboard (`python -m retina.storyboard`)
+  frena intocables; una traducción no puede cambiar qué citas se mandan quitar («Corta “Comenta abajo”» no se vuelve «Di “Comenta abajo”»); en la comparación de dos
+  versiones una diferencia solo se sostiene si el mismo aspecto aparece en los dos órdenes, nunca por ir en la misma posición; el README instala desde
+  `requirements.lock` con hashes y dice que el filtro de temas corre antes de reescribir y dibujar, no antes de toda la revisión.

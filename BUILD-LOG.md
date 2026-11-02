@@ -575,4 +575,8 @@ producto: una comprobación que no pudo correr ya no deja pasar la apertura (sal
 con el candado del tope antes de llamar. Además: intocables en el storyboard y en lo traducido, el idioma por nombre en el paso del agente, el título entra en la clave
 de reuso de la carpeta, ffmpeg siempre por el mismo envoltorio, el destino de la llave por host exacto y, en línea, el código también para leer un caso subido. El margen
 se volvió a medir con las funciones reales del cerebro público: 10.0 y 10.6 de cada 100 (la curva de su duración, 12.2 y 11.5); el panel sigue diciendo «más o menos 11».
-Se vuelve a pasar Codex sobre la versión corregida. Pruebas: 536. **Costo:** USD 0 (ninguna llamada a las API; el margen corre con datos locales).
+La segunda pasada de Codex sobre la versión corregida dio 9 de 12 corregidos, 3 a medias y 3 nuevos, y también se arreglaron: cada intento que pudo cobrarse
+(un 5xx o una falla de red, en Meta y en Baseten) aparta lo suyo y la estimación de entrada cuenta todo lo que viaja, también herramientas; el generador suelto de
+storyboard frena intocables; una traducción no puede volver recomendación una cita que se manda quitar; una diferencia de la comparación solo se sostiene con el mismo
+aspecto en los dos órdenes, nunca por su posición; el README instala desde `requirements.lock` con hashes y ya no dice que el filtro de temas corre antes que todo.
+Pruebas: 550. **Costo:** USD 0 (ninguna llamada a las API; el margen corre con datos locales).
