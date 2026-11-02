@@ -589,4 +589,8 @@ Una revisión del repo contra lectores hostiles (árbol y los 770 archivos del h
 inscritos, pero esta copia no traía el escáner con la regla de códigos de producción ni el gancho de pre-commit que este `CLAUDE.md` describe.
 Los dos entran al repo: `.gitleaks.toml` (reglas de fábrica más códigos internos, con el ejemplo `XYZ000000N` permitido) y `.githooks/pre-commit`
 (pruebas y gitleaks antes de cada commit), que se activa con `git config core.hooksPath .githooks`. gitleaks con esa regla no encuentra nada en
-todo el historial.
+todo el historial. Una pasada más de Codex sobre ese commit dejó cinco detalles en los dos archivos nuevos, todos corregidos: el permiso
+del ejemplo aceptaba otros códigos (ahora solo los dos ejemplos exactos), el permiso de los nombres de caché podía tapar una llave que los contuviera
+(ahora anclado al secreto completo), la regla consumía el separador y escondía un código pegado a un ejemplo (ya no cierra a la derecha), y el gancho
+prefería `python` aunque hubiera `python3` (ahora busca el primer intérprete 3.12 o más nuevo). Cada caso quedó en `tests/test_escaner_secretos.py`,
+con los códigos de prueba armados en ejecución para que ni la prueba ni su .pyc disparen el escáner. Pruebas: 568.

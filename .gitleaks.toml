@@ -1,19 +1,25 @@
-# Además de las reglas de siempre, bloquea códigos internos de producción de Badabun
-# (letras y de 6 a 9 dígitos, como en los nombres de archivo, también pegados a un «_»).
-# Los de ejemplo usan XYZ000000N.
+# Además de las reglas de fábrica, bloquea códigos internos de producción de Badabun
+# (de 2 a 6 letras mayúsculas y de 6 a 9 dígitos, como en los nombres de archivo, también pegados a un «_»).
+# Los de ejemplo usan XYZ000000N (y XYZ0000001 donde el código va sin letra final).
 [extend]
 useDefault = true
 
 [[rules]]
 id = "codigo-produccion-badabun"
 description = "Código interno de producción de Badabun: no va al repo público"
-regex = '''(?:^|[^A-Za-z0-9])([A-Z]{2,6}[0-9]{6,9})(?:[^0-9]|$)'''
+# Sin cierre a la derecha a propósito: un cierre consumiría el separador y escondería un código pegado al ejemplo
+# (XYZ0000001,ABC1234567). A cambio, letras seguidas de 10 dígitos o más también se marcan y se revisan a mano.
+regex = '''(?:^|[^A-Za-z0-9])([A-Z]{2,6}[0-9]{6,9})'''
 secretGroup = 1
 
 [[rules.allowlists]]
-regexes = ['''XYZ0+[0-9]''']
+description = "Solo los dos ejemplos inventados, completos"
+regexTarget = "secret"
+regexes = ['''^XYZ000000$''', '''^XYZ0000001$''']
 
-# Los nombres de caché de los prompts («retina-explicar-v2») parecen llaves, pero no lo son.
+# Los nombres de caché de los prompts («retina-explicar-v2») parecen llaves, pero no lo son. Anclado al secreto
+# completo: una llave que solo contenga ese texto sí se marca.
 [[allowlists]]
 description = "Nombres de caché de prompts de Retina"
-regexes = ['''retina-[a-z-]+-v[0-9]+''']
+regexTarget = "secret"
+regexes = ['''^retina-[a-z-]+-v[0-9]+$''']

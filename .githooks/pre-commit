@@ -2,9 +2,14 @@
 # Antes de cada commit: las pruebas y el escáner de secretos. Si algo falla, no se hace el commit.
 # Se activa una vez por copia del repo:  git config core.hooksPath .githooks
 cd "$(git rev-parse --show-toplevel)" || exit 1
-PY=python
-command -v python3 >/dev/null 2>&1 && PY=python3
-command -v python >/dev/null 2>&1 && PY=python
+PY=""
+for c in python3 python py; do
+  if "$c" -c 'import sys; raise SystemExit(0 if sys.version_info[:2] >= (3, 12) else 1)' >/dev/null 2>&1; then
+    PY="$c"
+    break
+  fi
+done
+[ -n "$PY" ] || { echo "No encuentro Python 3.12 o más nuevo: no se hace el commit."; exit 1; }
 "$PY" -m unittest discover -s tests -q || { echo "Las pruebas fallaron: no se hace el commit."; exit 1; }
 command -v gitleaks >/dev/null 2>&1 || { echo "No encuentro gitleaks (https://github.com/gitleaks/gitleaks): no se hace el commit."; exit 1; }
 # Lee .gitleaks.toml de la raíz: además de las reglas de fábrica, bloquea códigos internos de producción.
