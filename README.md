@@ -88,7 +88,7 @@ PYTHONPATH=src python -m retina.demo      # Windows PowerShell: $env:PYTHONPATH=
 You only need Python. It opens a made-up example in your browser, in your browser's language, served only on your machine: the opening
 before and after, the corrections it went through, every check it passed, the number and the check against Facebook's rules. The script,
 the review card and the rules check are made up. The new opening came out of the real pipeline and the number out of the real formula,
-both run on that made-up script.
+both run on that made-up script. A banner at the top of the panel says so, and the section below lists what is live, recorded or made up.
 
 ## Try it with your own video
 
@@ -118,6 +118,31 @@ PYTHONPATH=src python -m retina.apertura FOLDER --idioma en --aprobar
 
 Tests need no key and no private data: `pip install --require-hashes -r requirements.lock`, then `PYTHONPATH=src python -m unittest discover -s tests`.
 The optional GPU extras in `requirements-gpu.txt` (local transcription and V-JEPA 2) are pinned but have no hash lock.
+
+## What is live, what is recorded, what is made up
+
+The organizers asked every team to say which steps are simulated. This is the whole list.
+
+| Where | What you see | Status |
+|---|---|---|
+| `python -m retina.demo`, no key | The panel | The real panel, served from your machine. A banner at the top says it is a made-up example |
+| | The script, the review card and the rules check | Made up by hand. No real video is in this repository |
+| | The new opening, its three drawings, the attempt history and the number | Recorded outputs. The real pipeline and the real formula ran on that made-up script on 31-Oct-2026; the files are in [`casos/demo`](casos/demo) and [`casos/demo-en`](casos/demo-en), marked `"ejemplo_inventado": true` |
+| | The voice that reads the opening | Your browser's speech synthesis, not a model |
+| `python -m retina.app`, your key | Everything | Live. Each step calls the model named on screen. Nothing is cached or stubbed; the only reuse is that a folder already paid for the same video and the same title is not charged twice |
+| The 3-minute video | One run on a real video | Live, recorded in one take on 3-Nov-2026 with the app above. The two waits are sped up 4× and labeled on screen. Step by step, with seconds and models: [`docs/live-run.md`](docs/live-run.md) |
+| The tests | 571 tests | Run without a key. Every model answer in them is a fixture, and they say so |
+
+### Provenance you can check
+
+- **Recorded outputs:** [`casos/demo`](casos/demo) and [`casos/demo-en`](casos/demo-en) hold the result file, the three frames Muse Image
+  drew and the made-up script, exactly as the pipeline left them.
+- **Measurements:** every script in [`eval/`](eval/) with its result in [`docs/results.md`](docs/results.md); the rule for each one was
+  written in [`docs/decisiones.md`](docs/decisiones.md) before running and sealed with a commit listed in [`docs/hash-map.md`](docs/hash-map.md).
+  The videos and their curves stay private; only aggregated figures are here.
+- **Logs:** [`docs/live-run.md`](docs/live-run.md) is the timeline of the run in the video, and [`BUILD-LOG.md`](BUILD-LOG.md) is the diary,
+  day by day, with what failed and what each day cost.
+- **Screen captures:** [`docs/img/`](docs/img/) shows the panel as it ships: the review card, the made-up-example banner and the attempt history.
 
 ## Meta models in Retina
 

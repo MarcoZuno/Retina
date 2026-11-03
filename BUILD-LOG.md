@@ -606,3 +606,14 @@ el arranque en inglés para un video en español; la comprobación «tema» (la 
 la persona se quedaba sin arranque. Ahora la ventaja se cuenta contra cada otro idioma solo con las palabras que los dos no comparten, y «a»
 entra como palabra común del español y del inglés. El portugués y el francés siguen sin pasar por español (sus pruebas no cambiaron) y el
 caso queda en `tests/test_video.py`. Pruebas: 571.
+
+## 3-nov-2026 · Lo que es en vivo, grabado o inventado, por escrito
+
+Los organizadores pidieron a todos los equipos decir en el README qué pasos son simulados y dejar toda la procedencia posible (salidas grabadas, bitácoras,
+capturas). El README gana la sección «What is live, what is recorded, what is made up»: el ejemplo sin llave es el panel real con salidas grabadas del lazo
+real sobre un guion inventado, y lo dice en pantalla; la app con llave es en vivo y no guarda respuestas; el video del concurso es una corrida en vivo, de una
+sola toma, con las dos esperas aceleradas y marcadas. `docs/live-run.md` deja la línea de tiempo de esa corrida, modelo por modelo y segundo a segundo, sin el
+video, su título ni su transcripción. Dos corridas del mismo día sobre el mismo video terminaron sin apertura (enumeró varias pruebas, agregó un detalle que
+el video no dice, volvió a enumerar) y el día anterior una pasó a la primera: el modelo no es determinista y queda dicho. El grabador del panel, que es
+privado, ahora recorre la hoja completa antes y después del arreglo. Dos capturas nuevas del ejemplo en `docs/img`. Pruebas: 571. **Costo:** USD 0.53 en tres
+corridas reales (0.17, 0.17 y 0.18, según el libro de gastos).
