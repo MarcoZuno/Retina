@@ -57,6 +57,18 @@ class Idioma(unittest.TestCase):
         self.assertIsNone(idioma_de("Tutorial"))
         self.assertIsNone(idioma_de(""))
 
+    def test_un_espanol_corto_no_se_queda_sin_idioma_por_las_palabras_que_comparte_con_el_portugues(self):
+        # Un título y las primeras 60 palabras de un video en español (inventado). «de», «que», «para», «a» y «no» también
+        # son portuguesas o francesas: con el margen contado sobre todas las palabras comunes, el español no sacaba ventaja,
+        # el inicio se escribía en el idioma del panel (inglés) y la comprobación «tema» fallaba las tres vueltas.
+        texto = ("Gatito no quiso dormir para cuidar a sus hermanos. Ahorita nos acabamos de encontrar a este gatito que la "
+                 "verdad sí se ve bastante mal. Cuando le ofrecimos agua pensamos que se la iba a tomar toda. Se veía cansado "
+                 "y con muchísima sed. No, yo me imagino cuántos días estuvo sin tomar nada, pero en lugar de tomar se fue a "
+                 "buscar a los demás")
+        self.assertEqual(idioma_de(texto), "es")
+        self.assertEqual(idioma_de("Gatito no quiso dormir para cuidar a sus hermanos"), "es")
+        self.assertEqual(idioma_de("A quick fix for a slow laptop"), "en")  # «a» también es inglesa: no inclina al español
+
 
 class Recortar(unittest.TestCase):
     def wav(self, carpeta: Path, segundos: float) -> Path:

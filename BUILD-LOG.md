@@ -598,3 +598,11 @@ La estación «tema» pasó a decidir por inclusión (tema-v2): la lista dice qu
 videos de la quinta medición (50 dentro) y sobre 14 títulos inventados (14 como se esperaba; la regla, en `docs/decisiones.md`). El cerebro
 público lee una sola columna «incluir» de la base, y dos scripts de investigación que solo corrían con datos de la casa salieron del repo. El
 repo se rehízo otra vez antes de publicarse, con los mismos sellos (`docs/hash-map.md`). Pruebas: 570.
+
+Una corrida real de la tarde (un video de prueba en español, con el panel en inglés) destapó un defecto en la detección de idioma: con el
+título y las primeras 60 palabras del video, el español ganaba (27 palabras comunes contra 0 del inglés) pero no le sacaba la ventaja de 1.5
+al portugués (19), porque «de», «que», «para», «a» y «no» son de los dos idiomas. Retina se quedaba sin idioma, caía al del panel y escribía
+el arranque en inglés para un video en español; la comprobación «tema» (la primera frase con palabras del título) fallaba las tres vueltas y
+la persona se quedaba sin arranque. Ahora la ventaja se cuenta contra cada otro idioma solo con las palabras que los dos no comparten, y «a»
+entra como palabra común del español y del inglés. El portugués y el francés siguen sin pasar por español (sus pruebas no cambiaron) y el
+caso queda en `tests/test_video.py`. Pruebas: 571.

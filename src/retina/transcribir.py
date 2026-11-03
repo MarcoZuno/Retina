@@ -31,30 +31,40 @@ COMUNES = {
               "se ne plus par mais ou où son sa ses leur leurs cette ces mon ma mes ton ta tes très tout tous être avoir "
               "fait faire aussi comme bien sans sous ça c'est j'ai qu'il d'un d'une l'on y a été sont était dit peut "
               "même alors encore merci voici voilà quand si donc car cela cet ceux celui".split()),
-    "es": set("de la que el en y los se del las un por con no una su para es al lo como más pero sus le ya "
+    "es": set("de la que el en y los se del las un por con no una su para es al lo como más pero sus le ya a "
               "este sí porque esta cuando muy sin sobre también me hasta hay donde todo nos uno les ni eso esto "
               "qué yo otro él ella mi tu te así cómo hoy vas aquí mira".split()),
-    "en": set("the of and to in is it you that was for on are with as they be at have this from or had by not "
+    "en": set("the of and to in is it you that was for on are with as they be at have this from or had by not a "
               "but what all were we when your can there an which she do how their if will up about out then them "
               "so would like him into has look more go see could people my than who its now did get here watch".split()),
 }
 
 
-MARGEN = 1.5  # el idioma que gana tiene que sacarle esta ventaja al segundo: «de», «que» y «para» son de varios a la vez
+# El idioma que gana tiene que sacarle esta ventaja a cada uno de los otros, contada solo con las palabras que no
+# comparten: «de», «que», «para» y «a» son de varios idiomas a la vez y no deciden nada; «sí», «cuando» y «pero» sí.
+MARGEN = 1.5
 PROPORCION = 0.12  # y sus palabras comunes tienen que ser al menos esta parte del texto
 
 
 def idioma_detectado(texto: str) -> str | None:
-    """«es», «en», «pt» o «fr» si el texto lo deja claro: dos palabras comunes o más, con ventaja sobre el segundo idioma
-    y una parte razonable del texto. Un portugués no se confunde con español solo porque comparten palabras."""
+    """«es», «en», «pt» o «fr» si el texto lo deja claro: dos palabras comunes o más, una parte razonable del texto y
+    ventaja sobre cada otro idioma medida con las palabras que no comparten. Un portugués no se confunde con español solo
+    porque comparten palabras, y un español corto tampoco se queda sin idioma por lo mismo (2-nov: 60 palabras de un video
+    en español se quedaban sin idioma y el inicio salía en inglés)."""
     palabras = re.findall(r"[^\W\d_]+(?:'[^\W\d_]+)?", (texto or "").lower())
     cuenta = {k: sum(p in comunes for p in palabras) for k, comunes in COMUNES.items()}
-    orden = sorted(cuenta, key=cuenta.get, reverse=True)
-    gana, segundo = orden[0], orden[1]
-    if cuenta[gana] >= 2 and cuenta[gana] >= MARGEN * cuenta[segundo] and cuenta[gana] > cuenta[segundo] \
-            and cuenta[gana] >= PROPORCION * len(palabras):
-        return gana
-    return None
+    gana = max(cuenta, key=cuenta.get)
+    if cuenta[gana] < 2 or cuenta[gana] < PROPORCION * len(palabras):
+        return None
+    for otro in cuenta:
+        if otro == gana:
+            continue
+        compartidas = COMUNES[gana] & COMUNES[otro]
+        propias = sum(p in COMUNES[gana] and p not in compartidas for p in palabras)
+        ajenas = sum(p in COMUNES[otro] and p not in compartidas for p in palabras)
+        if not (propias > ajenas and propias >= MARGEN * ajenas):
+            return None
+    return gana
 
 
 def idioma_de(texto: str) -> str | None:
