@@ -615,5 +615,12 @@ real sobre un guion inventado, y lo dice en pantalla; la app con llave es en viv
 sola toma, con las dos esperas aceleradas y marcadas. `docs/live-run.md` deja la línea de tiempo de esa corrida, modelo por modelo y segundo a segundo, sin el
 video, su título ni su transcripción. Dos corridas del mismo día sobre el mismo video terminaron sin apertura (enumeró varias pruebas, agregó un detalle que
 el video no dice, volvió a enumerar) y el día anterior una pasó a la primera: el modelo no es determinista y queda dicho. El grabador del panel, que es
-privado, ahora recorre la hoja completa antes y después del arreglo. Dos capturas nuevas del ejemplo en `docs/img`. Pruebas: 571. **Costo:** USD 0.53 en tres
+privado, ahora recorre la hoja completa antes y después del arreglo. Dos capturas nuevas del ejemplo en `docs/img`. Pruebas: 571. **Costo:** USD 0.52 en tres
 corridas reales (0.17, 0.17 y 0.18, según el libro de gastos).
+
+Sistemas revisó ese commit para el gate de seguridad y dejó cuatro observaciones de procedencia, todas ciertas, corregidas aquí sin tocar
+código: el README decía que todos los scripts de `eval/` tenían su resultado en `docs/results.md` y solo tres aparecen ahí por nombre, así
+que ahora dice qué mediciones sí están ahí y `eval/README.md` nombra los 29 scripts con el lugar donde quedó lo que salió de cada uno;
+«nothing is cached» no era exacto, porque las llamadas usan la caché de instrucciones de los proveedores y el arreglo reusa la lectura de
+SAM de la revisión, y ahora lo dice; `docs/live-run.md` aclara que sus segundos son del reloj de la corrida y no del video, y que la
+corrida usó una carpeta nueva; y el costo de arriba decía 0.53 cuando 0.17 + 0.17 + 0.18 es 0.52. Pruebas: 571.

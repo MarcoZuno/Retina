@@ -129,7 +129,7 @@ The organizers asked every team to say which steps are simulated. This is the wh
 | | The script, the review card and the rules check | Made up by hand. No real video is in this repository |
 | | The new opening, its three drawings, the attempt history and the number | Recorded outputs. The real pipeline and the real formula ran on that made-up script on 31-Oct-2026; the files are in [`casos/demo`](casos/demo) and [`casos/demo-en`](casos/demo-en), marked `"ejemplo_inventado": true` |
 | | The voice that reads the opening | Your browser's speech synthesis, not a model |
-| `python -m retina.app`, your key | Everything | Live. Each step calls the model named on screen. Nothing is cached or stubbed; the only reuse is that a folder already paid for the same video and the same title is not charged twice |
+| `python -m retina.app`, your key | Everything | Live. Each step calls the model named on screen and every answer is generated in that run; nothing is stubbed. Two things are reused: the providers' prompt cache (a `prompt_cache_key` keeps the fixed instructions warm, which lowers the price of a call but still generates the answer), and a folder that already paid for the same video and the same title is not charged twice, so the fix reuses the SAM reading the review already made of the draft |
 | The 3-minute video | One run on a real video | Live, recorded in one take on 3-Nov-2026 with the app above. The two waits are sped up 4× and labeled on screen. Step by step, with seconds and models: [`docs/live-run.md`](docs/live-run.md) |
 | The tests | 571 tests | Run without a key. Every model answer in them is a fixture, and they say so |
 
@@ -137,8 +137,11 @@ The organizers asked every team to say which steps are simulated. This is the wh
 
 - **Recorded outputs:** [`casos/demo`](casos/demo) and [`casos/demo-en`](casos/demo-en) hold the result file, the three frames Muse Image
   drew and the made-up script, exactly as the pipeline left them.
-- **Measurements:** every script in [`eval/`](eval/) with its result in [`docs/results.md`](docs/results.md); the rule for each one was
-  written in [`docs/decisiones.md`](docs/decisiones.md) before running and sealed with a commit listed in [`docs/hash-map.md`](docs/hash-map.md).
+- **Measurements:** the five tests of the opening fix, the reference number, the opening level and the card have their result in
+  [`docs/results.md`](docs/results.md); each rule was written in [`docs/decisiones.md`](docs/decisiones.md) before running and sealed with a
+  commit listed in [`docs/hash-map.md`](docs/hash-map.md). [`eval/README.md`](eval/README.md) names all 29 scripts in [`eval/`](eval/) and
+  says, for each one, whether it has a sealed rule and where its outcome is written: that file, [`docs/decisiones.md`](docs/decisiones.md) or
+  [`BUILD-LOG.md`](BUILD-LOG.md). None of the research scripts without a sealed rule sets a figure the panel shows.
   The videos and their curves stay private; only aggregated figures are here.
 - **Logs:** [`docs/live-run.md`](docs/live-run.md) is the timeline of the run in the video, and [`BUILD-LOG.md`](BUILD-LOG.md) is the diary,
   day by day, with what failed and what each day cost.

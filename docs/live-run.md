@@ -6,6 +6,12 @@ it clicked, typed and scrolled, and the panel was not modified. For the video, t
 on screen; everything else runs at real speed. The reel, its title and its transcript belong to the creator and are not in
 this repository.
 
+Two things to read the table right. The seconds are the clock of the run, counted from the start of the recording, not the timeline of the
+video: the video shortens the two waits, so the same moments land earlier there. And the run started from a fresh upload: the app
+gives every upload its own folder, named with a random id (`mis-revisiones/<id>`), and the "already paid" reuse described in the
+README only works inside one folder, for the same video and the same title. The two failed runs that day had their own folders, so
+nothing they paid for was reused here; the cost log shows the three runs paid in full, 0.17, 0.17 and 0.18 USD.
+
 What the panel showed, second by second, and which model was working:
 
 | Second | What the panel showed | Model |
